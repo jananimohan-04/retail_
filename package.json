@@ -1,0 +1,16 @@
+{
+  "name": "cncforge-retail-store",
+  "version": "1.0.0",
+  "private": true,
+  "description": "CNCFORGE Retail Store — frontend (static) + backend (Express) run together locally.",
+  "scripts": {
+    "install:all": "npm --prefix backend install",
+    "backend": "npm --prefix backend start",
+    "frontend": "npx --yes serve . -l 3000",
+    "dev": "npm --prefix backend install && node ./scripts/run-both.js",
+    "client:install": "npm --prefix client install",
+    "client:build": "npm --prefix client run build",
+    "client:dev": "npm --prefix client run dev",
+    "dev:react": "npm --prefix client install && npm --prefix client run build && npm --prefix backend install && node ./scripts/run-both.js"
+  }
+}
