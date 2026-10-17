@@ -345,7 +345,7 @@ function MediaTab({ id }) {
         <h2 style={{ fontSize: 16 }}>Media ({rows.length})</h2>
         <button className="btn btn-primary btn-sm" onClick={() => setUploading(true)}>+ Upload media</button>
       </div>
-      <div className="prod-grid" style={{ gridTemplateColumns: 'repeat(4,1fr)' }}>
+      <div className="prod-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '16px' }}>
         {gallery.map((m, i) => (
           <div className="prod" key={m.id || i}>
             <div className="prod-img">

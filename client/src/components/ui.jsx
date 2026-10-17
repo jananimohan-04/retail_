@@ -93,13 +93,13 @@ export function statusBadge(status) {
 /* ---------- Modal Dialog ---------- */
 export function Modal({ title, onClose, wide, children }) {
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
+    <div className="modal-backdrop fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 15 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 15 }}
         transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-        className={`bg-white rounded-2xl shadow-2xl border border-slate-200/80 w-full overflow-hidden my-auto max-h-[90vh] flex flex-col ${
+        className={`modal bg-white rounded-2xl shadow-2xl border border-slate-200/80 w-full overflow-hidden my-auto max-h-[90vh] flex flex-col ${
           wide ? 'max-w-4xl' : 'max-w-xl'
         }`}
       >

@@ -24,6 +24,7 @@ export default function Media() {
   const [upProducts, setUpProducts] = useState([]);
   const [replacing, setReplacing] = useState(null);
   const [del, setDel] = useState(null);
+  const [preview, setPreview] = useState(null);
 
   useEffect(() => { fetchCompanyOptions().then(setCos).catch(() => {}); }, []);
 
@@ -102,10 +103,10 @@ export default function Media() {
         </div>
         {loading ? <Skeleton h={220} /> : err ? <Empty title={'⚠️ ' + err} /> : (
           <>
-            <div className="prod-grid" style={{ gridTemplateColumns: 'repeat(4,1fr)' }}>
+            <div className="prod-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
               {data.rows.map((m) => (
                 <div className="prod" key={m.id}>
-                  <div className="prod-img">
+                  <div className="prod-img" onClick={() => setPreview(m)} style={{ cursor: 'pointer' }} title="Click for Full View preview">
                     {m.type === 'video'
                       ? <video src={m.url} controls style={{ width: '100%', height: '100%' }} />
                       : <img src={m.url} onError={(e) => { e.target.src = imgFallback('media', 400, 300); }} alt="" />}
@@ -115,6 +116,7 @@ export default function Media() {
                     <span className="hint">{m.productName || ''}</span>
                     <span className="hint">{m.companyName || m.companyId} • {m.type}{m.visible === false ? ' • hidden' : ''}</span>
                     <div className="prod-actions" style={{ flexWrap: 'wrap' }}>
+                      <button className="btn btn-ghost btn-sm" onClick={() => setPreview(m)} title="Full view preview">🔍 Full View</button>
                       <button className="btn btn-ghost btn-sm" onClick={() => patch(m, { primary: true }, 'Primary updated')}>Primary</button>
                       <button className="btn btn-ghost btn-sm" onClick={() => patch(m, { visible: !(m.visible !== false) }, 'Visibility updated')}>{m.visible !== false ? 'Hide' : 'Show'}</button>
                     </div>
@@ -161,6 +163,30 @@ export default function Media() {
       {del && (
         <Confirm title="Delete media" body={`Delete this ${del.type} (${del.sku || del.productId})? The product record is updated too.`}
           okLabel="Delete" danger onCancel={() => setDel(null)} onOk={() => remove(del)} />
+      )}
+      {preview && (
+        <Modal title={`🖼️ ${preview.sku || preview.productId} — Full View`} onClose={() => setPreview(null)} wide>
+          <div className="flex flex-col items-center gap-4">
+            <div className="w-full max-h-[65vh] flex items-center justify-center bg-slate-950 rounded-2xl overflow-hidden p-2">
+              {preview.type === 'video' ? (
+                <video src={preview.url} controls autoPlay className="max-h-[60vh] max-w-full rounded-xl" />
+              ) : (
+                <img src={preview.url} alt="" className="max-h-[60vh] max-w-full object-contain rounded-xl" />
+              )}
+            </div>
+            <div className="w-full flex items-center justify-between gap-4 p-4 bg-slate-50 rounded-xl border border-slate-200 flex-wrap">
+              <div>
+                <h4 className="font-bold text-slate-900 m-0 text-sm">{preview.productName || preview.sku || preview.productId}</h4>
+                <p className="text-xs text-slate-500 m-0 mt-0.5">{preview.companyName || preview.companyId} • {preview.type} • {preview.primary ? 'Primary Image' : 'Gallery Asset'}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <a href={preview.url} target="_blank" rel="noreferrer" className="btn btn-ghost btn-sm">Direct Link ↗</a>
+                <button className="btn btn-primary btn-sm" onClick={() => { patch(preview, { primary: true }, 'Primary updated'); setPreview(null); }}>Make Primary</button>
+                <button className="btn btn-ghost btn-sm" onClick={() => setPreview(null)}>Close</button>
+              </div>
+            </div>
+          </div>
+        </Modal>
       )}
     </>
   );

@@ -12,14 +12,15 @@ import {
 import { useAuth } from './auth';
 import { getCart } from './api';
 
-function sideLink(to, label, IconComponent, badge, onClick) {
+function sideLink(to, label, IconComponent, badge = null, onClick = null, mini = false) {
   return (
     <NavLink
       key={to}
       to={to}
       onClick={onClick}
+      title={label}
       className={({ isActive }) => `
-        group relative flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200
+        group relative flex items-center ${mini ? 'justify-center p-2.5 w-10 h-10 mx-auto' : 'gap-3 px-3.5 py-2.5'} rounded-xl text-xs font-semibold transition-all duration-200
         ${isActive 
           ? 'bg-blue-50 text-blue-700 font-bold border border-blue-200/60 shadow-xs' 
           : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80'}
@@ -35,13 +36,15 @@ function sideLink(to, label, IconComponent, badge, onClick) {
             />
           )}
           <span className={`transition-colors ${isActive ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-600'}`}>
-            {IconComponent && <IconComponent className="w-4 h-4" />}
+            {IconComponent && <IconComponent className="w-4 h-4 flex-shrink-0" />}
           </span>
-          <span className="truncate flex-1">{label}</span>
-          {badge ? (
+          {!mini && <span className="truncate flex-1">{label}</span>}
+          {!mini && badge ? (
             <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold tracking-wide ${isActive ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-700'}`}>
               {badge}
             </span>
+          ) : mini && badge ? (
+            <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-orange-500" />
           ) : null}
         </>
       )}
@@ -49,46 +52,52 @@ function sideLink(to, label, IconComponent, badge, onClick) {
   );
 }
 
-export function Sidebar({ counts, onItemClick }) {
+export function Sidebar({ counts, onItemClick, mini = false }) {
   const { me } = useAuth();
   const role = me && me.role;
   const companyTitle = ((me && me.companyId) || 'ARGUS').toUpperCase();
 
   if (role === 'super_admin') {
     return (
-      <aside className="w-full flex flex-col gap-5 py-2">
+      <aside className={`w-full flex flex-col ${mini ? 'gap-1.5 py-1 items-center' : 'gap-5 py-2'}`}>
         <div>
-          <div className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-3.5 mb-1.5">OVERVIEW</div>
-          {sideLink('/super/dashboard', 'Platform Dashboard', LayoutDashboard, null, onItemClick)}
+          {!mini && <div className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-3.5 mb-1.5">OVERVIEW</div>}
+          {sideLink('/super/dashboard', 'Platform Dashboard', LayoutDashboard, null, onItemClick, mini)}
         </div>
+        {mini && <div className="w-8 border-t border-slate-100 my-0.5" />}
         <div>
-          <div className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-3.5 mb-1.5">ORGANIZATIONS</div>
-          {sideLink('/super/companies', 'Company Hub', Building2, null, onItemClick)}
+          {!mini && <div className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-3.5 mb-1.5">ORGANIZATIONS</div>}
+          {sideLink('/super/companies', 'Company Hub', Building2, null, onItemClick, mini)}
         </div>
-        <div>
-          <div className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-3.5 mb-1.5">GLOBAL CATALOG</div>
-          {sideLink('/super/catalog', 'Master Catalog', Boxes, null, onItemClick)}
-          {sideLink('/super/categories', 'Categories', FolderTree, null, onItemClick)}
-          {sideLink('/super/media', 'Product Media', ImageIcon, null, onItemClick)}
+        {mini && <div className="w-8 border-t border-slate-100 my-0.5" />}
+        <div className={mini ? 'flex flex-col gap-1' : ''}>
+          {!mini && <div className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-3.5 mb-1.5">GLOBAL CATALOG</div>}
+          {sideLink('/super/catalog', 'Master Catalog', Boxes, null, onItemClick, mini)}
+          {sideLink('/super/categories', 'Categories', FolderTree, null, onItemClick, mini)}
+          {sideLink('/super/media', 'Product Media', ImageIcon, null, onItemClick, mini)}
         </div>
-        <div>
-          <div className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-3.5 mb-1.5">COMMERCE</div>
-          {sideLink('/super/orders', 'Platform Orders', Receipt, null, onItemClick)}
-          {sideLink('/super/quotes', 'RFQ Quotations', FileText, null, onItemClick)}
+        {mini && <div className="w-8 border-t border-slate-100 my-0.5" />}
+        <div className={mini ? 'flex flex-col gap-1' : ''}>
+          {!mini && <div className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-3.5 mb-1.5">COMMERCE</div>}
+          {sideLink('/super/orders', 'Platform Orders', Receipt, null, onItemClick, mini)}
+          {sideLink('/super/quotes', 'RFQ Quotations', FileText, null, onItemClick, mini)}
         </div>
-        <div>
-          <div className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-3.5 mb-1.5">GOVERNANCE</div>
-          {sideLink('/super/settings', 'Global Settings', Settings, null, onItemClick)}
-          {sideLink('/super/audit', 'Audit Logs', ShieldCheck, null, onItemClick)}
+        {mini && <div className="w-8 border-t border-slate-100 my-0.5" />}
+        <div className={mini ? 'flex flex-col gap-1' : ''}>
+          {!mini && <div className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-3.5 mb-1.5">GOVERNANCE</div>}
+          {sideLink('/super/settings', 'Global Settings', Settings, null, onItemClick, mini)}
+          {sideLink('/super/audit', 'Audit Logs', ShieldCheck, null, onItemClick, mini)}
         </div>
-        <div>
-          <div className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-3.5 mb-1.5">PUBLISHING</div>
-          {sideLink('/content', 'Content Writer', PenLine, null, onItemClick)}
-          {sideLink('/finance', 'Finance Review', IndianRupee, null, onItemClick)}
+        {mini && <div className="w-8 border-t border-slate-100 my-0.5" />}
+        <div className={mini ? 'flex flex-col gap-1' : ''}>
+          {!mini && <div className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-3.5 mb-1.5">PUBLISHING</div>}
+          {sideLink('/content', 'Content Writer', PenLine, null, onItemClick, mini)}
+          {sideLink('/finance', 'Finance Review', IndianRupee, null, onItemClick, mini)}
         </div>
+        {mini && <div className="w-8 border-t border-slate-100 my-0.5" />}
         <div>
-          <div className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-3.5 mb-1.5">STOREFRONT</div>
-          {sideLink('/store/home', 'View Storefront', Store, null, onItemClick)}
+          {!mini && <div className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-3.5 mb-1.5">STOREFRONT</div>}
+          {sideLink('/store/home', 'View Storefront', Store, null, onItemClick, mini)}
         </div>
       </aside>
     );
@@ -96,28 +105,32 @@ export function Sidebar({ counts, onItemClick }) {
 
   if (role === 'company_admin') {
     return (
-      <aside className="w-full flex flex-col gap-5 py-2">
-        <div>
-          <div className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-3.5 mb-1.5">
-            {companyTitle} • OPERATIONS
-          </div>
-          {sideLink('/admin/dashboard', 'Dashboard', LayoutDashboard, null, onItemClick)}
-          {sideLink('/admin/products', 'Industrial Catalog', Boxes, null, onItemClick)}
-          {sideLink('/admin/media', 'Product Media', ImageIcon, null, onItemClick)}
-          {sideLink('/admin/categories', 'Custom Categories', FolderTree, null, onItemClick)}
-          {sideLink('/admin/users', 'Sales Representatives', User, null, onItemClick)}
-          {sideLink('/admin/orders', 'Customer Orders', Receipt, counts?.pendingOrders || '', onItemClick)}
-          {sideLink('/admin/quotes', 'RFQ Inquiries', FileText, counts?.openQuotes || '', onItemClick)}
-          {sideLink('/admin/settings', 'Store Settings', Settings, null, onItemClick)}
+      <aside className={`w-full flex flex-col ${mini ? 'gap-1.5 py-1 items-center' : 'gap-5 py-2'}`}>
+        <div className={mini ? 'flex flex-col gap-1' : ''}>
+          {!mini && (
+            <div className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-3.5 mb-1.5">
+              {companyTitle} • OPERATIONS
+            </div>
+          )}
+          {sideLink('/admin/dashboard', 'Dashboard', LayoutDashboard, null, onItemClick, mini)}
+          {sideLink('/admin/products', 'Industrial Catalog', Boxes, null, onItemClick, mini)}
+          {sideLink('/admin/media', 'Product Media', ImageIcon, null, onItemClick, mini)}
+          {sideLink('/admin/categories', 'Custom Categories', FolderTree, null, onItemClick, mini)}
+          {sideLink('/admin/users', 'Sales Representatives', User, null, onItemClick, mini)}
+          {sideLink('/admin/orders', 'Customer Orders', Receipt, counts?.pendingOrders || '', onItemClick, mini)}
+          {sideLink('/admin/quotes', 'RFQ Inquiries', FileText, counts?.openQuotes || '', onItemClick, mini)}
+          {sideLink('/admin/settings', 'Store Settings', Settings, null, onItemClick, mini)}
         </div>
-        <div>
-          <div className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-3.5 mb-1.5">PUBLISHING</div>
-          {sideLink('/content', 'Content Writer', PenLine, null, onItemClick)}
-          {sideLink('/finance', 'Finance Review', IndianRupee, null, onItemClick)}
+        {mini && <div className="w-8 border-t border-slate-100 my-0.5" />}
+        <div className={mini ? 'flex flex-col gap-1' : ''}>
+          {!mini && <div className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-3.5 mb-1.5">PUBLISHING</div>}
+          {sideLink('/content', 'Content Writer', PenLine, null, onItemClick, mini)}
+          {sideLink('/finance', 'Finance Review', IndianRupee, null, onItemClick, mini)}
         </div>
+        {mini && <div className="w-8 border-t border-slate-100 my-0.5" />}
         <div>
-          <div className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-3.5 mb-1.5">STOREFRONT</div>
-          {sideLink('/store/home', 'Live Store', Store, null, onItemClick)}
+          {!mini && <div className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-3.5 mb-1.5">STOREFRONT</div>}
+          {sideLink('/store/home', 'Live Store', Store, null, onItemClick, mini)}
         </div>
       </aside>
     );
@@ -125,70 +138,80 @@ export function Sidebar({ counts, onItemClick }) {
 
   if (role === 'content_writer') {
     return (
-      <aside className="w-full flex flex-col gap-5 py-2">
+      <aside className={`w-full flex flex-col ${mini ? 'gap-1.5 py-1 items-center' : 'gap-5 py-2'}`}>
         <div>
-          <div className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-3.5 mb-1.5">
-            {companyTitle} • CONTENT
+          {!mini && (
+            <div className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-3.5 mb-1.5">
+              {companyTitle} • CONTENT
+            </div>
+          )}
+          {sideLink('/content', 'Content Queue', PenLine, counts?.pendingContent || '', onItemClick, mini)}
+        </div>
+        {!mini && (
+          <div>
+            <div className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-3.5 mb-1.5">GUIDANCE</div>
+            <p className="px-3.5 text-[11px] leading-relaxed text-slate-500">
+              Products arrive here automatically from ERP Inventory. Write the sales copy, attach media, then
+              <span className="font-bold text-slate-700"> Submit to Finance</span> for pricing.
+            </p>
           </div>
-          {sideLink('/content', 'Content Queue', PenLine, counts?.pendingContent || '', onItemClick)}
-        </div>
-        <div>
-          <div className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-3.5 mb-1.5">GUIDANCE</div>
-          <p className="px-3.5 text-[11px] leading-relaxed text-slate-500">
-            Products arrive here automatically from ERP Inventory. Write the sales copy, attach media, then
-            <span className="font-bold text-slate-700"> Submit to Finance</span> for pricing.
-          </p>
-        </div>
+        )}
       </aside>
     );
   }
 
   if (role === 'finance') {
     return (
-      <aside className="w-full flex flex-col gap-5 py-2">
+      <aside className={`w-full flex flex-col ${mini ? 'gap-1.5 py-1 items-center' : 'gap-5 py-2'}`}>
         <div>
-          <div className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-3.5 mb-1.5">
-            {companyTitle} • FINANCE
+          {!mini && (
+            <div className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-3.5 mb-1.5">
+              {companyTitle} • FINANCE
+            </div>
+          )}
+          {sideLink('/finance', 'Review & Pricing', IndianRupee, counts?.financeQueue || '', onItemClick, mini)}
+        </div>
+        {!mini && (
+          <div>
+            <div className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-3.5 mb-1.5">GUIDANCE</div>
+            <p className="px-3.5 text-[11px] leading-relaxed text-slate-500">
+              Review submitted content, set the selling price, then
+              <span className="font-bold text-slate-700"> Approve &amp; Publish</span> to make the listing visible to Salespeople.
+            </p>
           </div>
-          {sideLink('/finance', 'Review & Pricing', IndianRupee, counts?.financeQueue || '', onItemClick)}
-        </div>
-        <div>
-          <div className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-3.5 mb-1.5">GUIDANCE</div>
-          <p className="px-3.5 text-[11px] leading-relaxed text-slate-500">
-            Review submitted content, set the selling price, then
-            <span className="font-bold text-slate-700"> Approve &amp; Publish</span> to make the listing visible to Salespeople.
-          </p>
-        </div>
+        )}
       </aside>
     );
   }
 
   return (
-    <aside className="w-full flex flex-col gap-5 py-2">
-      <div>
-        <div className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-3.5 mb-1.5">INDUSTRIAL STORE</div>
-        {sideLink('/store/home', 'Home', Home, null, onItemClick)}
-        {sideLink('/store/listing', 'All Products', Boxes, null, onItemClick)}
-        {sideLink('/store/cart', 'My Cart', ShoppingCart, counts?.cart || '', onItemClick)}
-        {sideLink('/store/quotes', 'My Quotations', FileText, counts?.openQuotes || '', onItemClick)}
-        {sideLink('/store/orders', 'My Orders', Package, null, onItemClick)}
-        {sideLink('/store/profile', 'My Profile', User, null, onItemClick)}
+    <aside className={`w-full flex flex-col ${mini ? 'gap-1.5 py-1 items-center' : 'gap-5 py-2'}`}>
+      <div className={mini ? 'flex flex-col gap-1' : ''}>
+        {!mini && <div className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-3.5 mb-1.5">INDUSTRIAL STORE</div>}
+        {sideLink('/store/home', 'Home', Home, null, onItemClick, mini)}
+        {sideLink('/store/listing', 'All Products', Boxes, null, onItemClick, mini)}
+        {sideLink('/store/cart', 'My Cart', ShoppingCart, counts?.cart || '', onItemClick, mini)}
+        {sideLink('/store/quotes', 'My Quotations', FileText, counts?.openQuotes || '', onItemClick, mini)}
+        {sideLink('/store/orders', 'My Orders', Package, null, onItemClick, mini)}
+        {sideLink('/store/profile', 'My Profile', User, null, onItemClick, mini)}
       </div>
+      {mini && <div className="w-8 border-t border-slate-100 my-0.5" />}
       <div>
-        <div className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-3.5 mb-1.5">BROWSE CATEGORIES</div>
-        <div className="space-y-0.5">
+        {!mini && <div className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-3.5 mb-1.5">BROWSE CATEGORIES</div>}
+        <div className={mini ? 'flex flex-col gap-1 items-center' : 'space-y-0.5'}>
           {(counts?.cats || []).map((c) => (
             <NavLink
               key={c.id}
               to={'/store/listing?cat=' + c.id}
               onClick={onItemClick}
+              title={c.name}
               className={({ isActive }) => `
-                flex items-center gap-2.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all
+                flex items-center ${mini ? 'justify-center w-10 h-10 p-2' : 'gap-2.5 px-3.5 py-2'} rounded-xl text-xs font-semibold transition-all
                 ${isActive ? 'bg-orange-50 text-orange-700 font-bold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}
               `}
             >
               <span className="text-sm flex-shrink-0">{c.icon || '📦'}</span>
-              <span className="truncate">{c.name}</span>
+              {!mini && <span className="truncate">{c.name}</span>}
             </NavLink>
           ))}
         </div>
@@ -263,11 +286,24 @@ export function Topbar({ onMobileToggle, sidebarOpen, onToggleSidebar, noSide })
             <button
               type="button"
               onClick={onToggleSidebar}
-              title={sidebarOpen ? "Full page view (hide sidebar)" : "Show sidebar"}
-              className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200/80 hover:bg-slate-100 text-slate-700 hover:text-slate-900 transition-colors text-xs font-bold cursor-pointer ml-2"
+              title={sidebarOpen ? "Collapse sidebar to Full Page view" : "Expand sidebar with full labels"}
+              className={`hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-all text-xs font-bold cursor-pointer ml-2 shadow-xs ${
+                !sidebarOpen
+                  ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700'
+                  : 'bg-white border-slate-200/80 text-slate-700 hover:bg-slate-100 hover:text-slate-900'
+              }`}
             >
-              {sidebarOpen ? <PanelLeftClose className="w-4 h-4 text-slate-500" /> : <PanelLeftOpen className="w-4 h-4 text-blue-600" />}
-              <span className="hidden xl:inline">{sidebarOpen ? 'Full Page' : 'Show Sidebar'}</span>
+              {!sidebarOpen ? (
+                <>
+                  <Maximize2 className="w-4 h-4 text-white" />
+                  <span className="hidden xl:inline">Full Page View</span>
+                </>
+              ) : (
+                <>
+                  <PanelLeftClose className="w-4 h-4 text-slate-500" />
+                  <span className="hidden xl:inline">Full Page</span>
+                </>
+              )}
             </button>
           )}
         </div>
@@ -375,8 +411,8 @@ export function Shell({ counts, noSide, children }) {
   const [sidebarOpen, setSidebarOpen] = useState(() => {
     try {
       const saved = localStorage.getItem('cncforge_sidebar_open');
-      return saved !== null ? saved === 'true' : true;
-    } catch { return true; }
+      return saved !== null ? saved === 'true' : false; // Default to Full View Page
+    } catch { return false; }
   });
   const location = useLocation();
 
@@ -392,8 +428,6 @@ export function Shell({ counts, noSide, children }) {
     setMobileOpen(false);
   }, [location.pathname]);
 
-  const showSidebar = !noSide && sidebarOpen;
-
   return (
     <div className="min-h-screen flex flex-col bg-slate-50/60 text-slate-900 font-sans w-full">
       <Topbar 
@@ -403,23 +437,27 @@ export function Shell({ counts, noSide, children }) {
         noSide={noSide}
       />
 
-      <div className={`w-full px-4 sm:px-6 lg:px-8 py-6 flex-1 ${
-        showSidebar 
-          ? 'grid grid-cols-1 lg:grid-cols-[250px_1fr] xl:grid-cols-[270px_1fr] gap-6 items-start' 
-          : 'w-full'
+      <div className={`w-full px-3 sm:px-5 lg:px-6 py-5 flex-1 transition-all duration-200 ${
+        noSide 
+          ? 'w-full' 
+          : sidebarOpen
+          ? 'grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-6 items-start' 
+          : 'grid grid-cols-1 lg:grid-cols-[56px_1fr] gap-4 items-start'
       }`}>
-        {showSidebar && (
-          <div className="hidden lg:block sticky top-24 bg-white rounded-2xl border border-slate-200/80 p-3 shadow-xs max-h-[calc(100vh-7rem)] overflow-y-auto">
-            <Sidebar counts={counts} />
+        {!noSide && (
+          <div className={`hidden lg:block sticky top-20 bg-white rounded-2xl border border-slate-200/80 shadow-xs max-h-[calc(100vh-6rem)] overflow-y-auto transition-all duration-200 ${
+            sidebarOpen ? 'w-full p-3' : 'w-14 p-1.5 items-center'
+          }`}>
+            <Sidebar counts={counts} mini={!sidebarOpen} />
           </div>
         )}
 
         <main className="w-full min-w-0 flex-1">
           <motion.div
             key={location.pathname}
-            initial={{ opacity: 0, y: 8 }}
+            initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.22, ease: 'easeOut' }}
+            transition={{ duration: 0.18, ease: 'easeOut' }}
             className="w-full"
           >
             {children}
