@@ -21,12 +21,13 @@ export function setGoogleToken(t) {
 }
 
 function headers() {
-  const s = getSession() || { role: 'sales_user', companyId: 'C-A', name: 'Ravi Kumar' };
+  const s = getSession() || { role: 'sales_user', companyId: 'C-ARGUS', name: 'Argus User' };
   const t = googleToken();
+  const cid = s.role === 'super_admin' ? (s.companyId || '') : (s.companyId || 'C-ARGUS');
   return {
     'Content-Type': 'application/json',
     'x-role': s.role || 'sales_user',
-    'x-company-id': s.companyId || 'C-A',
+    'x-company-id': cid,
     'x-user-name': s.name || '',
     ...(t ? { Authorization: 'Bearer ' + t } : {})
   };
@@ -48,15 +49,16 @@ export const api = {
 };
 
 export async function uploadFiles(files) {
-  const s = getSession() || { role: 'sales_user', companyId: 'C-A', name: 'Ravi Kumar' };
+  const s = getSession() || { role: 'sales_user', companyId: 'C-ARGUS', name: 'Argus User' };
   const t = googleToken();
+  const cid = s.role === 'super_admin' ? (s.companyId || '') : (s.companyId || 'C-ARGUS');
   const fd = new FormData();
   [...files].forEach((f) => fd.append('files', f));
   const r = await fetch('/api/uploads', {
     method: 'POST',
     headers: {
       'x-role': s.role || 'sales_user',
-      'x-company-id': s.companyId || 'C-A',
+      'x-company-id': cid,
       'x-user-name': s.name || '',
       ...(t ? { Authorization: 'Bearer ' + t } : {})
     },

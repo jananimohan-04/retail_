@@ -196,6 +196,26 @@
   ],
   "users": [
     {
+      "id": "U-1792231077265",
+      "name": "test",
+      "email": "productionargus@gmail.com",
+      "mobile": "",
+      "role": "sales_user",
+      "companyId": "C-ARGUS",
+      "active": true,
+      "createdAt": "2026-10-17"
+    },
+    {
+      "id": "U-1792231048855",
+      "name": "ARGUS TECHNOLOGIES",
+      "email": "technologiesargus@gmail.com",
+      "mobile": "",
+      "role": "company_admin",
+      "companyId": "C-ARGUS",
+      "active": true,
+      "createdAt": "2026-10-17"
+    },
+    {
       "id": "U-janani-1604",
       "name": "janani",
       "role": "sales_user",
@@ -268,6 +288,24 @@
     }
   ],
   "products": [
+    {
+      "id": "P-MVCEPL6DHG",
+      "sold": 0,
+      "featured": false,
+      "visible": true,
+      "active": true,
+      "archived": false,
+      "uom": "Pc",
+      "moq": 1,
+      "created": "2026-10-17",
+      "name": "Argus High-Precision Collet CH-20",
+      "sku": "ARG-CH20-01",
+      "brand": "ArgusCNC",
+      "price": 1850,
+      "stock": 45,
+      "category": "workholding",
+      "companyId": "C-ARGUS"
+    },
     {
       "id": "P-2036",
       "sold": 0,
@@ -902,6 +940,39 @@
     "version": 8
   },
   "audit_logs": [
+    {
+      "id": "A-179224220782449",
+      "ts": "2026-10-17T13:03:27.825Z",
+      "actor": "Argus User",
+      "role": "company_admin",
+      "action": "product.delete",
+      "entity": "product",
+      "entityId": "P-MVC88BYIRW",
+      "companyId": "C-ARGUS",
+      "summary": "Deleted SKU 2"
+    },
+    {
+      "id": "A-179223104885642",
+      "ts": "2026-10-17T09:57:28.856Z",
+      "actor": "ARGUS TECHNOLOGIES",
+      "role": "company_admin",
+      "action": "user.create",
+      "entity": "user",
+      "entityId": "U-1792231048855",
+      "companyId": "C-ARGUS",
+      "summary": "Created ARGUS TECHNOLOGIES (company_admin)"
+    },
+    {
+      "id": "A-179223010314740",
+      "ts": "2026-10-17T09:41:43.147Z",
+      "actor": "Argus Admin",
+      "role": "company_admin",
+      "action": "product.create",
+      "entity": "product",
+      "entityId": "P-MVC7J23UVX",
+      "companyId": "C-ARGUS",
+      "summary": "Created SKU ARG-CHK-100 in C-ARGUS"
+    },
     {
       "id": "A-179222976313889",
       "ts": "2026-10-17T09:36:03.138Z",

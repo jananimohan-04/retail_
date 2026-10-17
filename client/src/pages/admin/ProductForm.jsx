@@ -106,7 +106,6 @@ export default function ProductForm({ edit }) {
     if (!sku) { toast('SKU required', '⚠️'); return; }
     if (price != null && !(price > 0)) { toast('Price must be > 0 or empty (quotation-only)', '⚠️'); return; }
     if (!(stock >= 0)) { toast('Valid stock required', '⚠️'); return; }
-    if (!imgs.length) { toast('Add at least one image', '⚠️'); return; }
     setSaving(true);
     setErr('');
     try {

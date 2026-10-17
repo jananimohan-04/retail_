@@ -1,3 +1,5 @@
+@import "tailwindcss";
+
 /* CNCFORGE ERP — design tokens. Single source of truth for colour, type, space, motion. */
 :root{
   --navy:#172554; --blue:#2563EB; --brand-dark:#1D4ED8; --orange:#FF6500; --orange-dark:#EA580C;

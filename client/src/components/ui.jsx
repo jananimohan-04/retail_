@@ -1,148 +1,359 @@
-/* Shared UI primitives — class names defined in styles/components.css */
+/* Shared UI components with Framer Motion animations & Lucide icons */
 import { useEffect, useState } from 'react';
-import { createPortal } from 'react-dom';
-import { fmt as fmtInr } from '../api';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  X, AlertTriangle, CheckCircle2, Info, ChevronLeft, 
+  ChevronRight, ArrowRight, ShieldAlert, Sparkles 
+} from 'lucide-react';
 
-export const fmt = fmtInr;
+/* ---------- Toast Notification Bus ---------- */
+let pushToast = () => {};
 
-let toastPush = null;
-export function toast(msg, icon = '✅') {
-  if (toastPush) toastPush(msg, icon);
+export function toast(msg, icon = 'ℹ️') {
+  pushToast({ id: Date.now() + Math.random(), msg, icon });
 }
+
 export function ToastHost() {
-  const [items, setItems] = useState([]);
+  const [toasts, setToasts] = useState([]);
+
   useEffect(() => {
-    toastPush = (msg, icon) => {
-      const id = Date.now() + Math.random();
-      setItems((p) => [...p, { id, msg, icon }]);
+    pushToast = (t) => {
+      setToasts((prev) => [...prev, t]);
       setTimeout(() => {
-        setItems((p) => p.map((t) => (t.id === id ? { ...t, out: true } : t)));
-        setTimeout(() => setItems((p) => p.filter((t) => t.id !== id)), 300);
-      }, 2600);
+        setToasts((prev) => prev.filter((x) => x.id !== t.id));
+      }, 3500);
     };
-    return () => { toastPush = null; };
   }, []);
-  return createPortal(
-    <div className="toast-wrap">{items.map((t) => (<div key={t.id} className={'toast' + (t.out ? ' out' : '')}><span>{t.icon}</span><span>{t.msg}</span></div>))}</div>,
-    document.getElementById('toasts')
+
+  return (
+    <div className="fixed bottom-5 right-5 z-[300] flex flex-col gap-2.5 max-w-sm w-full pointer-events-none p-4">
+      <AnimatePresence>
+        {toasts.map((t) => (
+          <motion.div
+            key={t.id}
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, x: 40, scale: 0.95 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+            className="pointer-events-auto flex items-center gap-3 px-4 py-3 bg-slate-900/95 backdrop-blur-md text-white rounded-2xl shadow-xl border border-slate-700/60 text-xs font-semibold"
+          >
+            <span className="text-base flex-shrink-0">{t.icon}</span>
+            <span className="flex-1 leading-snug">{t.msg}</span>
+            <button
+              onClick={() => setToasts((prev) => prev.filter((x) => x.id !== t.id))}
+              className="text-slate-400 hover:text-white p-1 rounded-lg transition-colors cursor-pointer"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </motion.div>
+        ))}
+      </AnimatePresence>
+    </div>
   );
 }
 
-const STATUS_CLASS = {
-  Pending: 's-pending', Confirmed: 's-confirmed', Processing: 's-processing',
-  'Ready for Dispatch': 's-ready', Shipped: 's-shipped', Delivered: 's-delivered',
-  Cancelled: 's-cancelled', Quoted: 's-quoted', Accepted: 's-accepted', Rejected: 's-rejected'
+/* ---------- Status Badges ---------- */
+const STATUS_STYLES = {
+  Pending: { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200/80', dot: 'bg-amber-500' },
+  Confirmed: { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200/80', dot: 'bg-blue-500' },
+  Processing: { bg: 'bg-indigo-50', text: 'text-indigo-700', border: 'border-indigo-200/80', dot: 'bg-indigo-500' },
+  'Ready for Dispatch': { bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200/80', dot: 'bg-purple-500' },
+  Shipped: { bg: 'bg-cyan-50', text: 'text-cyan-700', border: 'border-cyan-200/80', dot: 'bg-cyan-500' },
+  Delivered: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200/80', dot: 'bg-emerald-500' },
+  Cancelled: { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200/80', dot: 'bg-red-500' },
+  Quoted: { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200/80', dot: 'bg-blue-500' },
+  Accepted: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200/80', dot: 'bg-emerald-500' },
+  Rejected: { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200/80', dot: 'bg-red-500' },
+  active: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200/80', dot: 'bg-emerald-500' },
+  suspended: { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200/80', dot: 'bg-red-500' }
 };
-export function statusBadge(s) {
-  return <span className={'status ' + (STATUS_CLASS[s] || 's-pending')}>{s}</span>;
+
+export function StatusBadge({ status }) {
+  const conf = STATUS_STYLES[status] || {
+    bg: 'bg-slate-100',
+    text: 'text-slate-700',
+    border: 'border-slate-200',
+    dot: 'bg-slate-400'
+  };
+
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border tracking-wide uppercase ${conf.bg} ${conf.text} ${conf.border}`}
+    >
+      <span className={`w-1.5 h-1.5 rounded-full ${conf.dot} ${status === 'Pending' ? 'animate-pulse' : ''}`} />
+      <span>{status}</span>
+    </span>
+  );
 }
 
-export function PageHead({ eyebrow, title, desc, actions }) {
+export function statusBadge(status) {
+  return <StatusBadge status={status} />;
+}
+
+/* ---------- Modal Dialog ---------- */
+export function Modal({ title, onClose, wide, children }) {
   return (
-    <div className="section-head">
-      <div>{eyebrow && <p className="hint" style={{ margin: 0 }}>{eyebrow}</p>}
-        <h2 style={eyebrow ? { fontSize: 22 } : undefined}>{title}</h2>
-        {desc && <p className="hint" style={{ margin: '2px 0 0' }}>{desc}</p>}</div>
-      {actions && <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>{actions}</div>}
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 15 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 15 }}
+        transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+        className={`bg-white rounded-2xl shadow-2xl border border-slate-200/80 w-full overflow-hidden my-auto max-h-[90vh] flex flex-col ${
+          wide ? 'max-w-4xl' : 'max-w-xl'
+        }`}
+      >
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+          <h3 className="font-extrabold text-slate-900 text-sm tracking-tight">{title}</h3>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition-colors cursor-pointer"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+        <div className="p-6 overflow-y-auto flex-1">{children}</div>
+      </motion.div>
     </div>
   );
 }
 
-export function Kpi({ to, onClick, value, label, sub, grad }) {
-  const inner = (<><h3>{value}</h3><p>{label}</p><small>{sub}</small></>);
-  if (to) return <a className="kpi" style={{ background: grad }} href={to}>{inner}</a>;
-  if (onClick) return <button className="kpi" style={{ background: grad }} onClick={onClick}>{inner}</button>;
-  return <div className="kpi" style={{ background: grad }}>{inner}</div>;
-}
-
-export function Empty({ icon = '📭', title = 'Nothing here', sub = '', action = null }) {
-  return <div className="empty"><div className="big">{icon}</div><b>{title}</b>{sub && <p>{sub}</p>}{action}</div>;
-}
-export function Skeleton({ h = 180 }) {
-  return <div className="card"><div className="card-pad"><div className="skel" style={{ minHeight: h }}></div><p className="hint">Loading live records…</p></div></div>;
-}
-
-export function Pager({ total, page, limit, onPage, live = true }) {
-  const pages = Math.max(1, Math.ceil((total || 0) / (limit || 8)));
+/* ---------- Tab Switcher ---------- */
+export function Tabs({ tabs = [], active, onTab, onChange }) {
+  const handler = onTab || onChange || (() => {});
   return (
-    <div className="pager">
-      <span className="hint">{total || 0} record{(total || 0) === 1 ? '' : 's'} • page {page}/{pages}{live ? ' • live DB' : ''}</span>
-      <button className="btn btn-ghost btn-sm" disabled={page <= 1} onClick={() => onPage(page - 1)}>← Prev</button>
-      <button className="btn btn-ghost btn-sm" disabled={page >= pages} onClick={() => onPage(page + 1)}>Next →</button>
+    <div className="flex items-center gap-1.5 p-1 bg-slate-100/90 rounded-2xl w-fit border border-slate-200/80 mb-5 overflow-x-auto max-w-full">
+      {tabs.map((t) => {
+        const id = Array.isArray(t) ? t[0] : (typeof t === 'string' ? t : t.id);
+        const label = Array.isArray(t) ? t[1] : (typeof t === 'string' ? t : (t.label || t.name));
+        const isActive = active === id;
+        return (
+          <button
+            key={id}
+            type="button"
+            onClick={() => handler(id)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+              isActive
+                ? 'bg-white text-slate-900 shadow-xs border border-slate-200/60'
+                : 'text-slate-500 hover:text-slate-900 hover:bg-slate-200/60'
+            }`}
+          >
+            <span>{label}</span>
+          </button>
+        );
+      })}
     </div>
   );
 }
 
-export function Field({ label, req, hint, error, children, full }) {
-  return (
-    <div className={'field' + (full ? ' full' : '')}>
-      <label className={req ? 'req' : ''}>{label}</label>
-      {children}
-      {hint && <span className="hint">{hint}</span>}
-      {error && <span className="ferr">{error}</span>}
-    </div>
-  );
-}
-
-export function Modal({ title, onClose, children, wide }) {
-  useEffect(() => {
-    document.body.style.overflow = 'hidden';
-    const fn = (e) => { if (e.key === 'Escape' && onClose) onClose(); };
-    window.addEventListener('keydown', fn);
-    return () => { document.body.style.overflow = ''; window.removeEventListener('keydown', fn); };
-  }, [onClose]);
-  return createPortal(
-    <div className="modal-bg" onClick={(e) => { if (e.target === e.currentTarget && onClose) onClose(); }}>
-      <div className={'modal' + (wide ? ' wide' : '')} role="dialog" aria-modal="true">
-        <div className="modal-head"><span>{title}</span>{onClose && <button className="btn btn-ghost btn-sm" onClick={onClose}>✕</button>}</div>
-        <div className="modal-body">{children}</div>
-      </div>
-    </div>,
-    document.body
-  );
-}
-
-export function Confirm({ title, body, okLabel = 'Confirm', danger, busy, onCancel, onOk }) {
+/* ---------- Confirm Dialog ---------- */
+export function Confirm({ title, body, okLabel = 'Confirm', danger = false, busy = false, onCancel, onOk }) {
   return (
     <Modal title={title} onClose={onCancel}>
-      <p style={{ fontSize: 13.5, marginTop: 0 }} dangerouslySetInnerHTML={{ __html: body }}></p>
-      <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 14 }}>
-        <button className="btn btn-ghost btn-sm" onClick={onCancel}>Cancel</button>
-        <button className={'btn btn-sm ' + (danger ? 'btn-danger' : 'btn-primary')} disabled={busy} onClick={onOk}>{busy ? 'Working…' : okLabel}</button>
+      <div className="space-y-4">
+        <div className="flex items-start gap-3">
+          <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${danger ? 'bg-red-50 text-red-600' : 'bg-blue-50 text-blue-600'}`}>
+            <AlertTriangle className="w-5 h-5" />
+          </div>
+          <div className="text-xs text-slate-600 leading-relaxed pt-1" dangerouslySetInnerHTML={{ __html: body }} />
+        </div>
+        <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-slate-100">
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={busy}
+            className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={onOk}
+            disabled={busy}
+            className={`px-4 py-2 rounded-xl text-xs font-bold text-white transition-all shadow-sm cursor-pointer disabled:opacity-50 ${
+              danger ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'
+            }`}
+          >
+            {busy ? 'Processing…' : okLabel}
+          </button>
+        </div>
       </div>
     </Modal>
   );
 }
 
-export function Tabs({ tabs, active, onTab }) {
+/* ---------- Page Header ---------- */
+export function PageHead({ title, eyebrow, desc, actions }) {
   return (
-    <div className="tabs">
-      {tabs.map(([k, l]) => <button key={k} className={'tab' + (active === k ? ' active' : '')} onClick={() => onTab(k)}>{l}</button>)}
+    <div className="flex items-start justify-between gap-4 flex-wrap pb-2 border-b border-slate-200/80 mb-6">
+      <div>
+        {eyebrow && <div className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 mb-1">{eyebrow}</div>}
+        <h1 className="text-2xl font-black text-slate-900 tracking-tight">{title}</h1>
+        {desc && <p className="text-xs text-slate-500 mt-1 max-w-2xl">{desc}</p>}
+      </div>
+      {actions && <div className="flex items-center gap-2.5 flex-wrap">{actions}</div>}
     </div>
   );
 }
 
-export function DataTable({ cols, rows, empty = 'No records match.', rowKey = (r, i) => i }) {
-  if (!rows || !rows.length) return <div className="table-wrap"><table><tbody><tr><td><Empty title={empty} /></td></tr></tbody></table></div>;
+/* ---------- Empty State ---------- */
+export function Empty({ icon = '📭', title = 'No records found', sub, action }) {
   return (
-    <div className="table-wrap">
-      <table>
-        <thead><tr>{cols.map((c) => <th key={c.key} className={c.num ? 'num' : ''}>{c.label}</th>)}</tr></thead>
-        <tbody>{rows.map((r, i) => <tr key={rowKey(r, i)}>{cols.map((c) => <td key={c.key} className={c.num ? 'num' : ''}>{c.render ? c.render(r) : r[c.key]}</td>)}</tr>)}</tbody>
+    <div className="py-16 px-4 text-center max-w-md mx-auto">
+      <div className="text-4xl mb-3">{icon}</div>
+      <h3 className="font-bold text-slate-900 text-sm mb-1">{title}</h3>
+      {sub && <p className="text-xs text-slate-500 mb-4">{sub}</p>}
+      {action}
+    </div>
+  );
+}
+
+/* ---------- Skeleton Loader ---------- */
+export function Skeleton({ h = 200, count = 1 }) {
+  return (
+    <div className="space-y-3">
+      {Array.from({ length: count }).map((_, i) => (
+        <div
+          key={i}
+          style={{ height: h }}
+          className="w-full bg-gradient-to-r from-slate-100 via-slate-200/60 to-slate-100 rounded-2xl animate-pulse"
+        />
+      ))}
+    </div>
+  );
+}
+
+/* ---------- Pagination Controls ---------- */
+export function Pager({ total, page = 1, limit = 8, onPage }) {
+  const pages = Math.max(1, Math.ceil(total / limit));
+  if (pages <= 1) return null;
+
+  return (
+    <div className="flex items-center justify-between gap-4 pt-4 border-t border-slate-100 text-xs">
+      <div className="text-slate-500">
+        Showing <span className="font-bold text-slate-800 font-mono">{(page - 1) * limit + 1}</span>–
+        <span className="font-bold text-slate-800 font-mono">{Math.min(page * limit, total)}</span> of{' '}
+        <span className="font-bold text-slate-800 font-mono">{total}</span>
+      </div>
+      <div className="flex items-center gap-1.5">
+        <button
+          onClick={() => onPage(page - 1)}
+          disabled={page <= 1}
+          className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </button>
+        <span className="px-3 font-semibold text-slate-700">
+          Page {page} of {pages}
+        </span>
+        <button
+          onClick={() => onPage(page + 1)}
+          disabled={page >= pages}
+          className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ---------- Data Table ---------- */
+export function DataTable({ cols, rows = [], rowKey = (r, i) => r.id || i, empty = 'No items found.' }) {
+  if (!rows || !rows.length) {
+    return <div className="text-center py-12 text-xs text-slate-400">{empty}</div>;
+  }
+
+  return (
+    <div className="overflow-x-auto rounded-2xl border border-slate-200/80 bg-white shadow-2xs">
+      <table className="w-full text-left text-xs">
+        <thead className="bg-slate-50/80 border-b border-slate-200/80 text-[10px] uppercase font-bold text-slate-500 tracking-wider">
+          <tr>
+            {cols.map((c) => (
+              <th key={c.key} className="px-4 py-3 font-bold">
+                {c.label}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-slate-100">
+          {rows.map((r, i) => (
+            <tr key={rowKey(r, i)} className="hover:bg-slate-50/80 transition-colors">
+              {cols.map((c) => (
+                <td key={c.key} className="px-4 py-3 text-slate-700 align-middle">
+                  {c.render ? c.render(r) : r[c.key]}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
       </table>
     </div>
   );
 }
 
-export function Bars({ items, color = 'linear-gradient(135deg,#172554,#2563EB)' }) {
-  if (!items || !items.length) return <div className="empty" style={{ padding: 18 }}>Not enough data yet.</div>;
+/* ---------- Distribution Bars ---------- */
+export function Bars({ items, color = '#2563EB' }) {
+  if (!items || !items.length) {
+    return <div className="text-center py-6 text-xs text-slate-400">Not enough data yet.</div>;
+  }
   const mx = Math.max(...items.map((r) => r.value), 1);
   return (
-    <div>{items.map((r, i) => (
-      <div key={i} style={{ display: 'grid', gridTemplateColumns: '150px 1fr 44px', gap: 8, alignItems: 'center', padding: '4px 0', fontSize: 12 }}>
-        <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.label}</span>
-        <svg width="100%" height="12"><rect x="0" y="0" width={Math.max(2, (r.value / mx) * 100) + '%'} height="12" rx="3" fill={r.color || color} /></svg>
-        <b style={{ textAlign: 'right' }}>{r.value}</b>
-      </div>))}</div>
+    <div className="space-y-2">
+      {items.map((r, i) => (
+        <div key={i} className="grid grid-cols-[140px_1fr_48px] gap-3 items-center text-xs">
+          <span className="truncate text-slate-600 font-medium" title={r.label}>
+            {r.label}
+          </span>
+          <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+            <div
+              className="h-full rounded-full transition-all duration-500"
+              style={{
+                width: `${Math.max(3, (r.value / mx) * 100)}%`,
+                backgroundColor: r.color || color
+              }}
+            />
+          </div>
+          <span className="text-right font-bold font-mono text-slate-800">{r.value}</span>
+        </div>
+      ))}
+    </div>
   );
+}
+
+/* ---------- Form Field ---------- */
+export function Field({ label, req, hint, full, children }) {
+  return (
+    <div className={`space-y-1.5 ${full ? 'sm:col-span-2' : ''}`}>
+      {label && (
+        <label className="text-xs font-bold text-slate-700 flex items-center gap-1">
+          <span>{label}</span>
+          {req && <span className="text-red-500">*</span>}
+        </label>
+      )}
+      {children}
+      {hint && <span className="text-[11px] text-slate-400 block">{hint}</span>}
+    </div>
+  );
+}
+
+/* ---------- KPI Metric Tile ---------- */
+export function Kpi({ to, value, label, sub, grad }) {
+  const content = (
+    <div
+      style={{ background: grad || 'linear-gradient(135deg,#172554,#2563EB)' }}
+      className="p-5 rounded-2xl text-white shadow-xs hover:shadow-md transition-all flex flex-col justify-between min-h-[110px]"
+    >
+      <div className="text-2xl font-black font-mono tracking-tight">{value}</div>
+      <div className="mt-2">
+        <div className="text-xs font-bold opacity-90">{label}</div>
+        {sub && <div className="text-[11px] opacity-75 mt-0.5">{sub}</div>}
+      </div>
+    </div>
+  );
+
+  if (to) {
+    return <a href={to} className="block transition-transform hover:-translate-y-0.5">{content}</a>;
+  }
+  return content;
 }

@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api, fmt, imgFallback } from '../../api';
-import { PageHead, DataTable, Empty, Skeleton, Pager, toast } from '../../components/ui';
+import { PageHead, DataTable, Empty, Skeleton, Pager, Confirm, toast } from '../../components/ui';
 
 function norm(d) {
   if (!d) return { rows: [], total: 0, page: 1, limit: 8 };
@@ -16,6 +16,8 @@ export default function Products() {
   const [page, setPage] = useState(1);
   const [data, setData] = useState(null);
   const [tick, setTick] = useState(0);
+  const [delTarget, setDelTarget] = useState(null);
+  const [delBusy, setDelBusy] = useState(false);
 
   useEffect(() => {
     const t = setTimeout(() => { setDeb(q); setPage(1); }, 300);
@@ -76,7 +78,12 @@ export default function Products() {
                     <button className={'status ' + (p.visible ? 's-active' : 's-cancelled')} onClick={() => toggleVis(p)}>{p.visible ? 'Visible' : 'Hidden'}</button>)
                 },
                 {
-                  key: 'act', label: 'Action', render: (p) => (<Link className="btn btn-ghost btn-sm" to={'/admin/products/edit/' + p.id}>Edit</Link>)
+                  key: 'act', label: 'Actions', render: (p) => (
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <Link className="btn btn-ghost btn-sm" to={'/admin/products/edit/' + p.id}>Edit</Link>
+                      <button className="btn btn-ghost btn-sm text-rose-600 hover:text-rose-700" onClick={() => setDelTarget(p)} title="Delete product">🗑️</button>
+                    </div>
+                  )
                 }
               ]}
               rows={data.rows}
@@ -84,6 +91,29 @@ export default function Products() {
             <Pager total={data.total} page={data.page} limit={data.limit} onPage={setPage} />
           </>}
       </div></div>
+      {delTarget && (
+        <Confirm
+          title="Delete Product"
+          body={`Are you sure you want to permanently delete SKU <b>${delTarget.sku || delTarget.id}</b> (${delTarget.name})? This cannot be undone.`}
+          okLabel="Delete Permanently"
+          danger
+          busy={delBusy}
+          onCancel={() => setDelTarget(null)}
+          onOk={async () => {
+            setDelBusy(true);
+            try {
+              await api.del('/api/products/' + delTarget.id);
+              toast('Product deleted', '🗑️');
+              setDelTarget(null);
+              setTick((t) => t + 1);
+            } catch (e) {
+              toast('Delete failed: ' + e.message, '⚠️');
+            } finally {
+              setDelBusy(false);
+            }
+          }}
+        />
+      )}
     </>
   );
 }

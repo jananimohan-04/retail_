@@ -1,9 +1,15 @@
-/* Company admin dashboard — mirrors legacy vAdminDash exactly. */
+/* Company admin dashboard — mirrors legacy vAdminDash exactly with modern Tailwind UI. */
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { 
+  LayoutDashboard, Boxes, Receipt, IndianRupee, 
+  AlertTriangle, ArrowRight, Plus, ExternalLink, 
+  Clock, CheckCircle2, TrendingUp, PackageCheck 
+} from 'lucide-react';
 import { api, fmt, imgFallback } from '../../api';
 import { useAuth } from '../../auth';
-import { PageHead, statusBadge, Empty, Skeleton } from '../../components/ui';
+import { statusBadge, Empty, Skeleton } from '../../components/ui';
 
 export default function Dashboard() {
   const { me } = useAuth();
@@ -15,15 +21,38 @@ export default function Dashboard() {
 
   useEffect(() => {
     let on = true;
-    api.get('/api/stats/company').then((s) => { if (on) setStats(s); }).catch((e) => { if (on) setErr(e.message); });
-    api.get('/api/orders?page=1&limit=4').then((o) => { if (on) setOrders(Array.isArray(o) ? o : (o.rows || [])); }).catch((e) => { if (on) setErr(e.message); });
-    api.get('/api/products').then((p) => { if (on) setProds(Array.isArray(p) ? p : (p.rows || [])); }).catch((e) => { if (on) setErr(e.message); });
-    if (me && me.companyId) api.get('/api/companies/' + me.companyId).then((c) => { if (on && c) setCoName(c.name || ''); }).catch(() => {});
-    return () => { on = false; };
-  }, [me && me.companyId]); // eslint-disable-line react-hooks/exhaustive-deps
+    api.get('/api/stats/company')
+      .then((s) => { if (on) setStats(s); })
+      .catch((e) => { if (on) setErr(e.message); });
 
-  if (err && !stats && !orders && !prods) return <Empty icon="⚠️" title={err} sub="Could not reach the backend." />;
-  if (!stats && !orders && !prods) return <Skeleton h={220} />;
+    api.get('/api/orders?page=1&limit=5')
+      .then((o) => { if (on) setOrders(Array.isArray(o) ? o : (o.rows || [])); })
+      .catch((e) => { if (on) setErr(e.message); });
+
+    api.get('/api/products')
+      .then((p) => { if (on) setProds(Array.isArray(p) ? p : (p.rows || [])); })
+      .catch((e) => { if (on) setErr(e.message); });
+
+    if (me && me.companyId) {
+      api.get('/api/companies/' + me.companyId)
+        .then((c) => { if (on && c) setCoName(c.name || ''); })
+        .catch(() => {});
+    }
+
+    return () => { on = false; };
+  }, [me && me.companyId]);
+
+  if (err && !stats && !orders && !prods) {
+    return (
+      <div className="bg-white rounded-2xl border border-red-200 p-8 text-center max-w-lg mx-auto">
+        <AlertTriangle className="w-10 h-10 text-red-500 mx-auto mb-3" />
+        <h3 className="font-bold text-slate-900 mb-1">Backend Connection Error</h3>
+        <p className="text-xs text-slate-500">{err}</p>
+      </div>
+    );
+  }
+
+  if (!stats && !orders && !prods) return <Skeleton h={320} />;
 
   const ps = prods || [];
   const os = orders || [];
@@ -37,43 +66,201 @@ export default function Dashboard() {
   const del = stats ? stats.delivered : os.filter((o) => o.status === 'Delivered').length;
   const low = ps.filter((p) => p.stock <= 15);
 
+  const displayName = coName || (me && me.companyId) || 'Company';
+
   return (
-    <>
-      <PageHead
-        title={(coName || (me && me.companyId) || 'Company') + ' — Industrial Store'}
-        actions={<Link className="btn btn-primary btn-sm" to="/admin/products/new">+ Add product</Link>}
-      />
-      <div className="stat-grid">
-        <div className="kpi k1"><h3>{skuN}</h3><p>SKUs in catalog</p><small>{visN} visible • {rfqN} quotation-only</small></div>
-        <div className="kpi k4"><h3>{ordN}</h3><p>Orders</p><small>{pend} pending • {openQ} open RFQs</small></div>
-        <div className="kpi k3"><h3>{fmt(rev)}</h3><p>Order value</p><small>{del} delivered</small></div>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between gap-4 flex-wrap pb-2 border-b border-slate-200">
+        <div>
+          <span className="text-[11px] font-extrabold uppercase tracking-widest text-blue-600 block mb-0.5">
+            {displayName} • OPERATIONS HUB
+          </span>
+          <h1 className="text-2xl font-black text-slate-900 tracking-tight">
+            Commercial Dashboard
+          </h1>
+        </div>
+        <div className="flex items-center gap-2">
+          <Link 
+            to="/admin/products/new"
+            className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl transition-all shadow-sm cursor-pointer"
+          >
+            <Plus className="w-3.5 h-3.5" /> Add New Product
+          </Link>
+          <Link 
+            to="/store/home"
+            target="_blank"
+            className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-all cursor-pointer"
+          >
+            <ExternalLink className="w-3.5 h-3.5" /> View Storefront
+          </Link>
+        </div>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1.4fr .8fr', gap: 14 }}>
-        <div className="card"><div className="card-pad">
-          <div className="section-head" style={{ marginTop: 0 }}><h2>Recent orders</h2><Link className="btn btn-ghost btn-sm" to="/admin/orders">View all →</Link></div>
-          <div className="table-wrap"><table><tbody>
-            <tr><th>Order</th><th>Customer</th><th>Total</th><th>Status</th></tr>
-            {os.length ? os.slice(0, 4).map((o) => (
-              <tr key={o.id}>
-                <td><Link to={'/admin/orders/' + o.id}><b>{o.id}</b></Link><div className="hint">{o.date}</div></td>
-                <td>{o.companyName || o.customer}</td>
-                <td><b>{fmt(o.total)}</b></td>
-                <td>{statusBadge(o.status)}</td>
-              </tr>
-            )) : <tr><td colSpan="4"><div className="empty">No orders placed yet for this company.</div></td></tr>}
-          </tbody></table></div>
-        </div></div>
-        <div className="card"><div className="card-pad">
-          <h2 style={{ margin: '0 0 8px', fontSize: 16 }}>Low stock alerts</h2>
-          {low.length ? low.map((p) => (
-            <div key={p.id} style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '9px 0', borderTop: '1px solid #F1F5F9' }}>
-              <img className="thumb" src={(p.images || [])[0] || ''} alt="" onError={(e) => { e.currentTarget.src = imgFallback(p.sku || p.id, 100, 100); }} />
-              <div><b style={{ fontSize: 13 }}>{p.name}</b><div className="hint">{p.sku || ''} • {p.stock} {p.uom || ''} left • {p.warehouse || ''}</div></div>
-              <Link className="btn btn-ghost btn-sm" style={{ marginLeft: 'auto' }} to={'/admin/products/edit/' + p.id}>Restock</Link>
+
+      {/* KPI Cards Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        {/* SKUs */}
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.2 }}
+          className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-2xs hover:shadow-xs transition-all relative overflow-hidden"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Industrial Catalog</span>
+            <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+              <Boxes className="w-5 h-5" />
             </div>
-          )) : <p className="hint">Stock levels healthy or catalog empty.</p>}
-        </div></div>
+          </div>
+          <div className="text-3xl font-black text-slate-900 font-mono">{skuN}</div>
+          <div className="text-xs text-slate-500 mt-2 flex items-center gap-2">
+            <span className="text-emerald-600 font-bold">{visN} visible</span>
+            <span>•</span>
+            <span>{rfqN} RFQ-only</span>
+          </div>
+        </motion.div>
+
+        {/* Orders */}
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.2, delay: 0.05 }}
+          className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-2xs hover:shadow-xs transition-all relative overflow-hidden"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Orders</span>
+            <div className="w-9 h-9 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center">
+              <Receipt className="w-5 h-5" />
+            </div>
+          </div>
+          <div className="text-3xl font-black text-slate-900 font-mono">{ordN}</div>
+          <div className="text-xs text-slate-500 mt-2 flex items-center gap-2">
+            <span className="text-amber-600 font-bold">{pend} pending</span>
+            <span>•</span>
+            <span>{openQ} open RFQs</span>
+          </div>
+        </motion.div>
+
+        {/* Revenue */}
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.2, delay: 0.1 }}
+          className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-2xs hover:shadow-xs transition-all relative overflow-hidden"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Gross Order Value</span>
+            <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+              <TrendingUp className="w-5 h-5" />
+            </div>
+          </div>
+          <div className="text-3xl font-black text-slate-900 font-mono">{fmt(rev)}</div>
+          <div className="text-xs text-slate-500 mt-2 flex items-center gap-2">
+            <span className="text-emerald-600 font-bold">{del} delivered</span>
+            <span>•</span>
+            <span>Live database</span>
+          </div>
+        </motion.div>
       </div>
-    </>
+
+      {/* Main Grid: Orders & Low Stock */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Recent Orders Table */}
+        <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+            <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+              <Receipt className="w-4 h-4 text-blue-600" /> Recent Purchase Orders
+            </h2>
+            <Link 
+              to="/admin/orders" 
+              className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1"
+            >
+              View all <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="border-b border-slate-100 text-slate-400 uppercase tracking-wider text-[10px]">
+                  <th className="pb-2.5 font-bold">Order ID</th>
+                  <th className="pb-2.5 font-bold">Customer Entity</th>
+                  <th className="pb-2.5 font-bold">Total</th>
+                  <th className="pb-2.5 font-bold">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {os.length ? os.slice(0, 5).map((o) => (
+                  <tr key={o.id} className="hover:bg-slate-50/80 transition-colors">
+                    <td className="py-3 font-mono font-bold text-blue-600">
+                      <Link to={'/admin/orders/' + o.id} className="hover:underline">
+                        {o.id}
+                      </Link>
+                      <div className="text-[10px] text-slate-400 font-sans mt-0.5">{o.date}</div>
+                    </td>
+                    <td className="py-3 font-medium text-slate-800">
+                      {o.companyName || o.customer}
+                      {o.poRef && <span className="block text-[10px] text-slate-400 font-mono">PO: {o.poRef}</span>}
+                    </td>
+                    <td className="py-3 font-mono font-bold text-slate-900">{fmt(o.total)}</td>
+                    <td className="py-3">{statusBadge(o.status)}</td>
+                  </tr>
+                )) : (
+                  <tr>
+                    <td colSpan={4} className="py-8 text-center text-slate-400">
+                      No orders placed yet for this company.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Low Stock Alerts */}
+        <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+            <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-amber-500" /> Low Stock Alerts
+            </h2>
+            <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700">
+              {low.length}
+            </span>
+          </div>
+
+          <div className="divide-y divide-slate-100">
+            {low.length ? low.slice(0, 6).map((p) => (
+              <div key={p.id} className="py-3 flex items-center gap-3">
+                <img 
+                  src={(p.images || [])[0] || ''} 
+                  onError={(e) => { e.currentTarget.src = imgFallback(p.sku || p.id, 100, 100); }} 
+                  className="w-11 h-11 rounded-lg object-cover border border-slate-200 bg-slate-50 flex-shrink-0" 
+                  alt="" 
+                />
+                <div className="flex-1 min-w-0">
+                  <div className="font-bold text-slate-900 text-xs truncate">{p.name}</div>
+                  <div className="text-[11px] text-slate-500 mt-0.5">
+                    SKU: <span className="font-mono text-slate-700">{p.sku || ''}</span>
+                  </div>
+                  <div className="text-[11px] font-bold text-amber-600 mt-0.5">
+                    {p.stock} {p.uom || 'Pc'} remaining ({p.warehouse || 'WH-01'})
+                  </div>
+                </div>
+                <Link 
+                  to={'/admin/products/edit/' + p.id}
+                  className="px-2.5 py-1 text-[11px] font-bold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors flex-shrink-0"
+                >
+                  Restock
+                </Link>
+              </div>
+            )) : (
+              <p className="text-xs text-slate-400 py-6 text-center">
+                All inventory levels are healthy above threshold.
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

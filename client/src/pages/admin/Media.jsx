@@ -1,8 +1,13 @@
 /* Company media library — product-image grid from own catalog. Mirrors legacy vMedia. */
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { 
+  Image as ImageIcon, Plus, ExternalLink, Video, 
+  Eye, Boxes, Sparkles 
+} from 'lucide-react';
 import { api, imgFallback } from '../../api';
-import { PageHead, Empty, Skeleton } from '../../components/ui';
+import { Empty, Skeleton } from '../../components/ui';
 
 export default function Media() {
   const [prods, setProds] = useState(null);
@@ -10,32 +15,105 @@ export default function Media() {
 
   useEffect(() => {
     let on = true;
-    api.get('/api/products').then((d) => { if (on) setProds(Array.isArray(d) ? d : (d.rows || [])); }).catch((e) => { if (on) setErr(e.message); });
+    api.get('/api/products')
+      .then((d) => { if (on) setProds(Array.isArray(d) ? d : (d.rows || [])); })
+      .catch((e) => { if (on) setErr(e.message); });
     return () => { on = false; };
   }, []);
 
-  if (err && !prods) return <Empty icon="⚠️" title={err} sub="Could not reach the backend." />;
-  if (!prods) return <Skeleton h={220} />;
+  if (err && !prods) {
+    return (
+      <div className="bg-white rounded-2xl border border-red-200 p-8 text-center max-w-lg mx-auto">
+        <p className="text-red-500 font-bold mb-1">Failed to load media</p>
+        <p className="text-xs text-slate-500">{err}</p>
+      </div>
+    );
+  }
 
-  const cells = prods.flatMap((p) => ((p.images || []).slice(0, 2)).map((u) => ({ p, u })));
+  if (!prods) return <Skeleton h={320} />;
+
+  const cells = prods.flatMap((p) => ((p.images || []).slice(0, 3)).map((u, i) => ({ p, u, index: i })));
 
   return (
-    <>
-      <PageHead
-        title="Media library"
-        actions={<Link className="btn btn-primary btn-sm" to="/admin/products/new">+ Upload via product</Link>}
-      />
-      <div className="card"><div className="card-pad">
-        <div className="prod-grid" style={{ gridTemplateColumns: 'repeat(3,1fr)' }}>
-          {cells.length ? cells.map(({ p, u }, i) => (
-            <div className="prod" key={p.id + '-' + i}>
-              <div className="prod-img"><img src={u} alt={p.name} loading="lazy" onError={(e) => { e.currentTarget.src = imgFallback(p.sku || p.id); }} /></div>
-              <div className="prod-body"><b style={{ fontSize: 13 }}>{p.name}</b><span className="hint">{p.sku || ''} • primary image</span></div>
-            </div>
-          )) : <div className="empty" style={{ gridColumn: '1/-1', padding: 32, textAlign: 'center' }}><div className="big">🖼️</div><p className="hint">No product media uploaded yet for this company.</p></div>}
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between gap-4 flex-wrap pb-2 border-b border-slate-200">
+        <div>
+          <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+            <ImageIcon className="w-6 h-6 text-blue-600" /> Catalog Media Library ({cells.length})
+          </h1>
+          <p className="text-xs text-slate-500 mt-0.5">High-definition industrial product photography and CAD captures</p>
         </div>
-        <p className="hint">Company-scoped media. Videos stream with lazy loading + error fallback on the product page.</p>
-      </div></div>
-    </>
+        <Link 
+          to="/admin/products/new"
+          className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl transition-all shadow-sm cursor-pointer"
+        >
+          <Plus className="w-3.5 h-3.5" /> Upload Media via Product
+        </Link>
+      </div>
+
+      {/* Media Grid */}
+      <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
+        {cells.length ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+            {cells.map(({ p, u, index }) => (
+              <motion.div
+                key={p.id + '-' + index}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="group relative rounded-xl border border-slate-200 overflow-hidden bg-slate-50 flex flex-col hover:border-blue-400 hover:shadow-md transition-all"
+              >
+                <div className="aspect-square relative overflow-hidden bg-slate-100">
+                  <img 
+                    src={u} 
+                    alt={p.name} 
+                    loading="lazy" 
+                    onError={(e) => { e.currentTarget.src = imgFallback(p.sku || p.id); }} 
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                  <div className="absolute top-2 left-2">
+                    <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-md bg-slate-900/80 backdrop-blur-xs text-white">
+                      {index === 0 ? 'Primary' : `Gallery #${index + 1}`}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="p-3 flex-1 flex flex-col justify-between">
+                  <div>
+                    <h4 className="font-bold text-slate-900 text-xs truncate">{p.name}</h4>
+                    <span className="text-[11px] text-slate-500 font-mono mt-0.5 block">{p.sku || p.id}</span>
+                  </div>
+
+                  <div className="pt-2 mt-2 border-t border-slate-100 flex items-center justify-between text-[11px]">
+                    <Link 
+                      to={'/store/product/' + p.id}
+                      className="text-blue-600 font-bold hover:underline flex items-center gap-1"
+                    >
+                      <Eye className="w-3 h-3" /> View
+                    </Link>
+                    <Link 
+                      to={'/admin/products/edit/' + p.id}
+                      className="text-slate-500 font-medium hover:text-slate-800"
+                    >
+                      Edit
+                    </Link>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        ) : (
+          <div className="py-16 text-center text-slate-400">
+            <ImageIcon className="w-12 h-12 mx-auto mb-2 text-slate-300" />
+            <p className="text-sm font-bold text-slate-700">No media assets found</p>
+            <p className="text-xs text-slate-400 mt-1">Upload images or videos when creating or editing products.</p>
+          </div>
+        )}
+
+        <p className="text-[11px] text-slate-400 pt-3 border-t border-slate-100">
+          Media is scoped to your company catalog. Videos stream with lazy loading on the public storefront.
+        </p>
+      </div>
+    </div>
   );
 }

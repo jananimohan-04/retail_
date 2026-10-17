@@ -133,7 +133,7 @@ export default function Home() {
     <>
       <div className="hero"><div className="hero-inner">
         <div>
-          <span className="hero-tag">CNCFORGE ERP • INDUSTRIAL PROCUREMENT</span>
+          <span className="hero-tag">ARGUSCNC ERP • INDUSTRIAL PROCUREMENT</span>
           <h1>Precision Products for Modern Manufacturing</h1>
           <p>Discover CNC machine components, precision tooling, industrial spares, and manufacturing essentials — sourced from live ERP inventory.</p>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>

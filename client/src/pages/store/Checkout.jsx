@@ -1,6 +1,12 @@
 /* Store checkout — mirrors legacy vCheckout/ckBody: 2 steps, B2B validation, placeOrder. */
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  Building2, User, Phone, Mail, MapPin, FileText, 
+  ArrowRight, ArrowLeft, CheckCircle2, ShoppingBag, ShieldCheck,
+  PackageCheck, Truck, AlertCircle, Loader2
+} from 'lucide-react';
 import { api, fmt, getCart, setCart } from '../../api';
 import { Empty, Skeleton, toast } from '../../components/ui';
 import { asList } from './Home';
@@ -26,29 +32,64 @@ export default function Checkout() {
     api.get('/api/products').then((d) => setProducts(asList(d))).catch(() => setProducts([]));
   }, []);
 
-  if (products === null) return <Skeleton h={220} />;
+  if (products === null) return <Skeleton h={280} />;
   const prodById = (id) => products.find((p) => p.id === id);
   const cart = getCart();
+
   if (!cart.length) {
-    return <div className="empty"><div className="big">🧾</div>Cart empty — <Link to="/store/listing"><b>browse the catalog</b></Link> first.</div>;
+    return (
+      <div className="bg-white rounded-2xl border border-slate-200/80 p-12 text-center max-w-lg mx-auto shadow-xs">
+        <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl">
+          <ShoppingBag className="w-8 h-8" />
+        </div>
+        <h3 className="text-xl font-bold text-slate-900 mb-2">Cart is empty</h3>
+        <p className="text-slate-500 text-sm mb-6">You have no items in your indent cart to checkout.</p>
+        <Link 
+          to="/store/listing" 
+          className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-xl transition-all shadow-sm"
+        >
+          Browse Industrial Catalog <ArrowRight className="w-4 h-4" />
+        </Link>
+      </div>
+    );
   }
-  const sub = cart.reduce((a, c) => { const p = prodById(c.pid); return a + (p && p.price != null ? p.price * c.qty : 0); }, 0);
+
+  const sub = cart.reduce((a, c) => { 
+    const p = prodById(c.pid); 
+    return a + (p && p.price != null ? p.price * c.qty : 0); 
+  }, 0);
 
   const goStep = (n) => {
     if (n === 2) {
-      const req = [[company, 'Company'], [name, 'Contact'], [mobile, 'Mobile'], [pin, 'PIN'], [addr, 'Address']];
+      const req = [
+        [company, 'Company name'], 
+        [name, 'Contact person'], 
+        [mobile, 'Mobile number'], 
+        [pin, 'PIN code'], 
+        [addr, 'Delivery address']
+      ];
       for (const [v, l] of req) {
-        if (!String(v || '').trim()) { toast(l + ' is required', '⚠️'); return; }
+        if (!String(v || '').trim()) { 
+          toast(l + ' is required', '⚠️'); 
+          return; 
+        }
       }
     }
     setStep(n);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const placeOrder = async () => {
     setBusy(true);
     const payload = {
-      customer: name, contact: name, companyName: company, mobile, address: addr || '—',
-      city, poRef: po, items: cart.map((c) => ({ pid: c.pid, qty: c.qty }))
+      customer: name, 
+      contact: name, 
+      companyName: company, 
+      mobile, 
+      address: addr || '—',
+      city, 
+      poRef: po, 
+      items: cart.map((c) => ({ pid: c.pid, qty: c.qty }))
     };
     try {
       const o = await api.post('/api/orders', payload);
@@ -56,60 +97,346 @@ export default function Checkout() {
       toast('Order ' + o.id + ' submitted • stock reserved', '🏭');
       nav('/store/confirmation/' + o.id);
     } catch (e) {
-      toast(e.message, '⚠️');
+      toast(e.message || 'Failed to place order', '⚠️');
       setBusy(false);
     }
   };
 
   return (
-    <>
-      <div className="section-head"><h2>Checkout — purchase order</h2><Link className="btn btn-ghost btn-sm" to="/store/cart">← Back to cart</Link></div>
-      <div className="steps">
-        <div className={'step' + (step === 1 ? ' active' : '')}>1 • Company & delivery</div>
-        <div className={'step' + (step === 2 ? ' active' : '')}>2 • Review indent</div>
+    <div className="space-y-6 max-w-5xl mx-auto">
+      {/* Header & Back Link */}
+      <div className="flex items-center justify-between gap-4 flex-wrap pb-2 border-b border-slate-200">
+        <div>
+          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Checkout — Purchase Order</h1>
+          <p className="text-xs text-slate-500 mt-1">Official B2B procurement requisition with inventory lock</p>
+        </div>
+        <Link 
+          to="/store/cart" 
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-slate-600 hover:text-slate-900 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg transition-all"
+        >
+          <ArrowLeft className="w-3.5 h-3.5" /> Back to Cart
+        </Link>
       </div>
-      {step === 1
-        ? <div className="card"><div className="card-pad">
-          <h3 style={{ marginTop: 0 }}>Company & delivery details</h3>
-          <div className="form-grid">
-            <div className="field"><label>Company name *</label><input value={company} onChange={(e) => setCompany(e.target.value)} /></div>
-            <div className="field"><label>Contact person *</label><input value={name} onChange={(e) => setName(e.target.value)} /></div>
-            <div className="field"><label>Mobile *</label><input value={mobile} onChange={(e) => setMobile(e.target.value)} /></div>
-            <div className="field"><label>Email</label><input value={email} onChange={(e) => setEmail(e.target.value)} /></div>
-            <div className="field"><label>PO reference (optional)</label><input value={po} onChange={(e) => setPo(e.target.value)} placeholder="e.g. PO/SAC/26/118" /></div>
-            <div className="field"><label>PIN code *</label><input value={pin} onChange={(e) => setPin(e.target.value)} /></div>
-            <div className="field full"><label>Delivery address *</label><textarea rows="2" value={addr} onChange={(e) => setAddr(e.target.value)} /></div>
-            <div className="field"><label>City *</label><input value={city} onChange={(e) => setCity(e.target.value)} /></div>
-            <div className="field"><label>State *</label><input value={state} onChange={(e) => setState(e.target.value)} /></div>
-            <div className="field full"><label>Delivery instructions (optional)</label><input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="e.g. Unloading bay 2, contact security" /></div>
-          </div>
-          <button className="btn btn-primary" onClick={() => goStep(2)}>Review indent →</button>
-        </div></div>
-        : <div style={{ display: 'grid', gridTemplateColumns: '1.4fr .8fr', gap: 14 }} className="dash2">
-          <div className="card"><div className="card-pad">
-            <h3 style={{ marginTop: 0 }}>Review line items</h3>
-            {cart.map((c) => {
-              const p = prodById(c.pid) || { name: c.pid };
-              return (
-                <div key={c.pid} className="cart-line">
-                  <img src={(p.images || [])[0] || ''} onError={(e) => { e.currentTarget.src = `https://picsum.photos/seed/${p.sku || c.pid}/200/200`; }} style={{ width: 60, height: 60, borderRadius: 8, objectFit: 'cover' }} alt={p.name} />
-                  <div><b style={{ fontSize: 13 }}>{p.name}</b><div className="hint">{p.sku || ''} • {c.qty} {p.uom || ''} × {fmt(p.price)}</div></div>
-                  <b>{fmt(p.price != null ? p.price * c.qty : null)}</b>
-                </div>
-              );
-            })}
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button className="btn btn-ghost btn-sm" onClick={() => goStep(1)}>← Edit details</button>
-              <Link className="btn btn-ghost btn-sm" to="/store/cart">Edit cart</Link>
+
+      {/* Stepper Header */}
+      <div className="grid grid-cols-2 gap-3 max-w-lg mx-auto">
+        <button
+          type="button"
+          onClick={() => goStep(1)}
+          className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs font-bold transition-all border ${
+            step === 1 
+              ? 'bg-slate-900 text-white border-slate-900 shadow-sm' 
+              : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+          }`}
+        >
+          <Building2 className="w-4 h-4" />
+          <span>1. Company & Delivery</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => goStep(2)}
+          className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs font-bold transition-all border ${
+            step === 2 
+              ? 'bg-slate-900 text-white border-slate-900 shadow-sm' 
+              : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+          }`}
+        >
+          <PackageCheck className="w-4 h-4" />
+          <span>2. Review Indent</span>
+        </button>
+      </div>
+
+      {/* Step Content */}
+      <AnimatePresence mode="wait">
+        {step === 1 ? (
+          <motion.div
+            key="step1"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ duration: 0.2 }}
+            className="bg-white rounded-2xl border border-slate-200/80 p-6 sm:p-8 shadow-xs"
+          >
+            <div className="flex items-center gap-3 pb-5 mb-6 border-b border-slate-100">
+              <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+                <Truck className="w-5 h-5" />
+              </div>
+              <div>
+                <h2 className="text-base font-bold text-slate-900">Organization & Delivery Location</h2>
+                <p className="text-xs text-slate-500">Provide procurement entity details for tax invoicing and logistics</p>
+              </div>
             </div>
-          </div></div>
-          <div className="card"><div className="card-pad">
-            <h3 style={{ marginTop: 0 }}>Payable: {fmt(sub)}</h3>
-            <p className="hint">Excl. GST — invoiced as per ERP. Order is recorded as <b>Pending</b>, not paid.</p>
-            <button className="btn btn-coral" style={{ width: '100%' }} disabled={busy} onClick={placeOrder}>{busy ? 'Submitting…' : `Submit order • ${fmt(sub)}`}</button>
-            <p className="hint">Double-click protected • server revalidates stock.</p>
-          </div></div>
-        </div>}
-    </>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-8">
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                  <Building2 className="w-3.5 h-3.5 text-slate-400" /> Company Name <span className="text-red-500">*</span>
+                </label>
+                <input 
+                  type="text" 
+                  value={company} 
+                  onChange={(e) => setCompany(e.target.value)} 
+                  placeholder="e.g. Acme Precision Tools Pvt Ltd"
+                  className="w-full px-3.5 py-2.5 text-sm bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 rounded-xl outline-hidden transition-all"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                  <User className="w-3.5 h-3.5 text-slate-400" /> Contact Person <span className="text-red-500">*</span>
+                </label>
+                <input 
+                  type="text" 
+                  value={name} 
+                  onChange={(e) => setName(e.target.value)} 
+                  placeholder="Authorized officer name"
+                  className="w-full px-3.5 py-2.5 text-sm bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 rounded-xl outline-hidden transition-all"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                  <Phone className="w-3.5 h-3.5 text-slate-400" /> Mobile Number <span className="text-red-500">*</span>
+                </label>
+                <input 
+                  type="tel" 
+                  value={mobile} 
+                  onChange={(e) => setMobile(e.target.value)} 
+                  placeholder="+91 98765 43210"
+                  className="w-full px-3.5 py-2.5 text-sm bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 rounded-xl outline-hidden transition-all"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                  <Mail className="w-3.5 h-3.5 text-slate-400" /> Official Email
+                </label>
+                <input 
+                  type="email" 
+                  value={email} 
+                  onChange={(e) => setEmail(e.target.value)} 
+                  placeholder="procurement@company.in"
+                  className="w-full px-3.5 py-2.5 text-sm bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 rounded-xl outline-hidden transition-all"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                  <FileText className="w-3.5 h-3.5 text-slate-400" /> PO Reference Number (Optional)
+                </label>
+                <input 
+                  type="text" 
+                  value={po} 
+                  onChange={(e) => setPo(e.target.value)} 
+                  placeholder="e.g. PO/ARGUS/26/108"
+                  className="w-full px-3.5 py-2.5 text-sm bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 rounded-xl outline-hidden transition-all"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                  <MapPin className="w-3.5 h-3.5 text-slate-400" /> Postal PIN Code <span className="text-red-500">*</span>
+                </label>
+                <input 
+                  type="text" 
+                  value={pin} 
+                  onChange={(e) => setPin(e.target.value)} 
+                  placeholder="411026"
+                  className="w-full px-3.5 py-2.5 text-sm bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 rounded-xl outline-hidden transition-all"
+                />
+              </div>
+
+              <div className="sm:col-span-2 space-y-1.5">
+                <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                  <MapPin className="w-3.5 h-3.5 text-slate-400" /> Delivery Address / Plant Bay <span className="text-red-500">*</span>
+                </label>
+                <textarea 
+                  rows={2} 
+                  value={addr} 
+                  onChange={(e) => setAddr(e.target.value)} 
+                  placeholder="Plot number, industrial area, street, landmark"
+                  className="w-full px-3.5 py-2.5 text-sm bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 rounded-xl outline-hidden transition-all resize-y"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700">City <span className="text-red-500">*</span></label>
+                <input 
+                  type="text" 
+                  value={city} 
+                  onChange={(e) => setCity(e.target.value)} 
+                  className="w-full px-3.5 py-2.5 text-sm bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 rounded-xl outline-hidden transition-all"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700">State / Region <span className="text-red-500">*</span></label>
+                <input 
+                  type="text" 
+                  value={state} 
+                  onChange={(e) => setState(e.target.value)} 
+                  className="w-full px-3.5 py-2.5 text-sm bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 rounded-xl outline-hidden transition-all"
+                />
+              </div>
+
+              <div className="sm:col-span-2 space-y-1.5">
+                <label className="text-xs font-bold text-slate-700">Unloading / Security Instructions (Optional)</label>
+                <input 
+                  type="text" 
+                  value={notes} 
+                  onChange={(e) => setNotes(e.target.value)} 
+                  placeholder="e.g. Unloading Bay 2, call stores incharge before arrival"
+                  className="w-full px-3.5 py-2.5 text-sm bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 rounded-xl outline-hidden transition-all"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-5 border-t border-slate-100">
+              <button 
+                type="button" 
+                onClick={() => goStep(2)}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-xl transition-all shadow-sm hover:shadow-md cursor-pointer"
+              >
+                Review Line Items <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="step2"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ duration: 0.2 }}
+            className="grid grid-cols-1 lg:grid-cols-3 gap-6"
+          >
+            {/* Line Items List */}
+            <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-5">
+              <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+                <div>
+                  <h2 className="text-base font-bold text-slate-900">Line Items Review ({cart.length})</h2>
+                  <p className="text-xs text-slate-500">Verify quantities and items prior to submitting indent</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => goStep(1)}
+                  className="text-xs font-bold text-blue-600 hover:text-blue-700"
+                >
+                  Edit details
+                </button>
+              </div>
+
+              <div className="divide-y divide-slate-100">
+                {cart.map((c) => {
+                  const p = prodById(c.pid) || { name: c.pid, sku: c.pid, price: 0 };
+                  const itemTotal = p.price != null ? p.price * c.qty : null;
+                  return (
+                    <div key={c.pid} className="py-3.5 flex items-center gap-4">
+                      <img 
+                        src={(p.images || [])[0] || ''} 
+                        onError={(e) => { e.currentTarget.src = `https://picsum.photos/seed/${p.sku || c.pid}/200/200`; }} 
+                        className="w-14 h-14 rounded-xl object-cover border border-slate-200 bg-slate-50 flex-shrink-0" 
+                        alt={p.name} 
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="font-bold text-slate-900 text-sm truncate">{p.name}</div>
+                        <div className="text-xs text-slate-500 mt-0.5">
+                          SKU: <span className="font-mono text-slate-700">{p.sku || c.pid}</span> • {c.qty} {p.uom || 'Pc'} × {fmt(p.price)}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-bold text-slate-900 text-sm">{fmt(itemTotal)}</div>
+                        <span className="text-[10px] text-slate-400 font-medium">Excl. GST</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Delivery Destination Summary */}
+              <div className="bg-slate-50 rounded-xl p-4 border border-slate-200/60 mt-4 text-xs space-y-1">
+                <div className="font-bold text-slate-800 flex items-center gap-1.5">
+                  <MapPin className="w-3.5 h-3.5 text-blue-600" /> Dispatch Destination:
+                </div>
+                <div className="text-slate-600 font-semibold">{company} — Attn: {name} ({mobile})</div>
+                <div className="text-slate-500">{addr}, {city}, {state} - {pin}</div>
+                {po && <div className="text-blue-700 font-mono pt-1">PO Reference: {po}</div>}
+              </div>
+
+              <div className="flex items-center gap-3 pt-2">
+                <button 
+                  type="button" 
+                  onClick={() => goStep(1)} 
+                  className="inline-flex items-center gap-1.5 px-4 py-2 border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-xs rounded-xl transition-all"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" /> Back to Information
+                </button>
+                <Link 
+                  to="/store/cart" 
+                  className="text-xs font-bold text-slate-500 hover:text-slate-800 ml-auto"
+                >
+                  Modify Cart
+                </Link>
+              </div>
+            </div>
+
+            {/* Payable / Submit Card */}
+            <div className="space-y-4">
+              <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-5">
+                <h3 className="font-bold text-slate-900 text-sm pb-3 border-b border-slate-100 flex items-center justify-between">
+                  <span>Requisition Summary</span>
+                  <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                </h3>
+
+                <div className="space-y-2 text-xs">
+                  <div className="flex justify-between text-slate-600">
+                    <span>Taxable Subtotal</span>
+                    <span className="font-bold text-slate-900 font-mono">{fmt(sub)}</span>
+                  </div>
+                  <div className="flex justify-between text-slate-600">
+                    <span>GST (CGST + SGST 18%)</span>
+                    <span className="text-slate-500">Invoiced as per ERP</span>
+                  </div>
+                  <div className="flex justify-between text-slate-600">
+                    <span>Freight / Logistics</span>
+                    <span className="text-emerald-600 font-semibold">Standard Freight</span>
+                  </div>
+                  <div className="border-t border-slate-200 pt-3 flex justify-between items-baseline">
+                    <span className="font-extrabold text-slate-900 text-sm">Estimated Total</span>
+                    <span className="font-black text-blue-600 text-xl font-mono">{fmt(sub)}</span>
+                  </div>
+                </div>
+
+                <div className="bg-blue-50/60 rounded-xl p-3 border border-blue-100 text-[11px] text-blue-900 leading-relaxed">
+                  <p className="font-bold mb-0.5">🏭 B2B Commercial Requisition</p>
+                  Order status will be set to <b>Pending</b>. Inventory is instantaneously deducted in real-time.
+                </div>
+
+                <button 
+                  type="button" 
+                  disabled={busy} 
+                  onClick={placeOrder}
+                  className="w-full flex items-center justify-center gap-2 py-3 px-5 bg-orange-600 hover:bg-orange-700 disabled:opacity-50 text-white font-extrabold text-sm rounded-xl transition-all shadow-md hover:shadow-lg cursor-pointer"
+                >
+                  {busy ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" /> Submitting Indent…
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="w-4 h-4" /> Confirm & Place Order ({fmt(sub)})
+                    </>
+                  )}
+                </button>
+
+                <p className="text-[11px] text-slate-400 text-center flex items-center justify-center gap-1">
+                  <ShieldCheck className="w-3.5 h-3.5" /> Re-validates stock & creates audit trail
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }

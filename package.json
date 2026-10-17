@@ -8,6 +8,7 @@
     "backend": "npm --prefix backend start",
     "frontend": "npx --yes serve . -l 3000",
     "dev": "npm --prefix backend install && node ./scripts/run-both.js",
+    "build": "npm --prefix client run build",
     "client:install": "npm --prefix client install",
     "client:build": "npm --prefix client run build",
     "client:dev": "npm --prefix client run dev",

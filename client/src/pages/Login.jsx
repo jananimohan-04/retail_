@@ -122,10 +122,10 @@ export default function Login() {
           )}
 
           <div style={{ display: 'flex', gap: 8, marginTop: 16, flexWrap: 'wrap', justifyContent: 'center' }}>
-            <span className="hint" style={{ width: '100%', textAlign: 'center' }}>Demo access</span>
+            <span className="hint" style={{ width: '100%', textAlign: 'center' }}>Instant Demo Access</span>
             <button className="pill" onClick={() => demo('super_admin')}>Super Admin</button>
-            <button className="pill" onClick={() => demo('company_admin')}>Company Admin</button>
-            <button className="pill" onClick={() => demo('sales_user')}>Sales User</button>
+            <button className="pill" onClick={() => demo('company_admin')}>Argus Admin</button>
+            <button className="pill" onClick={() => demo('sales_user')}>Argus Sales User</button>
           </div>
         </div>
       </div>

@@ -7,9 +7,9 @@ const AuthCtx = createContext(null);
 export const useAuth = () => useContext(AuthCtx);
 
 const DEMO = {
-  super_admin: { role: 'super_admin', name: 'Aarav Shah', companyId: null, email: 'super@cncforge.io' },
-  company_admin: { role: 'company_admin', name: 'Amina Khan', companyId: 'C-A', email: 'amina@apexcnc.in' },
-  sales_user: { role: 'sales_user', name: 'Ravi Kumar', companyId: 'C-A', email: 'ravi@apexcnc.in' }
+  super_admin: { role: 'super_admin', name: 'Janani Mohan', companyId: null, email: 'jananimohan44@gmail.com' },
+  company_admin: { role: 'company_admin', name: 'argus', companyId: 'C-ARGUS', email: 'argushexadoc2021@gmail.com' },
+  sales_user: { role: 'sales_user', name: 'janani', companyId: 'C-ARGUS', email: 'jananimohan1604@gmail.com' }
 };
 
 export function AuthProvider({ children }) {

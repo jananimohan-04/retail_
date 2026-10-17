@@ -867,9 +867,14 @@ app.put('/api/settings/global', (req, res) => {
 });
 
 /* serve frontend (same origin → no CORS issues) */
-const WEBROOT = ROOT;
+const CLIENT_DIST = path.join(ROOT, 'client', 'dist');
+const WEBROOT = fs.existsSync(CLIENT_DIST) ? CLIENT_DIST : ROOT;
 app.use(express.static(WEBROOT));
-app.get('*', (_req, res) => res.sendFile(path.join(WEBROOT, 'index.html')));
+app.use('/uploads', express.static(UP_DIR));
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) return next();
+  res.sendFile(path.join(WEBROOT, 'index.html'));
+});
 
 if (require.main === module) {
   app.listen(PORT, () => console.log(`CNCFORGE Industrial Store: frontend + API on http://localhost:${PORT}`));
