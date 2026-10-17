@@ -38,8 +38,34 @@ import StoreOrders from './pages/store/Orders';
 import StoreOrderDetail from './pages/store/OrderDetail';
 import StoreQuotes from './pages/store/Quotes';
 import StoreProfile from './pages/store/Profile';
+import ContentWriter from './pages/content/ContentWriter';
+import FinanceReview from './pages/finance/Finance';
 
-function Gate({ children, noSide }) {
+/* role-aware landing page — content/finance staff do not belong in the storefront */
+const homeFor = (role) => ({
+  super_admin: '/super/dashboard',
+  company_admin: '/admin/dashboard',
+  content_writer: '/content',
+  finance: '/finance',
+  sales_user: '/store/home'
+}[role] || '/store/home');
+
+const R = {
+  super: ['super_admin'],
+  admin: ['super_admin', 'company_admin'],
+  content: ['super_admin', 'company_admin', 'content_writer'],
+  finance: ['super_admin', 'company_admin', 'finance'],
+  store: ['super_admin', 'company_admin', 'sales_user']
+};
+
+/* "/" → each role's own home (a Content Writer no longer lands in the storefront) */
+function RoleRedirect() {
+  const { me, ready } = useAuth();
+  if (!ready) return null;
+  return <Navigate to={me ? homeFor(me.role) : '/login'} replace />;
+}
+
+function Gate({ children, noSide, roles }) {
   const { me, ready } = useAuth();
   const loc = useLocation();
   const [counts, setCounts] = useState({ cart: 0, cats: [], pendingOrders: '', openQuotes: '' });
@@ -47,9 +73,21 @@ function Gate({ children, noSide }) {
   useEffect(() => {
     const cartN = (getCart() || []).reduce((a, c) => a + (c.qty || 0), 0);
     setCounts((p) => ({ ...p, cart: cartN }));
-    if (!me || !me.companyId || me.role === 'super_admin') {
+    if (!me) return;
+    /* publishing roles care about their queue, not sales orders */
+    if (me.role === 'content_writer' || me.role === 'finance') {
+      api.get('/api/workflow?limit=1').then((w) => {
+        const c = (w && w.counts) || {};
+        const pending = (c.content_pending || 0) + (c.content_in_progress || 0) + (c.returned_for_correction || 0);
+        const financeQ = (c.submitted_to_finance || 0) + (c.finance_review || 0);
+        setCounts((p) => ({ ...p, pendingContent: pending || '', financeQueue: financeQ || '' }));
+      }).catch(() => {});
       api.get('/api/categories').then((c) => setCounts((p) => ({ ...p, cats: c || [] }))).catch(() => {});
-      if (!me || me.role === 'super_admin') return;
+      return;
+    }
+    if (!me.companyId || me.role === 'super_admin') {
+      api.get('/api/categories').then((c) => setCounts((p) => ({ ...p, cats: c || [] }))).catch(() => {});
+      if (me.role === 'super_admin') return;
     }
     Promise.all([
       api.get('/api/orders').catch(() => []),
@@ -72,6 +110,8 @@ function Gate({ children, noSide }) {
   if (loc.pathname === '/login') return <>{children}</>;
   if (!me) return <Navigate to="/login" replace />;
   if (me.role === 'pending' || me.role === 'disabled') return <Pending />;
+  /* route-level authorization: a role never lands on a screen it may not act on */
+  if (roles && !roles.includes(me.role)) return <Navigate to={homeFor(me.role)} replace />;
   return <Shell counts={counts} noSide={noSide}>{children}</Shell>;
 }
 
@@ -83,43 +123,47 @@ export default function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/pending" element={<Gate noSide><Pending /></Gate>} />
-          <Route path="/super/dashboard" element={<Gate><SuperDashboard /></Gate>} />
-          <Route path="/super/companies" element={<Gate><Companies /></Gate>} />
-          <Route path="/super/companies/new" element={<Gate><CompanyNew /></Gate>} />
-          <Route path="/super/companies/:id/edit" element={<Gate><CompanyNew edit /></Gate>} />
-          <Route path="/super/companies/:id" element={<Gate><CompanyDetail /></Gate>} />
-          <Route path="/super/admins" element={<Gate><Companies tab="admins" /></Gate>} />
-          <Route path="/super/users" element={<Gate><Companies tab="users" /></Gate>} />
-          <Route path="/super/catalog" element={<Gate><SuperCatalog /></Gate>} />
-          <Route path="/super/categories" element={<Gate><SuperCategories /></Gate>} />
-          <Route path="/super/media" element={<Gate><SuperMedia /></Gate>} />
-          <Route path="/super/orders" element={<Gate><SuperOrders /></Gate>} />
-          <Route path="/super/orders/:id" element={<Gate><AdminOrderDetail back="/super/orders" /></Gate>} />
-          <Route path="/super/quotes" element={<Gate><SuperQuotes /></Gate>} />
-          <Route path="/super/settings" element={<Gate><SuperSettings /></Gate>} />
-          <Route path="/super/audit" element={<Gate><SuperAudit /></Gate>} />
-          <Route path="/admin/dashboard" element={<Gate><AdminDashboard /></Gate>} />
-          <Route path="/admin/products" element={<Gate><AdminProducts /></Gate>} />
-          <Route path="/admin/products/new" element={<Gate><AdminProductForm /></Gate>} />
-          <Route path="/admin/products/edit/:id" element={<Gate><AdminProductForm edit /></Gate>} />
-          <Route path="/admin/media" element={<Gate><AdminMedia /></Gate>} />
-          <Route path="/admin/categories" element={<Gate><AdminCategories /></Gate>} />
-          <Route path="/admin/users" element={<Gate><AdminUsers /></Gate>} />
-          <Route path="/admin/orders" element={<Gate><AdminOrders /></Gate>} />
-          <Route path="/admin/orders/:id" element={<Gate><AdminOrderDetail back="/admin/orders" /></Gate>} />
-          <Route path="/admin/quotes" element={<Gate><AdminQuotes /></Gate>} />
-          <Route path="/admin/settings" element={<Gate><AdminSettings /></Gate>} />
-          <Route path="/store/home" element={<Gate><StoreHome /></Gate>} />
-          <Route path="/store/listing" element={<Gate><StoreListing /></Gate>} />
-          <Route path="/store/product/:id" element={<Gate><StoreProduct /></Gate>} />
-          <Route path="/store/cart" element={<Gate><StoreCart /></Gate>} />
-          <Route path="/store/checkout" element={<Gate><StoreCheckout /></Gate>} />
-          <Route path="/store/confirmation/:id" element={<Gate><StoreConfirmation /></Gate>} />
-          <Route path="/store/orders" element={<Gate><StoreOrders /></Gate>} />
-          <Route path="/store/orders/:id" element={<Gate><StoreOrderDetail /></Gate>} />
-          <Route path="/store/quotes" element={<Gate><StoreQuotes /></Gate>} />
-          <Route path="/store/profile" element={<Gate><StoreProfile /></Gate>} />
-          <Route path="/" element={<Navigate to="/store/home" replace />} />
+          <Route path="/super/dashboard" element={<Gate roles={R.super}><SuperDashboard /></Gate>} />
+          <Route path="/super/companies" element={<Gate roles={R.super}><Companies /></Gate>} />
+          <Route path="/super/companies/new" element={<Gate roles={R.super}><CompanyNew /></Gate>} />
+          <Route path="/super/companies/:id/edit" element={<Gate roles={R.super}><CompanyNew edit /></Gate>} />
+          <Route path="/super/companies/:id" element={<Gate roles={R.super}><CompanyDetail /></Gate>} />
+          <Route path="/super/admins" element={<Gate roles={R.super}><Companies tab="admins" /></Gate>} />
+          <Route path="/super/users" element={<Gate roles={R.super}><Companies tab="users" /></Gate>} />
+          <Route path="/super/catalog" element={<Gate roles={R.super}><SuperCatalog /></Gate>} />
+          <Route path="/super/categories" element={<Gate roles={R.super}><SuperCategories /></Gate>} />
+          <Route path="/super/media" element={<Gate roles={R.super}><SuperMedia /></Gate>} />
+          <Route path="/super/orders" element={<Gate roles={R.super}><SuperOrders /></Gate>} />
+          <Route path="/super/orders/:id" element={<Gate roles={R.super}><AdminOrderDetail back="/super/orders" /></Gate>} />
+          <Route path="/super/quotes" element={<Gate roles={R.super}><SuperQuotes /></Gate>} />
+          <Route path="/super/settings" element={<Gate roles={R.super}><SuperSettings /></Gate>} />
+          <Route path="/super/audit" element={<Gate roles={R.super}><SuperAudit /></Gate>} />
+          <Route path="/admin/dashboard" element={<Gate roles={R.admin}><AdminDashboard /></Gate>} />
+          <Route path="/admin/products" element={<Gate roles={R.admin}><AdminProducts /></Gate>} />
+          <Route path="/admin/products/new" element={<Gate roles={R.admin}><AdminProductForm /></Gate>} />
+          <Route path="/admin/products/edit/:id" element={<Gate roles={R.admin}><AdminProductForm edit /></Gate>} />
+          <Route path="/admin/media" element={<Gate roles={R.admin}><AdminMedia /></Gate>} />
+          <Route path="/admin/categories" element={<Gate roles={R.admin}><AdminCategories /></Gate>} />
+          <Route path="/admin/users" element={<Gate roles={R.admin}><AdminUsers /></Gate>} />
+          <Route path="/admin/orders" element={<Gate roles={R.admin}><AdminOrders /></Gate>} />
+          <Route path="/admin/orders/:id" element={<Gate roles={R.admin}><AdminOrderDetail back="/admin/orders" /></Gate>} />
+          <Route path="/admin/quotes" element={<Gate roles={R.admin}><AdminQuotes /></Gate>} />
+          <Route path="/admin/settings" element={<Gate roles={R.admin}><AdminSettings /></Gate>} />
+          <Route path="/content" element={<Gate roles={R.content}><ContentWriter /></Gate>} />
+          <Route path="/content/:id" element={<Gate roles={R.content}><ContentWriter /></Gate>} />
+          <Route path="/finance" element={<Gate roles={R.finance}><FinanceReview /></Gate>} />
+          <Route path="/finance/:id" element={<Gate roles={R.finance}><FinanceReview /></Gate>} />
+          <Route path="/store/home" element={<Gate roles={R.store}><StoreHome /></Gate>} />
+          <Route path="/store/listing" element={<Gate roles={R.store}><StoreListing /></Gate>} />
+          <Route path="/store/product/:id" element={<Gate roles={R.store}><StoreProduct /></Gate>} />
+          <Route path="/store/cart" element={<Gate roles={R.store}><StoreCart /></Gate>} />
+          <Route path="/store/checkout" element={<Gate roles={R.store}><StoreCheckout /></Gate>} />
+          <Route path="/store/confirmation/:id" element={<Gate roles={R.store}><StoreConfirmation /></Gate>} />
+          <Route path="/store/orders" element={<Gate roles={R.store}><StoreOrders /></Gate>} />
+          <Route path="/store/orders/:id" element={<Gate roles={R.store}><StoreOrderDetail /></Gate>} />
+          <Route path="/store/quotes" element={<Gate roles={R.store}><StoreQuotes /></Gate>} />
+          <Route path="/store/profile" element={<Gate roles={R.store}><StoreProfile /></Gate>} />
+          <Route path="/" element={<RoleRedirect />} />
           <Route path="*" element={<Gate><StoreHome /></Gate>} />
         </Routes>
       </HashRouter>

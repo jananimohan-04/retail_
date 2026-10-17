@@ -6,6 +6,12 @@ import { useAuth } from '../../auth';
 import { Empty, Skeleton } from '../../components/ui';
 import { ProdCard, RfqModal, addToCart, asList, availBadge, priceHtml } from './Home';
 
+/* youtube watch/shorts/embed url → video id (null when not a YouTube link) */
+const ytId = (u) => {
+  const m = String(u || '').match(/(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/|live\/)|youtu\.be\/)([\w-]{5,})/i);
+  return m ? m[1] : null;
+};
+
 export default function Product() {
   const { id } = useParams();
   const { me } = useAuth();
@@ -87,6 +93,30 @@ export default function Product() {
                 ? <p className="hint">⚠️ Video failed to load.</p>
                 : <video src={p.video} controls preload="metadata" style={{ width: '100%', borderRadius: 10, marginTop: 12, background: '#000' }} onError={() => setVideoErr(true)} />)
               : null}
+            {(p.media || []).filter((m) => m.type === 'youtube' && ytId(m.url)).map((m) => (
+              <iframe
+                key={m.id}
+                src={'https://www.youtube.com/embed/' + ytId(m.url)}
+                title={m.title || 'Product video'}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                style={{ width: '100%', aspectRatio: '16 / 9', borderRadius: 10, marginTop: 12, border: 'none', background: '#000' }}
+              />
+            ))}
+            {(p.media || []).some((m) => m.type === 'document') ? (
+              <div className="card" style={{ boxShadow: 'none', marginTop: 12 }}><div className="card-pad" style={{ padding: 14 }}>
+                <b style={{ fontSize: 13 }}>Documents</b>
+                <ul style={{ margin: '8px 0 0', padding: 0, listStyle: 'none', display: 'grid', gap: 6 }}>
+                  {(p.media || []).filter((m) => m.type === 'document').map((m) => (
+                    <li key={m.id}>
+                      <a href={m.url} target="_blank" rel="noreferrer" style={{ fontSize: 13, fontWeight: 600 }}>
+                        📄 {m.title || 'Product document'} <span className="hint">— open / download</span>
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div></div>
+            ) : null}
           </div>
           <div>
             <span className="pill">{catName(p.category)}</span> {availBadge(p)}

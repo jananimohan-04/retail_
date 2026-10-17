@@ -22,14 +22,30 @@ async function authUserFromToken(token) {
    (that one holds db.json and must stay private) */
 const MEDIA_BUCKET = process.env.SUPABASE_MEDIA_BUCKET || 'retail-media';
 const MEDIA_MAX_BYTES = 50 * 1024 * 1024;
+/* images + videos + PDF brochures/spec sheets */
+const MEDIA_ALLOWED_MIME = ['image/*', 'video/*', 'application/pdf'];
 let bucketReady = null;
 function ensureMediaBucket() {
   if (!admin) return Promise.reject(new Error('Supabase not configured'));
   bucketReady = bucketReady || (async () => {
-    const { data } = await admin.storage.getBucket(MEDIA_BUCKET);
-    if (data) return true;
-    const { error } = await admin.storage.createBucket(MEDIA_BUCKET, { public: true, fileSizeLimit: MEDIA_MAX_BYTES, allowedMimeTypes: ['image/*', 'video/*'] });
-    if (error && !/already exists/i.test(error.message)) throw error;
+    const opts = { public: true, fileSizeLimit: MEDIA_MAX_BYTES, allowedMimeTypes: MEDIA_ALLOWED_MIME };
+    const { data, error } = await admin.storage.getBucket(MEDIA_BUCKET);
+    if (error || !data) {
+      const { error: createErr } = await admin.storage.createBucket(MEDIA_BUCKET, opts);
+      if (createErr && !/already exists/i.test(createErr.message)) throw createErr;
+      return true;
+    }
+    /* the bucket pre-dates PDF support — widen its allowlist in place */
+    const allowed = data.allowed_mime_types || data.allowedMimeTypes || [];
+    const lacks = MEDIA_ALLOWED_MIME.filter(t => !allowed.includes(t));
+    if (lacks.length) {
+      const { error: updErr } = await admin.storage.updateBucket(MEDIA_BUCKET, {
+        public: data.public !== false,
+        fileSizeLimit: data.file_size_limit ?? data.fileSizeLimit ?? MEDIA_MAX_BYTES,
+        allowedMimeTypes: [...allowed, ...lacks]
+      });
+      if (updErr) throw updErr;
+    }
     return true;
   })().catch(e => { bucketReady = null; throw e; });
   return bucketReady;

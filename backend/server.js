@@ -135,8 +135,8 @@ function audit(req, action, entity, entityId, companyId, summary) {
 }
 /* server-side pagination helper (?page&limit, defaults 1/50, max 200) */
 function pageOf(list, req) {
-  const page = Math.max(1, parseInt(req.query.page || '1', 10));
-  const limit = Math.min(200, Math.max(1, parseInt(req.query.limit || '50', 10)));
+  const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+  const limit = Math.min(200, Math.max(1, parseInt(req.query.limit, 10) || 50));
   const total = list.length;
   return { rows: list.slice((page - 1) * limit, page * limit), total, page, limit };
 }
@@ -224,6 +224,84 @@ function scopeCompany(req, res, next) {
 }
 const ok = (res, data) => res.json({ data });
 const isAdmin = req => req.ctx.role === 'company_admin' || req.ctx.role === 'super_admin';
+/* --- publishing workflow roles: content_writer prepares, finance approves --- */
+const isContentWriter = req => isAdmin(req) || req.ctx.role === 'content_writer';
+const isFinance = req => isAdmin(req) || req.ctx.role === 'finance';
+const isWorkflowStaff = req => isContentWriter(req) || isFinance(req);
+
+/* --- product publishing workflow (ERP → Content Writer → Finance → Sales) --- */
+const WF = {
+  PENDING: 'content_pending',
+  IN_PROGRESS: 'content_in_progress',
+  SUBMITTED: 'submitted_to_finance',
+  REVIEW: 'finance_review',
+  RETURNED: 'returned_for_correction',
+  PRICED: 'pricing_saved',
+  PUBLISHED: 'published'
+};
+const WF_STAGES = [WF.PENDING, WF.IN_PROGRESS, WF.SUBMITTED, WF.REVIEW, WF.RETURNED, WF.PRICED, WF.PUBLISHED];
+const WF_LABELS = {
+  content_pending: 'ERP Product Received',
+  content_in_progress: 'Content In Progress',
+  submitted_to_finance: 'Submitted To Finance',
+  finance_review: 'Finance Review',
+  returned_for_correction: 'Returned For Correction',
+  pricing_saved: 'Pricing Saved',
+  published: 'Published To Sales'
+};
+/* legacy aliases seen in existing data → canonical stage. Anything unrecognised
+   falls back to PENDING so a product can never become un-actionable for every role. */
+const WF_STAGE_ALIASES = {
+  content_ready: WF.PENDING, pending_content: WF.PENDING, new: WF.PENDING, received: WF.PENDING,
+  content: WF.IN_PROGRESS, in_progress: WF.IN_PROGRESS,
+  submitted: WF.SUBMITTED, review: WF.REVIEW,
+  pricing: WF.PRICED, priced: WF.PRICED,
+  approved: WF.PUBLISHED, live: WF.PUBLISHED
+};
+const normalizeStage = s => (!s ? null : (WF_STAGES.includes(s) ? s : (WF_STAGE_ALIASES[s] || WF.PENDING)));
+/* stages where content may still be edited by a Content Writer */
+const WF_CONTENT_EDITABLE = [WF.PENDING, WF.IN_PROGRESS, WF.RETURNED];
+/* legacy / admin-created products carry no workflow_stage and keep their old behaviour */
+const stageOf = p => normalizeStage(p && p.workflow_stage);
+const isPublishedProduct = p => !p.workflow_stage || stageOf(p) === WF.PUBLISHED;
+/* the single rule that keeps unpublished workflow products out of the Sales catalog */
+const salesVisible = p => p.visible !== false && !p.archived && isPublishedProduct(p);
+const wfCounts = list => WF_STAGES.reduce((a, s) => (a[s] = list.filter(p => stageOf(p) === s).length, a), {});
+/* append an auditable history entry; `to` of null keeps the current stage */
+function pushWorkflow(p, req, action, to, note) {
+  const from = p.workflow_stage || null;
+  p.workflow_stage = to || from;
+  p.workflow_updated_at = new Date().toISOString();
+  if (!Array.isArray(p.workflow_history)) p.workflow_history = [];
+  p.workflow_history.push({
+    id: 'W' + (p.workflow_history.length + 1) + Date.now().toString(36).toUpperCase(),
+    action,
+    from,
+    to: p.workflow_stage,
+    stage: WF_LABELS[p.workflow_stage] || p.workflow_stage,
+    by: req.ctx.name || '',
+    byRole: req.ctx.role,
+    companyId: p.companyId,
+    ts: new Date().toISOString(),
+    note: note ? String(note).slice(0, 1000) : ''
+  });
+  if (p.workflow_history.length > 120) p.workflow_history.splice(0, p.workflow_history.length - 120);
+  return p;
+}
+/* resolve a workflow product with company isolation + workflow membership checks */
+function wfFind(req, res) {
+  const p = db.products.find(x => x.id === req.params.id);
+  if (!p) { res.status(404).json({ error: 'Product not found' }); return null; }
+  const co = req.companyId || req.ctx.companyId;
+  if (req.ctx.role !== 'super_admin' && p.companyId !== co) { res.status(403).json({ error: 'Cross-company access denied' }); return null; }
+  if (!p.workflow_stage) { res.status(400).json({ error: 'Product is not part of the ERP publishing workflow' }); return null; }
+  return p;
+}
+const wfGuard = (req, res, roles) => {
+  if (!roles(req)) { res.status(403).json({ error: 'Your role is not permitted to perform this action' }); return false; }
+  return true;
+};
+const wfReject = (res, code, error, extra) => res.status(code).json({ error, ...(extra || {}) });
 /* collision-free ids (random 4-digit ids used to clash and overwrite each other) */
 function uid(prefix, list) {
   let id;
@@ -311,7 +389,7 @@ app.patch('/api/companies/:id', (req, res) => {
 });
 
 /* users — super_admin manages across companies; company_admin only own company */
-const ROLES = ['super_admin', 'company_admin', 'sales_user'];
+const ROLES = ['super_admin', 'company_admin', 'content_writer', 'finance', 'sales_user'];
 app.get('/api/users', scopeCompany, (req, res) => {
   const cid = req.ctx.role === 'super_admin' ? (req.query.companyId || null) : req.companyId;
   let list = db.users.filter(u => !cid || u.companyId === cid || (req.ctx.role === 'super_admin' && !cid && !req.query.companyId));
@@ -458,7 +536,7 @@ app.get('/api/products', (req, res) => {
   if (req.query.brand && req.query.brand !== 'all') list = list.filter(p => p.brand === req.query.brand);
   if (req.query.q) { const q = req.query.q.toLowerCase(); list = list.filter(p => prodText(p).includes(q)); }
   if (req.query.archived && req.query.archived !== 'all') list = list.filter(p => String(!!p.archived) === req.query.archived);
-  if (req.ctx.role === 'sales_user') list = list.filter(p => p.visible !== false && !p.archived);
+  if (req.ctx.role === 'sales_user') list = list.filter(salesVisible);
   if (req.query.page || req.query.limit) return ok(res, pageOf(list, req));
   ok(res, list);
 });
@@ -466,7 +544,12 @@ app.get('/api/products/:id', (req, res) => {
   const p = db.products.find(x => x.id === req.params.id);
   if (!p) return res.status(404).json({ error: 'not found' });
   if (req.ctx.role !== 'super_admin' && p.companyId !== req.ctx.companyId) return res.status(403).json({ error: 'denied' });
-  ok(res, p);
+  /* Salespeople may only open published listings — a direct ID hit never leaks a draft */
+  if (req.ctx.role === 'sales_user' && !salesVisible(p)) return res.status(404).json({ error: 'not found' });
+  /* attach visible media (images, PDFs, video, YouTube) so the detail page can render it */
+  const media = (db.product_media || []).filter(m => m.productId === p.id && m.visible !== false)
+    .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+  ok(res, { ...p, media });
 });
 app.post('/api/products', scopeCompany, (req, res) => {
   if (req.ctx.role === 'sales_user') return res.status(403).json({ error: 'admin only' });
@@ -597,15 +680,34 @@ app.get('/api/catalog', (req, res) => {
    Vercel caps request bodies at 4.5 MB and wipes its tmp dir, so the browser uploads straight to Storage
    with a signed URL from /api/uploads/sign; the server never handles the file bytes. */
 const MEDIA_TYPES = /^(image|video)\//;
+const DOC_TYPES = /^application\/pdf$/i;
+/* images, videos and PDF brochures/spec sheets may be uploaded */
+const isAllowedUpload = t => MEDIA_TYPES.test(t || '') || DOC_TYPES.test(t || '');
+const UPLOAD_KINDS = 'images, videos and PDF documents';
+/* image | video | document (PDF) | youtube (metadata-only link) */
+const YT_HOSTS = /^(https?:\/\/)?(www\.)?(youtube\.com\/(watch\?v=|shorts\/|embed\/)|youtu\.be\/)[\w-]{5,}/i;
+const isYouTubeUrl = u => YT_HOSTS.test(String(u || '').trim());
+function resolveMediaType(type, url) {
+  const t = String(type || '').toLowerCase();
+  if (t === 'image' || t === 'video' || t === 'document' || t === 'pdf') return t === 'pdf' ? 'document' : t;
+  if (t === 'youtube' || t === 'video_link') return isYouTubeUrl(url) ? 'youtube' : null;
+  if (t) return null;
+  const u = String(url || '');
+  if (/\.pdf($|\?)/i.test(u)) return 'document';
+  if (MEDIA_TYPES.test('image/png') && /\.(jpe?g|png|gif|webp|avif|svg)($|\?)/i.test(u)) return 'image';
+  if (/\.(mp4|webm|mov|m4v)($|\?)/i.test(u)) return 'video';
+  if (isYouTubeUrl(u)) return 'youtube';
+  return null;
+}
 const safeName = n => String(n || 'file').replace(/[^a-zA-Z0-9.]+/g, '_').slice(-80);
 const mediaPath = (req, name) => `${req.ctx.companyId || 'platform'}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${safeName(name)}`;
 app.post('/api/uploads/sign', async (req, res) => {
-  if (!isAdmin(req)) return res.status(403).json({ error: 'admin only' });
+  if (!isWorkflowStaff(req)) return res.status(403).json({ error: 'Your role is not permitted to upload media' });
   if (!SB.enabled) return res.status(501).json({ error: 'Supabase Storage not configured', fallback: true });
   const files = Array.isArray(req.body.files) ? req.body.files.slice(0, 10) : [];
   if (!files.length) return res.status(400).json({ error: 'files[] required' });
   for (const f of files) {
-    if (!MEDIA_TYPES.test(f.type || '')) return res.status(400).json({ error: `${f.name}: only images and videos can be uploaded` });
+    if (!isAllowedUpload(f.type || '')) return res.status(400).json({ error: `${f.name}: only ${UPLOAD_KINDS} can be uploaded` });
     if (!(f.size > 0) || f.size > SB.MEDIA_MAX_BYTES) return res.status(400).json({ error: `${f.name}: file must be under ${SB.MEDIA_MAX_BYTES / 1024 / 1024} MB` });
   }
   try {
@@ -624,9 +726,9 @@ const upload = SB.enabled
   ? multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } })
   : multer({ storage: multer.diskStorage({ destination: UP_DIR, filename: (_r, f, cb) => cb(null, Date.now() + '-' + safeName(f.originalname)) }), limits: { fileSize: 50 * 1024 * 1024 } });
 /* multipart fallback (small files / clients without signed-URL support) */
-app.post('/api/uploads', (req, res, next) => isAdmin(req) ? next() : res.status(403).json({ error: 'admin only' }), upload.array('files', 10), async (req, res) => {
+app.post('/api/uploads', (req, res, next) => isWorkflowStaff(req) ? next() : res.status(403).json({ error: 'Your role is not permitted to upload media' }), upload.array('files', 10), async (req, res) => {
   const files = req.files || [];
-  if (files.some(f => !MEDIA_TYPES.test(f.mimetype))) return res.status(400).json({ error: 'only images and videos can be uploaded' });
+  if (files.some(f => !isAllowedUpload(f.mimetype))) return res.status(400).json({ error: `only ${UPLOAD_KINDS} can be uploaded` });
   if (!SB.enabled) return ok(res, files.map(f => '/uploads/' + f.filename));
   try {
     await SB.ensureMediaBucket();
@@ -681,7 +783,11 @@ app.post('/api/orders', scopeCompany, (req, res) => {
   const id = uid('ORD-', db.orders);
   const order = { id, companyId: cid, date: new Date().toISOString().slice(0, 16).replace('T', ' '), salesUser: req.ctx.name, customer, contact: contact || customer, companyName: companyName || '', mobile, city: city || '', address, poRef: poRef || '', total, status: 'Pending', items: lines, history: [['Pending', new Date().toLocaleString()]] };
   for (const l of lines) { const p = db.products.find(x => x.id === l.pid); p.stock -= l.qty; p.sold = (p.sold || 0) + l.qty; } // single atomic write
-  db.orders.unshift(order); save(); ok(res, order);
+  db.orders.unshift(order); save();
+  if (typeof triggerErpOrderDeduction === 'function') {
+    triggerErpOrderDeduction(order, lines);
+  }
+  ok(res, order);
 });
 app.patch('/api/orders/:id/status', scopeCompany, (req, res) => {
   if (!isAdmin(req)) return res.status(403).json({ error: 'admin only' });
@@ -800,41 +906,64 @@ app.get('/api/media', scopeCompany, (req, res) => {
   ok(res, withNames(list));
 });
 app.post('/api/media', scopeCompany, (req, res) => {
-  if (req.ctx.role === 'sales_user') return res.status(403).json({ error: 'admin only' });
-  const { productId, type, url, primary, visible } = req.body;
+  if (!isWorkflowStaff(req)) return res.status(403).json({ error: 'Your role is not permitted to manage media' });
+  const { productId, type, url, primary, visible, title, alt } = req.body;
   const co = req.companyId || req.body.companyId;
   if (!productId || !url) return res.status(400).json({ error: 'productId and url required' });
   const p = db.products.find(x => x.id === productId && x.companyId === co);
   if (!p) return res.status(400).json({ error: 'unknown product in this company' });
-  const t = type === 'video' ? 'video' : 'image';
+  const t = resolveMediaType(type, url);
+  if (!t) return res.status(400).json({ error: `unsupported media type "${type}" — use image, video, document or youtube` });
+  if (t === 'youtube' && !isYouTubeUrl(url)) return res.status(400).json({ error: 'Enter a valid YouTube link (youtube.com/watch?v=… or youtu.be/…)' });
   const siblings = db.product_media.filter(m => m.productId === productId);
-  const m = { id: 'M-' + Date.now(), companyId: co, productId, sku: p.sku || '', type: t, url, primary: primary !== false && siblings.length === 0, visible: visible !== false, sortOrder: siblings.length, createdAt: new Date().toISOString().slice(0, 10) };
+  const m = {
+    id: uid('M-', db.product_media),
+    companyId: co,
+    productId,
+    sku: p.sku || '',
+    type: t,
+    url: String(url).slice(0, 2000),
+    title: title ? String(title).slice(0, 200) : '',
+    alt: alt ? String(alt).slice(0, 300) : '',
+    primary: (t === 'image' || t === 'video') && primary !== false && siblings.filter(s => s.type === t).length === 0,
+    visible: visible !== false,
+    sortOrder: siblings.length,
+    createdAt: new Date().toISOString().slice(0, 10)
+  };
   if (m.primary) siblings.forEach(s => { if (s.type === t) s.primary = false; });
   db.product_media.push(m);
-  if (t === 'image' && !(p.images || []).includes(url)) { p.images = [...(p.images || []), url]; }
-  if (t === 'video' && !p.video) p.video = url;
+  if (t === 'image' && !(p.images || []).includes(m.url)) p.images = [...(p.images || []), m.url];
+  if (t === 'video' && !p.video) p.video = m.url;
+  if (t === 'youtube' && !p.youtube) p.youtube = m.url;
   save();
   audit(req, 'media.upload', 'media', m.id, co, `Uploaded ${t} for ${p.sku || productId}`);
   ok(res, m);
 });
 app.patch('/api/media/:id', scopeCompany, (req, res) => {
-  if (req.ctx.role === 'sales_user') return res.status(403).json({ error: 'admin only' });
+  if (!isWorkflowStaff(req)) return res.status(403).json({ error: 'Your role is not permitted to manage media' });
   const m = (db.product_media || []).find(x => x.id === req.params.id);
   if (!m || !mediaVisible(m, req)) return res.status(404).json({ error: 'not found' });
   if (req.body.primary === true) (db.product_media || []).filter(s => s.productId === m.productId && s.type === m.type).forEach(s => { s.primary = false; });
-  for (const k of ['primary', 'visible', 'sortOrder', 'url']) if (req.body[k] !== undefined) m[k] = req.body[k];
+  for (const k of ['primary', 'visible', 'sortOrder', 'url', 'title', 'alt']) if (req.body[k] !== undefined) m[k] = req.body[k];
   if (m.primary && m.type === 'image') { const p = db.products.find(x => x.id === m.productId); if (p) p.images = [m.url, ...(p.images || []).filter(u => u !== m.url)]; }
   save();
   audit(req, 'media.update', 'media', m.id, m.companyId, `Updated media ${m.id}`);
   ok(res, m);
 });
 app.delete('/api/media/:id', scopeCompany, (req, res) => {
-  if (req.ctx.role === 'sales_user') return res.status(403).json({ error: 'admin only' });
+  if (!isWorkflowStaff(req)) return res.status(403).json({ error: 'Your role is not permitted to manage media' });
   const m = (db.product_media || []).find(x => x.id === req.params.id);
   if (!m || !mediaVisible(m, req)) return res.status(404).json({ error: 'not found' });
   db.product_media = db.product_media.filter(x => x.id !== m.id);
   const p = db.products.find(x => x.id === m.productId);
-  if (p) { if (m.type === 'image') p.images = (p.images || []).filter(u => u !== m.url); if (m.type === 'video' && p.video === m.url) p.video = ''; }
+  if (p) {
+    if (m.type === 'image') p.images = (p.images || []).filter(u => u !== m.url);
+    if (m.type === 'video' && p.video === m.url) p.video = '';
+    if (m.type === 'youtube' && p.youtube === m.url) {
+      const next = (db.product_media || []).find(x => x.productId === m.productId && x.type === 'youtube' && x.url !== m.url);
+      p.youtube = next ? next.url : '';
+    }
+  }
   save();
   if (!db.products.some(x => (x.images || []).includes(m.url) || x.video === m.url)) removeStoredMedia(m.url);
   audit(req, 'media.delete', 'media', m.id, m.companyId, `Deleted ${m.type} of ${m.sku || m.productId}`);
@@ -864,6 +993,656 @@ app.put('/api/settings/global', (req, res) => {
   save();
   audit(req, 'settings.global', 'settings', 'global', '', `Updated global settings: ${Object.keys(req.body).join(', ')}`);
   ok(res, db.global_settings);
+});
+
+/* ==========================================================================
+   PRODUCT PUBLISHING WORKFLOW  (ERP → Content Writer → Finance → Sales)
+   ERP INVENTORY PRODUCT RECEIVED → PENDING CONTENT → CONTENT IN PROGRESS →
+   SUBMITTED TO FINANCE → FINANCE REVIEW → RETURNED FOR CORRECTION →
+   PRICING SAVED → PUBLISHED TO SALES
+   ========================================================================== */
+function sanitizeSpecs(raw) {
+  if (raw == null) return {};
+  if (typeof raw !== 'object' || Array.isArray(raw)) { const e = new Error('specs must be an object of label/value pairs'); e.status = 400; throw e; }
+  const out = {};
+  for (const k of Object.keys(raw).slice(0, 120)) {
+    const label = String(k).trim().slice(0, 80);
+    if (!label) continue;
+    const v = raw[k];
+    out[label] = v == null ? '' : String(v).slice(0, 800);
+  }
+  return out;
+}
+const wfMediaStats = id => {
+  const ms = (db.product_media || []).filter(m => m.productId === id);
+  return {
+    total: ms.length,
+    images: ms.filter(m => m.type === 'image').length,
+    documents: ms.filter(m => m.type === 'document').length,
+    videos: ms.filter(m => m.type === 'video').length,
+    youtube: ms.filter(m => m.type === 'youtube').length
+  };
+};
+const wfCategoryName = id => ((db.categories || []).find(c => c.id === id) || {}).name || '';
+const wfContentReady = p => !!(p.desc && String(p.desc).trim() && String(p.desc).trim() !== String(p.name || '').trim() && (p.images || []).length > 0);
+function wfPermissions(p, req) {
+  const stage = stageOf(p);
+  const inContent = WF_CONTENT_EDITABLE.includes(stage);
+  const financeAble = [WF.SUBMITTED, WF.REVIEW, WF.PRICED].includes(stage);
+  return {
+    canEditContent: isContentWriter(req) && inContent,
+    canStartContent: isContentWriter(req) && inContent,
+    canSubmit: isContentWriter(req) && inContent && wfContentReady(p),
+    canStartReview: isFinance(req) && stage === WF.SUBMITTED,
+    canPrice: isFinance(req) && financeAble,
+    canApprove: isFinance(req) && financeAble,
+    canReturn: isFinance(req) && (financeAble || stage === WF.PUBLISHED),
+    canUnpublish: isFinance(req) && stage === WF.PUBLISHED,
+    isPublished: stage === WF.PUBLISHED
+  };
+}
+const wfDecorate = p => ({
+  ...p,
+  stageLabel: WF_LABELS[stageOf(p)] || stageOf(p) || '—',
+  categoryName: wfCategoryName(p.category),
+  companyName: (companyById(p.companyId) || {}).name || p.companyId,
+  mediaStats: wfMediaStats(p.id),
+  contentReady: wfContentReady(p),
+  priceSet: p.price != null
+});
+
+/* queue: products waiting on Content Writer or Finance */
+app.get('/api/workflow', scopeCompany, (req, res) => {
+  if (!wfGuard(req, res, isWorkflowStaff)) return;
+  const co = req.companyId || req.ctx.companyId;
+  const scoped = db.products.filter(p => p.workflow_stage && (req.ctx.role === 'super_admin'
+    ? (!req.query.companyId || req.query.companyId === 'all' || p.companyId === req.query.companyId)
+    : p.companyId === co));
+  const counts = wfCounts(scoped);
+  let list = scoped;
+  if (req.query.stage && req.query.stage !== 'all') {
+    const want = String(req.query.stage).split(',').map(s => s.trim()).filter(Boolean);
+    list = list.filter(p => want.includes(stageOf(p)));
+  }
+  if (req.query.erp === '1') list = list.filter(p => p.erp_synced);
+  if (req.query.cat && req.query.cat !== 'all') list = list.filter(p => p.category === req.query.cat);
+  if (req.query.q) {
+    const q = String(req.query.q).toLowerCase();
+    list = list.filter(p => prodText(p).includes(q));
+  }
+  list.sort((a, b) => String(b.workflow_updated_at || b.created || '').localeCompare(String(a.workflow_updated_at || a.created || '')));
+  const pg = pageOf(list, req);
+  pg.rows = pg.rows.map(wfDecorate);
+  pg.counts = counts;
+  pg.stages = WF_STAGES.map(s => ({ id: s, label: WF_LABELS[s], count: counts[s] }));
+  pg.can = { content: isContentWriter(req), finance: isFinance(req), company: co };
+  ok(res, pg);
+});
+
+/* single product: full content, media, history and what this user may do next */
+app.get('/api/workflow/:id', scopeCompany, (req, res) => {
+  if (!wfGuard(req, res, isWorkflowStaff)) return;
+  const p = wfFind(req, res); if (!p) return;
+  const media = (db.product_media || []).filter(m => m.productId === p.id)
+    .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+  ok(res, {
+    ...wfDecorate(p),
+    media,
+    workflow_history: [...(p.workflow_history || [])].reverse(),
+    permissions: wfPermissions(p, req)
+  });
+});
+
+/* Content Writer: claim a received product for editing */
+app.post('/api/workflow/:id/start-content', scopeCompany, (req, res) => {
+  if (!wfGuard(req, res, isContentWriter)) return;
+  const p = wfFind(req, res); if (!p) return;
+  const st = stageOf(p);
+  if (![WF.PENDING, WF.RETURNED].includes(st)) {
+    return wfReject(res, 409, `This product is already at "${WF_LABELS[st] || st}"`, { stage: st });
+  }
+  pushWorkflow(p, req, 'content.start', WF.IN_PROGRESS, req.body.note);
+  save();
+  audit(req, 'workflow.content_start', 'product', p.id, p.companyId, `Content started for ${p.sku || p.id}`);
+  ok(res, wfDecorate(p));
+});
+
+/* Content Writer: save sales copy + technical specifications (does NOT publish) */
+app.put('/api/workflow/:id/content', scopeCompany, (req, res) => {
+  if (!wfGuard(req, res, isContentWriter)) return;
+  const p = wfFind(req, res); if (!p) return;
+  const st = stageOf(p);
+  if (!WF_CONTENT_EDITABLE.includes(st)) {
+    return wfReject(res, 409, `Content is locked while the product is at "${WF_LABELS[st] || st}"`, { stage: st });
+  }
+  if (req.body.desc != null) {
+    const desc = String(req.body.desc).trim();
+    if (desc.length > 20000) return wfReject(res, 400, 'Description is too long (max 20000 characters)');
+    p.desc = desc;
+  }
+  if (req.body.short != null) {
+    const short = String(req.body.short).trim();
+    if (short.length > 400) return wfReject(res, 400, 'Short description is too long (max 400 characters)');
+    p.short = short;
+  }
+  if (req.body.specs !== undefined) {
+    try { p.specs = sanitizeSpecs(req.body.specs); }
+    catch (e) { return wfReject(res, e.status || 400, e.message); }
+  }
+  p.content_by = req.ctx.name || '';
+  p.content_updated_at = new Date().toISOString();
+  const stage = st === WF.PENDING || st === WF.RETURNED ? WF.IN_PROGRESS : st;
+  pushWorkflow(p, req, 'content.save', stage, req.body.note);
+  save();
+  audit(req, 'workflow.content_save', 'product', p.id, p.companyId, `Saved content for ${p.sku || p.id}`);
+  ok(res, wfDecorate(p));
+});
+
+/* Content Writer: hand off to Finance (never makes the product visible) */
+app.post('/api/workflow/:id/submit', scopeCompany, (req, res) => {
+  if (!wfGuard(req, res, isContentWriter)) return;
+  const p = wfFind(req, res); if (!p) return;
+  const st = stageOf(p);
+  if (!WF_CONTENT_EDITABLE.includes(st)) {
+    return wfReject(res, 409, `Already submitted — the product is at "${WF_LABELS[st] || st}"`, { stage: st });
+  }
+  const problems = [];
+  if (!p.desc || !String(p.desc).trim() || String(p.desc).trim() === String(p.name || '').trim()) {
+    problems.push('A sales description is required before submitting to Finance');
+  }
+  if (!(p.images || []).length) problems.push('At least one product image is required before submitting to Finance');
+  if (problems.length) return wfReject(res, 400, problems.join(' '), { details: problems });
+  pushWorkflow(p, req, 'content.submit', WF.SUBMITTED, req.body.note);
+  p.submitted_by = req.ctx.name || '';
+  p.submitted_at = new Date().toISOString();
+  p.visible = false; // submission alone must never expose the listing
+  save();
+  audit(req, 'workflow.submit_finance', 'product', p.id, p.companyId, `Submitted ${p.sku || p.id} to Finance`);
+  ok(res, wfDecorate(p));
+});
+
+/* Finance: open the item for review (moves it out of the waiting queue) */
+app.post('/api/workflow/:id/start-review', scopeCompany, (req, res) => {
+  if (!wfGuard(req, res, isFinance)) return;
+  const p = wfFind(req, res); if (!p) return;
+  const st = stageOf(p);
+  if (st === WF.REVIEW) return wfReject(res, 409, 'This product is already under Finance review', { stage: st });
+  if (st !== WF.SUBMITTED) {
+    return wfReject(res, 409, `Only products submitted by Content Writer can be reviewed — this one is at "${WF_LABELS[st] || st}"`, { stage: st });
+  }
+  pushWorkflow(p, req, 'finance.start_review', WF.REVIEW, req.body.note);
+  p.finance_by = req.ctx.name || '';
+  save();
+  audit(req, 'workflow.finance_review', 'product', p.id, p.companyId, `Finance review started for ${p.sku || p.id}`);
+  ok(res, wfDecorate(p));
+});
+
+/* Finance: save a price draft — the product stays hidden from Sales */
+app.put('/api/workflow/:id/pricing', scopeCompany, (req, res) => {
+  if (!wfGuard(req, res, isFinance)) return;
+  const p = wfFind(req, res); if (!p) return;
+  const st = stageOf(p);
+  if (st === WF.PUBLISHED) {
+    return wfReject(res, 409, 'Product is already published — return it for correction before changing the price', { stage: st });
+  }
+  if (![WF.SUBMITTED, WF.REVIEW, WF.PRICED].includes(st)) {
+    return wfReject(res, 409, `Pricing cannot be saved while the product is at "${WF_LABELS[st] || st}"`, { stage: st });
+  }
+  if (req.body.price !== undefined) {
+    let price = req.body.price;
+    if (price === '' || price === null) price = null;
+    else {
+      price = Number(price);
+      if (!Number.isFinite(price) || price <= 0) return wfReject(res, 400, 'Selling price must be a number greater than 0 (leave empty for quotation-only)');
+    }
+    p.price = price;
+  }
+  if (req.body.note != null) p.pricing_note = String(req.body.note).slice(0, 1000);
+  p.priced_by = req.ctx.name || '';
+  p.priced_at = new Date().toISOString();
+  const alreadyPriced = st === WF.PRICED;
+  pushWorkflow(p, req, 'pricing.save_draft', alreadyPriced ? null : WF.PRICED, req.body.note);
+  p.visible = false; // a saved draft is never publicly visible
+  save();
+  audit(req, 'workflow.pricing_save', 'product', p.id, p.companyId, `Pricing saved for ${p.sku || p.id} (${p.price == null ? 'quotation-only' : p.price})`);
+  ok(res, wfDecorate(p));
+});
+
+/* Finance: approve pricing and publish to the Salesperson catalog */
+app.post('/api/workflow/:id/approve', scopeCompany, (req, res) => {
+  if (!wfGuard(req, res, isFinance)) return;
+  const p = wfFind(req, res); if (!p) return;
+  const st = stageOf(p);
+  if (st === WF.PUBLISHED) {
+    return wfReject(res, 409, 'This product has already been approved and published', { stage: st });
+  }
+  if (![WF.SUBMITTED, WF.REVIEW, WF.PRICED].includes(st)) {
+    return wfReject(res, 409, `Only submitted or priced products can be published — this one is at "${WF_LABELS[st] || st}"`, { stage: st });
+  }
+  if (p.price == null && req.body.allow_rfq !== true) {
+    return wfReject(res, 400, 'A selling price is required before publishing. Set a price, or confirm quotation-only listing with allow_rfq: true.',
+      { needsPrice: true });
+  }
+  pushWorkflow(p, req, 'finance.approve', WF.PUBLISHED, req.body.note);
+  p.approved_by = req.ctx.name || '';
+  p.approved_at = new Date().toISOString();
+  p.published_at = p.approved_at;
+  p.visible = true;   // ← the moment the listing becomes visible to Salespeople
+  p.active = true;
+  p.archived = false;
+  save();
+  audit(req, 'workflow.publish', 'product', p.id, p.companyId, `Approved and published ${p.sku || p.id} to Sales (price: ${p.price == null ? 'quotation-only' : p.price})`);
+  ok(res, wfDecorate(p));
+});
+
+/* Finance: send back to Content Writer with review comments (also unpublishes) */
+app.post('/api/workflow/:id/return', scopeCompany, (req, res) => {
+  if (!wfGuard(req, res, isFinance)) return;
+  const p = wfFind(req, res); if (!p) return;
+  const st = stageOf(p);
+  if (![WF.SUBMITTED, WF.REVIEW, WF.PRICED, WF.PUBLISHED].includes(st)) {
+    return wfReject(res, 409, `This product is at "${WF_LABELS[st] || st}" and has not been submitted to Finance yet`, { stage: st });
+  }
+  const comment = req.body.comment != null ? String(req.body.comment).trim() : '';
+  if (comment.length < 3) return wfReject(res, 400, 'A review comment is required so the Content Writer knows what to fix');
+  pushWorkflow(p, req, 'finance.return', WF.RETURNED, comment);
+  p.return_comment = comment.slice(0, 1000);
+  p.returned_by = req.ctx.name || '';
+  p.returned_at = new Date().toISOString();
+  p.visible = false; // returned products must never stay visible
+  save();
+  audit(req, 'workflow.return_correction', 'product', p.id, p.companyId, `Returned ${p.sku || p.id} for correction: ${comment.slice(0, 120)}`);
+  ok(res, wfDecorate(p));
+});
+
+/* ==========================================================================
+   ERP INVENTORY ↔ RETAIL STORE SERVER-TO-SERVER INTEGRATION
+   Endpoints for secure product synchronization, status checks & stock consistency
+   ========================================================================== */
+
+const ERP_INTEGRATION_KEY = process.env.ERP_INTEGRATION_KEY || 'erp_sec_c4f8d9b1a03e7f22589e6d4c';
+const ERP_API_BASE_URL = process.env.ERP_API_BASE_URL || 'http://localhost:5173';
+
+// Idempotency cache (key -> { data, ts })
+const erpIdempotencyCache = new Map();
+function getIdempotent(key) {
+  if (!key) return null;
+  const entry = erpIdempotencyCache.get(key);
+  if (entry && (Date.now() - entry.ts < 1000 * 60 * 30)) return entry.data;
+  return null;
+}
+function setIdempotent(key, data) {
+  if (!key) return;
+  erpIdempotencyCache.set(key, { data, ts: Date.now() });
+  if (erpIdempotencyCache.size > 2000) {
+    const oldest = Array.from(erpIdempotencyCache.keys()).slice(0, 500);
+    oldest.forEach(k => erpIdempotencyCache.delete(k));
+  }
+}
+
+// Server-to-server auth middleware for ERP
+function verifyErpServerAuth(req, res, next) {
+  const authHeader = req.headers['authorization'] || '';
+  const apiKeyHeader = req.headers['x-erp-api-key'] || req.headers['x-api-key'] || '';
+  let token = apiKeyHeader;
+  if (!token && authHeader.startsWith('Bearer ')) {
+    token = authHeader.slice(7).trim();
+  }
+  if (!token || token !== ERP_INTEGRATION_KEY) {
+    return res.status(401).json({ error: 'Unauthorized: Invalid or missing ERP integration key' });
+  }
+
+  // Company verification
+  const co = req.headers['x-company-id'] || req.body.companyId;
+  if (!co) {
+    return res.status(400).json({ error: 'Company ID required (via x-company-id header or body)' });
+  }
+  const company = companyById(co);
+  if (!company) {
+    return res.status(404).json({ error: `Company "${co}" not found in Retail Store` });
+  }
+  req.erpCompany = company;
+  next();
+}
+
+// Map ERP category or name to valid Retail Store category ID
+function resolveStoreCategory(catInput, catNameInput) {
+  const norm = str => (str || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  const cats = db.categories || [];
+  if (catInput) {
+    const direct = cats.find(c => c.id === catInput || norm(c.id) === norm(catInput));
+    if (direct) return direct.id;
+  }
+  if (catNameInput) {
+    const byName = cats.find(c => norm(c.name) === norm(catNameInput));
+    if (byName) return byName.id;
+    const n = norm(catNameInput);
+    if (n.includes('tool') || n.includes('mill') || n.includes('drill') || n.includes('insert')) return 'cutting-tools';
+    if (n.includes('raw') || n.includes('material') || n.includes('metal') || n.includes('steel') || n.includes('aluminum')) return 'raw-materials';
+    if (n.includes('spare') || n.includes('bearing') || n.includes('part') || n.includes('component')) return 'spares';
+    if (n.includes('hold') || n.includes('chuck') || n.includes('collet') || n.includes('vise')) return 'workholding';
+    if (n.includes('machine') || n.includes('cnc')) return 'cnc-machines';
+    if (n.includes('measur') || n.includes('gauge') || n.includes('caliper')) return 'measuring';
+    if (n.includes('elect') || n.includes('sensor') || n.includes('servo')) return 'electrical';
+    if (n.includes('safe') || n.includes('ppe')) return 'safety';
+    if (n.includes('consum') || n.includes('oil') || n.includes('coolant')) return 'consumables';
+  }
+  return cats[0]?.id || 'cutting-tools';
+}
+
+// Single ERP Product Synchronizer with explicit field ownership
+function syncSingleErpProduct(item, companyId) {
+  const {
+    erp_item_id,
+    sku,
+    name,
+    brand,
+    mpn,
+    category,
+    category_name,
+    uom,
+    stock,
+    warehouse,
+    specification,
+    specs,
+    status,
+    is_retail_warehouse,
+    is_retail,
+    image_url,
+    rate
+  } = item;
+
+  if (!sku || !String(sku).trim()) throw new Error('Product SKU is required');
+  if (!name || !String(name).trim()) throw new Error('Product Name is required');
+
+  const cleanSku = String(sku).trim();
+  const cleanName = String(name).trim();
+  const stockQty = Math.max(0, Number(stock ?? 0));
+  const finalErpId = erp_item_id || item.id || '';
+  const isRetail = (is_retail_warehouse !== false) && (is_retail !== false);
+  const isEligible = isRetail && (status || 'Active').toLowerCase() === 'active';
+
+  // Find existing product by ERP ID or (SKU + Company)
+  let p = db.products.find(x => x.companyId === companyId && (
+    (finalErpId && x.erp_item_id === finalErpId) ||
+    x.sku.toLowerCase() === cleanSku.toLowerCase()
+  ));
+
+  // Case 1: NOT in retail warehouse or Inactive
+  if (!isEligible) {
+    if (p) {
+      // Deactivate / hide in store, preserve product record & order history
+      p.visible = false;
+      p.active = false;
+      p.stock = stockQty;
+      p.warehouse = warehouse || p.warehouse || 'Other Warehouse';
+      p.erp_synced = true;
+      p.erp_last_synced_at = new Date().toISOString();
+      return { action: 'deactivated', product: p };
+    }
+    return { action: 'ignored', message: 'Item is not assigned to Retail Store warehouse' };
+  }
+
+  // Case 2: In retail warehouse and Active
+  const catId = resolveStoreCategory(category, category_name);
+
+  if (p) {
+    // UPDATE existing product with strict field ownership:
+    // Update ONLY ERP-owned fields
+    p.erp_item_id = finalErpId || p.erp_item_id || '';
+    p.sku = cleanSku;
+    p.name = cleanName;
+    p.stock = stockQty; // ERP is source of truth for stock!
+    p.warehouse = warehouse || p.warehouse || 'Retail Store Warehouse';
+    p.uom = uom || p.uom || 'Pc';
+    p.active = true;
+    p.archived = false;
+    p.erp_synced = true;
+    p.erp_last_synced_at = new Date().toISOString();
+
+    // Technical specifications from ERP merged in
+    if (specs && typeof specs === 'object') {
+      p.specs = { ...(p.specs || {}), ...specs };
+    }
+    if (brand && !p.brand) p.brand = brand;
+    if (mpn && !p.mpn) p.mpn = mpn;
+
+    // PRESERVE Content Writer & Finance owned fields:
+    // If desc or short were empty, provide fallback from ERP specification
+    const initialSpec = specification || item.description || '';
+    if (!p.desc && initialSpec) p.desc = initialSpec;
+    if (!p.short && initialSpec) p.short = initialSpec;
+    // p.price, p.images, p.video, p.visible, p.featured, p.sold are NOT overwritten!
+
+    return { action: 'updated', product: p };
+  }
+
+  // CREATE new product in Retail Store
+  const newId = uid('P-', db.products);
+  const initialSpec = specification || item.description || cleanName;
+  const initialPrice = (rate != null && Number(rate) > 0) ? Number(rate) :
+    (item.price != null && Number(item.price) > 0 ? Number(item.price) : null);
+  const newProduct = {
+    id: newId,
+    name: cleanName,
+    sku: cleanSku,
+    brand: brand || 'ArgusCNC',
+    mpn: mpn || '',
+    short: initialSpec,
+    desc: initialSpec,
+    price: initialPrice, // null = Quotation-only RFQ until Finance sets it
+    uom: uom || 'Pc',
+    stock: stockQty,
+    moq: 1,
+    leadTime: 'Ex-stock',
+    warehouse: warehouse || 'Retail Store Warehouse',
+    category: catId,
+    visible: false, // initial draft state for Content Writer & Finance review!
+    active: true,
+    archived: false,
+    featured: false,
+    specs: specs && typeof specs === 'object' ? specs : (specification ? { 'Specification': specification } : {}),
+    images: (image_url && typeof image_url === 'string') ? [image_url] : [],
+    video: '',
+    companyId: companyId,
+    erp_synced: true,
+    erp_item_id: erp_item_id || '',
+    erp_last_synced_at: new Date().toISOString(),
+    workflow_stage: 'content_pending',
+    created: new Date().toISOString().slice(0, 10),
+    sold: 0
+  };
+
+  db.products.unshift(newProduct);
+  return { action: 'created', product: newProduct };
+}
+
+// Trigger ERP stock deduction when a sales order contains ERP-synced items
+async function triggerErpOrderDeduction(order, lines) {
+  const erpLines = [];
+  for (const l of lines) {
+    const p = db.products.find(x => x.id === l.pid);
+    if (p && (p.erp_synced || p.erp_item_id)) {
+      erpLines.push({
+        pid: p.id,
+        erp_item_id: p.erp_item_id || p.id,
+        sku: p.sku,
+        qty: l.qty,
+        price: l.price
+      });
+    }
+  }
+  if (!erpLines.length) return;
+
+  order.erp_sync_status = 'pending_deduction';
+  order.erp_deducted = false;
+  order.erp_items = erpLines;
+
+  const erpBase = process.env.ERP_API_BASE_URL || 'http://localhost:5173';
+  const erpKey = process.env.ERP_INTEGRATION_KEY || 'erp_sec_c4f8d9b1a03e7f22589e6d4c';
+
+  try {
+    const resp = await fetch(`${erpBase}/api/retail-sync/order-deduct`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'x-erp-api-key': erpKey,
+        'x-company-id': order.companyId,
+        'x-idempotency-key': `erp-deduct-${order.id}`
+      },
+      body: JSON.stringify({
+        order_id: order.id,
+        idempotency_key: `erp-deduct-${order.id}`,
+        company_id: order.companyId,
+        customer: order.customer,
+        items: erpLines
+      })
+    });
+    if (resp.ok) {
+      const data = await resp.json();
+      order.erp_deducted = true;
+      order.erp_sync_status = 'deducted';
+      order.erp_deducted_at = new Date().toISOString();
+      order.erp_movement_refs = data.movements || [];
+      delete order.erp_deduction_error;
+      save();
+    } else {
+      const txt = await resp.text();
+      order.erp_deducted = false;
+      order.erp_sync_status = 'deduction_failed';
+      order.erp_deduction_error = txt;
+      save();
+    }
+  } catch (err) {
+    order.erp_deducted = false;
+    order.erp_sync_status = 'deduction_failed';
+    order.erp_deduction_error = err.message;
+    save();
+  }
+}
+
+// 1. Handshake & Health Endpoint
+app.get('/api/integrations/erp/status', verifyErpServerAuth, (req, res) => {
+  const co = req.erpCompany;
+  const prods = (db.products || []).filter(p => p.companyId === co.id);
+  const synced = prods.filter(p => p.erp_synced);
+  const visible = prods.filter(p => p.visible && !p.archived);
+  const wfProducts = prods.filter(p => p.workflow_stage);
+  const pendingContent = wfProducts.filter(p => [WF.PENDING, WF.IN_PROGRESS, WF.RETURNED].includes(stageOf(p)));
+  const pendingFinance = wfProducts.filter(p => [WF.SUBMITTED, WF.REVIEW, WF.PRICED].includes(stageOf(p)));
+  const publishedWf = wfProducts.filter(p => stageOf(p) === WF.PUBLISHED);
+
+  ok(res, {
+    status: 'connected',
+    time: new Date().toISOString(),
+    store: {
+      name: co.name,
+      code: co.code || co.id,
+      companyId: co.id,
+      storeStatus: co.storeStatus || co.status || 'active'
+    },
+    metrics: {
+      totalProducts: prods.length,
+      erpSyncedProducts: synced.length,
+      visibleProducts: visible.length,
+      pendingContentReview: pendingContent.length,
+      pendingFinanceReview: pendingFinance.length,
+      publishedProducts: publishedWf.length,
+      workflowProducts: wfProducts.length
+    }
+  });
+});
+
+// 2. Synchronize Single Product
+app.post('/api/integrations/erp/sync-product', verifyErpServerAuth, (req, res) => {
+  const co = req.erpCompany.id;
+  const idempotencyKey = req.headers['x-idempotency-key'] || req.body.idempotency_key;
+
+  if (idempotencyKey) {
+    const cached = getIdempotent(idempotencyKey);
+    if (cached) return ok(res, { ...cached, replayed: true });
+  }
+
+  try {
+    const result = syncSingleErpProduct(req.body, co);
+    save();
+    const actionDesc = result.action === 'created' ? `Created SKU ${result.product?.sku} from ERP` :
+      result.action === 'updated' ? `Updated SKU ${result.product?.sku} from ERP (stock: ${result.product?.stock})` :
+      result.action === 'deactivated' ? `Deactivated SKU ${result.product?.sku} (moved away / inactive in ERP)` :
+      `Ignored non-retail item ${req.body.sku}`;
+
+    audit(req, `erp.sync_${result.action}`, 'product', result.product?.id || req.body.sku, co, actionDesc);
+
+    const responsePayload = {
+      ok: true,
+      action: result.action,
+      product: result.product || null,
+      message: result.message || undefined
+    };
+
+    if (idempotencyKey) setIdempotent(idempotencyKey, responsePayload);
+    ok(res, responsePayload);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// 3. Batch Product Synchronization
+app.post('/api/integrations/erp/sync-batch', verifyErpServerAuth, (req, res) => {
+  const co = req.erpCompany.id;
+  const items = Array.isArray(req.body.items) ? req.body.items : [];
+  const idempotencyKey = req.headers['x-idempotency-key'] || req.body.idempotency_key;
+
+  if (idempotencyKey) {
+    const cached = getIdempotent(idempotencyKey);
+    if (cached) return ok(res, cached);
+  }
+
+  const results = { total: items.length, created: 0, updated: 0, deactivated: 0, ignored: 0, errors: [] };
+
+  for (let i = 0; i < items.length; i++) {
+    const it = items[i];
+    try {
+      const res = syncSingleErpProduct(it, co);
+      if (res.action === 'created') results.created++;
+      else if (res.action === 'updated') results.updated++;
+      else if (res.action === 'deactivated') results.deactivated++;
+      else if (res.action === 'ignored') results.ignored++;
+    } catch (e) {
+      results.errors.push({ index: i, sku: it.sku || null, error: e.message });
+    }
+  }
+
+  if (results.created > 0 || results.updated > 0 || results.deactivated > 0) {
+    save();
+  }
+
+  audit(req, 'erp.sync_batch', 'product_batch', `batch-${Date.now()}`, co, `Batch sync: ${results.created} created, ${results.updated} updated, ${results.deactivated} deactivated, ${results.errors.length} errors`);
+
+  const responsePayload = { ok: true, ...results };
+  if (idempotencyKey) setIdempotent(idempotencyKey, responsePayload);
+  ok(res, responsePayload);
+});
+
+// 4. Reconcile Failed Order Deductions
+app.post('/api/integrations/erp/reconcile-orders', verifyErpServerAuth, async (req, res) => {
+  const co = req.erpCompany.id;
+  const pendingOrders = (db.orders || []).filter(o => o.companyId === co && o.erp_sync_status === 'deduction_failed');
+
+  let reconciled = 0;
+  let stillFailed = 0;
+
+  for (const o of pendingOrders) {
+    try {
+      await triggerErpOrderDeduction(o, o.items || []);
+      if (o.erp_deducted) reconciled++;
+      else stillFailed++;
+    } catch (e) {
+      stillFailed++;
+    }
+  }
+
+  ok(res, { ok: true, pendingTotal: pendingOrders.length, reconciled, stillFailed });
 });
 
 /* serve frontend (same origin → no CORS issues) */

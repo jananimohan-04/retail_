@@ -9,6 +9,8 @@ export const useAuth = () => useContext(AuthCtx);
 const DEMO = {
   super_admin: { role: 'super_admin', name: 'Janani Mohan', companyId: null, email: 'jananimohan44@gmail.com' },
   company_admin: { role: 'company_admin', name: 'argus', companyId: 'C-ARGUS', email: 'argushexadoc2021@gmail.com' },
+  content_writer: { role: 'content_writer', name: 'Content Writer', companyId: 'C-ARGUS', email: 'content.writer@arguscnc.com' },
+  finance: { role: 'finance', name: 'Finance Reviewer', companyId: 'C-ARGUS', email: 'finance@arguscnc.com' },
   sales_user: { role: 'sales_user', name: 'janani', companyId: 'C-ARGUS', email: 'jananimohan1604@gmail.com' }
 };
 

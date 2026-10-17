@@ -5,7 +5,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   LayoutDashboard, Building2, Boxes, FolderTree, Image as ImageIcon, 
   Receipt, FileText, Settings, ShieldCheck, Store, Home, ShoppingCart, 
-  Package, User, Search, Menu, X, LogOut, ChevronRight
+  Package, User, Search, Menu, X, LogOut, ChevronRight,
+  PanelLeftClose, PanelLeftOpen, Maximize2, Minimize2,
+  PenLine, IndianRupee, ClipboardCheck
 } from 'lucide-react';
 import { useAuth } from './auth';
 import { getCart } from './api';
@@ -80,6 +82,11 @@ export function Sidebar({ counts, onItemClick }) {
           {sideLink('/super/audit', 'Audit Logs', ShieldCheck, null, onItemClick)}
         </div>
         <div>
+          <div className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-3.5 mb-1.5">PUBLISHING</div>
+          {sideLink('/content', 'Content Writer', PenLine, null, onItemClick)}
+          {sideLink('/finance', 'Finance Review', IndianRupee, null, onItemClick)}
+        </div>
+        <div>
           <div className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-3.5 mb-1.5">STOREFRONT</div>
           {sideLink('/store/home', 'View Storefront', Store, null, onItemClick)}
         </div>
@@ -104,8 +111,53 @@ export function Sidebar({ counts, onItemClick }) {
           {sideLink('/admin/settings', 'Store Settings', Settings, null, onItemClick)}
         </div>
         <div>
+          <div className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-3.5 mb-1.5">PUBLISHING</div>
+          {sideLink('/content', 'Content Writer', PenLine, null, onItemClick)}
+          {sideLink('/finance', 'Finance Review', IndianRupee, null, onItemClick)}
+        </div>
+        <div>
           <div className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-3.5 mb-1.5">STOREFRONT</div>
           {sideLink('/store/home', 'Live Store', Store, null, onItemClick)}
+        </div>
+      </aside>
+    );
+  }
+
+  if (role === 'content_writer') {
+    return (
+      <aside className="w-full flex flex-col gap-5 py-2">
+        <div>
+          <div className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-3.5 mb-1.5">
+            {companyTitle} • CONTENT
+          </div>
+          {sideLink('/content', 'Content Queue', PenLine, counts?.pendingContent || '', onItemClick)}
+        </div>
+        <div>
+          <div className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-3.5 mb-1.5">GUIDANCE</div>
+          <p className="px-3.5 text-[11px] leading-relaxed text-slate-500">
+            Products arrive here automatically from ERP Inventory. Write the sales copy, attach media, then
+            <span className="font-bold text-slate-700"> Submit to Finance</span> for pricing.
+          </p>
+        </div>
+      </aside>
+    );
+  }
+
+  if (role === 'finance') {
+    return (
+      <aside className="w-full flex flex-col gap-5 py-2">
+        <div>
+          <div className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-3.5 mb-1.5">
+            {companyTitle} • FINANCE
+          </div>
+          {sideLink('/finance', 'Review & Pricing', IndianRupee, counts?.financeQueue || '', onItemClick)}
+        </div>
+        <div>
+          <div className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-3.5 mb-1.5">GUIDANCE</div>
+          <p className="px-3.5 text-[11px] leading-relaxed text-slate-500">
+            Review submitted content, set the selling price, then
+            <span className="font-bold text-slate-700"> Approve &amp; Publish</span> to make the listing visible to Salespeople.
+          </p>
         </div>
       </aside>
     );
@@ -145,7 +197,7 @@ export function Sidebar({ counts, onItemClick }) {
   );
 }
 
-export function Topbar({ onMobileToggle }) {
+export function Topbar({ onMobileToggle, sidebarOpen, onToggleSidebar, noSide }) {
   const { me, loginAs, logout } = useAuth();
   const [q, setQ] = useState('');
   const nav = useNavigate();
@@ -167,11 +219,18 @@ export function Topbar({ onMobileToggle }) {
     return () => window.removeEventListener('keydown', handleKey);
   }, []);
 
-  const roleLabel = (me?.role || 'sales_user').replace('_', ' ');
+  const ROLE_LABELS = {
+    super_admin: 'Super Admin',
+    company_admin: 'Company Admin',
+    content_writer: 'Content Writer',
+    finance: 'Finance',
+    sales_user: 'Sales'
+  };
+  const roleLabel = ROLE_LABELS[me?.role] || 'Sales';
 
   return (
-    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-xs">
-      <div className="bg-slate-900 text-slate-300 text-[11px] font-medium py-1.5 px-4 sm:px-8 border-b border-slate-800 flex items-center justify-between">
+    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-xs w-full">
+      <div className="bg-slate-900 text-slate-300 text-[11px] font-medium py-1.5 px-4 sm:px-8 border-b border-slate-800 flex items-center justify-between w-full">
         <div className="flex items-center gap-2 truncate">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
           <span className="font-bold text-white">ARGUSCNC ERP</span>
@@ -185,23 +244,35 @@ export function Topbar({ onMobileToggle }) {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+      <div className="w-full px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={onMobileToggle}
-            className="lg:hidden p-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors"
+            className="lg:hidden p-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer"
             aria-label="Toggle menu"
           >
             <Menu className="w-5 h-5" />
           </button>
 
-          <Link to="/store/home" className="flex items-center gap-2 group">
+          <Link to="/store/home" className="flex items-center gap-2 group flex-shrink-0">
             <img src="assets/argus-logo.png" alt="ARGUSCNC" className="h-8 w-auto object-contain transition-transform group-hover:scale-105 duration-200" />
           </Link>
+
+          {!noSide && (
+            <button
+              type="button"
+              onClick={onToggleSidebar}
+              title={sidebarOpen ? "Full page view (hide sidebar)" : "Show sidebar"}
+              className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200/80 hover:bg-slate-100 text-slate-700 hover:text-slate-900 transition-colors text-xs font-bold cursor-pointer ml-2"
+            >
+              {sidebarOpen ? <PanelLeftClose className="w-4 h-4 text-slate-500" /> : <PanelLeftOpen className="w-4 h-4 text-blue-600" />}
+              <span className="hidden xl:inline">{sidebarOpen ? 'Full Page' : 'Show Sidebar'}</span>
+            </button>
+          )}
         </div>
 
-        <form onSubmit={submit} className="flex-1 max-w-lg hidden md:flex items-center relative">
+        <form onSubmit={submit} className="flex-1 max-w-2xl hidden md:flex items-center relative">
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 pointer-events-none" />
           <input
             id="headerSearchInput"
@@ -213,33 +284,47 @@ export function Topbar({ onMobileToggle }) {
           <kbd className="absolute right-3 px-1.5 py-0.5 text-[10px] font-mono font-semibold text-slate-400 bg-white border border-slate-200 rounded-md pointer-events-none shadow-xs">/</kbd>
         </form>
 
-        <div className="flex items-center gap-2.5 sm:gap-3.5">
+        <div className="flex items-center gap-2.5 sm:gap-3.5 flex-shrink-0">
           {me && me.google ? (
             <div className="hidden sm:flex items-center gap-2 bg-slate-100 px-3 py-1.5 rounded-full border border-slate-200">
               <span className="w-2 h-2 rounded-full bg-emerald-500" />
-              <span className="text-xs font-bold text-slate-800 truncate max-w-[120px]">{me.name}</span>
+              <span className="text-xs font-bold text-slate-800 truncate max-w-[140px]">{me.name}</span>
               <span className="text-[10px] uppercase font-extrabold text-blue-600 tracking-wider">({roleLabel})</span>
             </div>
           ) : (
-            <div className="hidden xl:flex items-center gap-1.5 p-1 bg-slate-100 rounded-full border border-slate-200/80 text-[11px] font-bold">
+            <div className="hidden xl:flex items-center gap-1 p-1 bg-slate-100 rounded-full border border-slate-200/80 text-[11px] font-bold flex-wrap">
               <button
                 type="button"
                 onClick={() => loginAs('super_admin')}
-                className={`px-3 py-1 rounded-full transition-all ${me?.role === 'super_admin' ? 'bg-slate-900 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
+                className={`px-2.5 py-1 rounded-full transition-all cursor-pointer ${me?.role === 'super_admin' ? 'bg-slate-900 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
               >
                 Super
               </button>
               <button
                 type="button"
                 onClick={() => loginAs('company_admin')}
-                className={`px-3 py-1 rounded-full transition-all ${me?.role === 'company_admin' ? 'bg-slate-900 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
+                className={`px-2.5 py-1 rounded-full transition-all cursor-pointer ${me?.role === 'company_admin' ? 'bg-slate-900 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
               >
                 Admin
               </button>
               <button
                 type="button"
+                onClick={() => loginAs('content_writer')}
+                className={`px-2.5 py-1 rounded-full transition-all cursor-pointer ${me?.role === 'content_writer' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
+              >
+                Content
+              </button>
+              <button
+                type="button"
+                onClick={() => loginAs('finance')}
+                className={`px-2.5 py-1 rounded-full transition-all cursor-pointer ${me?.role === 'finance' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
+              >
+                Finance
+              </button>
+              <button
+                type="button"
                 onClick={() => loginAs('sales_user')}
-                className={`px-3 py-1 rounded-full transition-all ${me?.role === 'sales_user' ? 'bg-slate-900 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
+                className={`px-2.5 py-1 rounded-full transition-all cursor-pointer ${me?.role === 'sales_user' ? 'bg-slate-900 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
               >
                 Sales
               </button>
@@ -248,7 +333,7 @@ export function Topbar({ onMobileToggle }) {
 
           <Link
             to="/store/cart"
-            className="relative p-2.5 rounded-xl border border-slate-200/90 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 transition-all duration-200 shadow-xs group"
+            className="relative p-2.5 rounded-xl border border-slate-200/90 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 transition-all duration-200 shadow-xs group cursor-pointer"
             aria-label="Shopping Cart"
           >
             <ShoppingCart className="w-4 h-4 transition-transform group-hover:scale-110" />
@@ -265,7 +350,7 @@ export function Topbar({ onMobileToggle }) {
 
           <Link
             to="/store/profile"
-            className="w-9 h-9 rounded-xl bg-slate-900 text-white flex items-center justify-center text-xs font-extrabold shadow-sm hover:ring-2 hover:ring-blue-500 hover:ring-offset-2 transition-all"
+            className="w-9 h-9 rounded-xl bg-slate-900 text-white flex items-center justify-center text-xs font-extrabold shadow-sm hover:ring-2 hover:ring-blue-500 hover:ring-offset-2 transition-all cursor-pointer"
             title={me?.name ? `${me.name} (${roleLabel})` : 'Profile'}
           >
             {((me?.name) || 'A')[0].toUpperCase()}
@@ -274,7 +359,7 @@ export function Topbar({ onMobileToggle }) {
           <button
             type="button"
             onClick={() => { logout(); nav('/login'); }}
-            className="p-2.5 rounded-xl text-slate-500 hover:text-rose-600 hover:bg-rose-50 border border-slate-200/60 transition-colors"
+            className="p-2.5 rounded-xl text-slate-500 hover:text-rose-600 hover:bg-rose-50 border border-slate-200/60 transition-colors cursor-pointer"
             title="Sign Out"
           >
             <LogOut className="w-4 h-4" />
@@ -287,29 +372,55 @@ export function Topbar({ onMobileToggle }) {
 
 export function Shell({ counts, noSide, children }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    try {
+      const saved = localStorage.getItem('cncforge_sidebar_open');
+      return saved !== null ? saved === 'true' : true;
+    } catch { return true; }
+  });
   const location = useLocation();
+
+  const toggleSidebar = () => {
+    setSidebarOpen((prev) => {
+      const next = !prev;
+      try { localStorage.setItem('cncforge_sidebar_open', String(next)); } catch {}
+      return next;
+    });
+  };
 
   useEffect(() => {
     setMobileOpen(false);
   }, [location.pathname]);
 
-  return (
-    <div className="min-h-screen flex flex-col bg-slate-50/60 text-slate-900 font-sans">
-      <Topbar onMobileToggle={() => setMobileOpen(true)} />
+  const showSidebar = !noSide && sidebarOpen;
 
-      <div className={`max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 flex-1 ${noSide ? '' : 'grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-8 items-start'}`}>
-        {!noSide && (
+  return (
+    <div className="min-h-screen flex flex-col bg-slate-50/60 text-slate-900 font-sans w-full">
+      <Topbar 
+        onMobileToggle={() => setMobileOpen(true)} 
+        sidebarOpen={sidebarOpen}
+        onToggleSidebar={toggleSidebar}
+        noSide={noSide}
+      />
+
+      <div className={`w-full px-4 sm:px-6 lg:px-8 py-6 flex-1 ${
+        showSidebar 
+          ? 'grid grid-cols-1 lg:grid-cols-[250px_1fr] xl:grid-cols-[270px_1fr] gap-6 items-start' 
+          : 'w-full'
+      }`}>
+        {showSidebar && (
           <div className="hidden lg:block sticky top-24 bg-white rounded-2xl border border-slate-200/80 p-3 shadow-xs max-h-[calc(100vh-7rem)] overflow-y-auto">
             <Sidebar counts={counts} />
           </div>
         )}
 
-        <main className="w-full min-w-0">
+        <main className="w-full min-w-0 flex-1">
           <motion.div
             key={location.pathname}
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.22, ease: 'easeOut' }}
+            className="w-full"
           >
             {children}
           </motion.div>
@@ -338,7 +449,7 @@ export function Shell({ counts, noSide, children }) {
                 <button
                   type="button"
                   onClick={() => setMobileOpen(false)}
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 cursor-pointer"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -349,8 +460,8 @@ export function Shell({ counts, noSide, children }) {
         )}
       </AnimatePresence>
 
-      <footer className="border-t border-slate-200 bg-white py-6 mt-12 text-xs text-slate-500">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
+      <footer className="border-t border-slate-200 bg-white py-6 mt-12 text-xs text-slate-500 w-full">
+        <div className="w-full px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
           <div>
             <span className="font-bold text-slate-800">ARGUSCNC ERP Industrial Procurement</span> • Connected B2B Factory Platform
           </div>
