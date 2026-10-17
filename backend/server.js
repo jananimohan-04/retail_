@@ -77,8 +77,49 @@ let db;
 try { db = JSON.parse(fs.readFileSync(DB_FILE, 'utf8')); }
 catch { db = seed(); try { fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2)); } catch(e){} }
 if (!Array.isArray(db.quotations)) { db.quotations = []; }
+
+let lastSyncTime = 0;
+let pendingSave = null;
+let syncPromise = null;
+
+async function syncFromStorage(force = false) {
+  if (!SB.enabled || !SB.admin) return;
+  if (!force && (Date.now() - lastSyncTime < 2500)) return;
+  if (syncPromise) return syncPromise;
+
+  syncPromise = (async () => {
+    try {
+      const { data, error } = await SB.admin.storage.from('retail-data').download('db.json');
+      if (data && !error) {
+        const text = await data.text();
+        const remoteDb = JSON.parse(text);
+        if (remoteDb && Array.isArray(remoteDb.products)) {
+          Object.assign(db, remoteDb);
+          lastSyncTime = Date.now();
+        }
+      }
+    } catch (err) {
+      console.warn('Sync from Supabase storage warning:', err.message);
+    } finally {
+      syncPromise = null;
+    }
+  })();
+  return syncPromise;
+}
+
 const save = () => {
   try { fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2)); } catch(e){}
+  if (SB.enabled && SB.admin) {
+    const content = JSON.stringify(db, null, 2);
+    pendingSave = SB.admin.storage.from('retail-data').upload('db.json', content, {
+      contentType: 'application/json',
+      upsert: true
+    }).then(() => {
+      lastSyncTime = Date.now();
+    }).catch(err => {
+      console.warn('Failed to persist db to Supabase storage:', err.message);
+    });
+  }
 };
 
 /* versioned migrations (backend/migrations/): additive only, never drop tables */
@@ -107,6 +148,31 @@ const ordersOf = cid => db.orders.filter(o => o.companyId === cid);
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: '2mb' }));
+
+// Middleware: keep db synchronized across Vercel serverless instances and ensure saves complete
+app.use(async (req, res, next) => {
+  if (req.path.startsWith('/api') && req.path !== '/api/health' && req.path !== '/api/config') {
+    const isMutation = ['POST', 'PUT', 'DELETE', 'PATCH'].includes(req.method);
+    await syncFromStorage(isMutation);
+  }
+  const origJson = res.json.bind(res);
+  const origSend = res.send.bind(res);
+  res.json = async function(body) {
+    if (pendingSave) {
+      try { await pendingSave; } catch(e){}
+      pendingSave = null;
+    }
+    return origJson(body);
+  };
+  res.send = async function(body) {
+    if (pendingSave) {
+      try { await pendingSave; } catch(e){}
+      pendingSave = null;
+    }
+    return origSend(body);
+  };
+  next();
+});
 
 /* auth context: Google (Supabase Auth) Bearer token verified server-side;
    falls back to demo headers only when no token is supplied (offline demo) */
@@ -207,14 +273,14 @@ app.post('/api/companies', (req, res) => {
   if (!name || !city) return res.status(400).json({ error: 'name and city required' });
   const finalCode = (code || ('C-' + name.slice(0, 1).toUpperCase() + Math.floor(Math.random() * 90 + 10))).trim();
   if (db.companies.some(x => x.id === finalCode || x.code === finalCode)) return res.status(400).json({ error: 'company code already exists' });
+  const cleanAdmin = String(adminEmail || '').toLowerCase().trim();
+  if (adminName && !cleanAdmin) return res.status(400).json({ error: 'admin email required to provision Company Admin' });
+  if (cleanAdmin && db.users.some(u => (u.email || '').toLowerCase().trim() === cleanAdmin)) return res.status(400).json({ error: 'admin email already registered' });
   const today = new Date().toISOString().slice(0, 10);
   const c = { id: finalCode, code: finalCode, name, logo: '🏭', industry: industry || 'CNC Manufacturing', email: email || '', phone: phone || '', address: address || '', city, state: state || '', pin: pin || '', description: description || '', status: 'active', storeStatus: 'active', plan: plan || 'Starter', orders: 0, revenue: 0, products: 0, users: 1, createdAt: today, updatedAt: today };
   db.companies.unshift(c);
-  if (adminName) {
-    if (!adminEmail) return res.status(400).json({ error: 'admin email required to provision Company Admin' });
-    if (db.users.some(u => u.email === adminEmail)) return res.status(400).json({ error: 'email already registered' });
-    db.users.unshift({ id: 'U-' + Date.now(), name: adminName, role: 'company_admin', companyId: finalCode, email: adminEmail, active: true, createdAt: today });
-  }
+  // an admin email alone is enough — before, no admin was created unless a name was typed too
+  if (cleanAdmin) db.users.unshift({ id: uid('U-', db.users), name: (adminName || cleanAdmin.split('@')[0]).trim(), role: 'company_admin', companyId: finalCode, email: cleanAdmin, active: true, createdAt: today });
   save();
   audit(req, 'company.create', 'company', finalCode, finalCode, `Created ${name} (${finalCode})`);
   ok(res, c);

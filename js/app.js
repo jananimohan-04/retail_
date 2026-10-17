@@ -14,7 +14,7 @@ if (OV.users) {
   saveOv(OV);
 }
 if (OV.products) {
-  OV.products = OV.products.filter(p => !p.id.startsWith('P-ARGUS-') && p.sku !== '2' && p.sku !== 'ARG-COLLET-01' && p.sku !== 'ARG-CNMG-01' && p.sku !== 'ARG-EM10-4F');
+  OV.products = OV.products.filter(p => p.id !== 'P-ARGUS-01' && p.id !== 'P-ARGUS-02');
   saveOv(OV);
 }
 const B = () => window.Backend;
@@ -1337,7 +1337,15 @@ window.App={
     if (btn) { btn.disabled = true; btn.innerText = 'Saving…'; }
     if(live){
       try {
-        if (editId) await B().api.put('/api/products/'+editId,data); else await B().api.post('/api/products',data);
+        const saved = editId ? await B().api.put('/api/products/'+editId,data) : await B().api.post('/api/products',data);
+        if (saved && B()?.cache?.products) {
+          if (editId) {
+            const idx = B().cache.products.findIndex(x => x.id === editId);
+            if (idx >= 0) B().cache.products[idx] = saved;
+          } else {
+            B().cache.products.unshift(saved);
+          }
+        }
       } catch(e) { return fail('Not saved: ' + (e.message || 'server error')); } // never fake a save locally
       await B().refresh().catch(()=>{});
       ui.coD = null;
@@ -1510,7 +1518,7 @@ window.App={
       <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px"><button class="btn btn-ghost btn-sm" onclick="App.closeModal()">Cancel</button><button class="btn btn-primary btn-sm" id="coSaveBtn" onclick="App.saveCompanyModal('${c?c.id:''}')">💾 ${c?'Save changes':'Create company'}</button></div>
     </div>`, true);
   },
-  saveCompanyModal(editId){
+  async saveCompanyModal(editId){
     const err = m => { const e = $('#coFormErr'); if (e) e.textContent = m||''; };
     const btn = $('#coSaveBtn');
     const name = ($('#nc_name')?.value || '').trim();
@@ -1537,26 +1545,14 @@ window.App={
     if (!editId && code && getCompanies().some(x => x.id === code || x.code === code)) return err('Company code already exists.');
     if (btn) { btn.disabled = true; btn.innerText = 'Saving…'; }
     const payload = { name, code: code || undefined, industry, email, logo, phone, city, state, pin, address, description, plan, storeStatus, adminName: adminName || undefined, adminEmail: adminEmail || undefined };
-    const done = async okMsg => {
-      if (B()?.enabled) { try { await B().refresh(); } catch(e){} }
-      App.closeModal(); toast(okMsg, '🏭'); render();
-    };
-    if (B()?.enabled) {
-      const call = editId ? B().api.put('/api/companies/' + editId, payload) : B().api.post('/api/companies', payload);
-      call.then(() => done(editId ? 'Company updated' : name + ' created — available immediately'))
-        .catch(e => { err(e.message); if (btn) { btn.disabled = false; btn.innerText = editId ? '💾 Save changes' : '💾 Create company'; } });
-      return;
-    }
-    if (editId) {
-      const ex = [...getCompanies()].find(x => x.id === editId);
-      if (ex) Object.assign(ex, { ...payload, code: undefined });
-      saveOv(OV); done('Company updated');
-    } else {
-      const id = code || ('C-' + name.slice(0, 1).toUpperCase() + Math.floor(Math.random() * 90 + 10));
-      OV.companies = [{ id, code: id, logo, status: storeStatus, storeStatus, orders: 0, revenue: 0, products: 0, users: 1, createdAt: new Date().toISOString().slice(0,10), ...payload }, ...(OV.companies || [])];
-      if (adminName || adminEmail) OV.users = [{ id: 'U-' + Date.now(), name: adminName || adminEmail, email: adminEmail, role: 'company_admin', companyId: id, active: true }, ...(OV.users || [])];
-      saveOv(OV); done(name + ' created');
-    }
+    const reset = () => { if (btn) { btn.disabled = false; btn.innerText = editId ? '💾 Save changes' : '💾 Create company'; } };
+    // companies and their admins must exist on the server, otherwise the admin's Google login is rejected
+    if (!(await B()?.ensureLive?.())) { reset(); return err('Server not reachable — company NOT saved. Start the backend (npm run dev) and try again.'); }
+    try {
+      if (editId) await B().api.put('/api/companies/' + editId, payload); else await B().api.post('/api/companies', payload);
+    } catch(e) { reset(); return err(e.message); }
+    try { await B().refresh(); } catch(e){}
+    App.closeModal(); toast(editId ? 'Company updated' : name + ' created — admin ' + adminEmail + ' can sign in with Google', '🏭'); render();
   },
   /* ----- suspend / activate with impact warning (never deletes) ----- */
   async coToggle(id, cur){
@@ -1600,7 +1596,7 @@ window.App={
       <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px"><button class="btn btn-ghost btn-sm" onclick="App.closeModal()">Cancel</button><button class="btn btn-primary btn-sm" id="muSaveBtn" onclick="App.saveUserModal()">💾 ${isEdit?'Save changes':'Create user'}</button></div>
     </div>`);
   },
-  saveUserModal(){
+  async saveUserModal(){
     const err = m => { const e = $('#muErr'); if (e) e.textContent = m||''; };
     const btn = $('#muSaveBtn');
     const id = $('#mu_id')?.value || '';
@@ -1617,16 +1613,14 @@ window.App={
     if (!id && getUsers().some(x => (x.email||'').toLowerCase() === email.toLowerCase())) return err('This email is already registered.');
     if (btn) { btn.disabled = true; btn.innerText = 'Saving…'; }
     const payload = id ? { name, mobile, role, companyId } : { name, email, mobile, role, companyId };
-    const done = async msg => { if (B()?.enabled) { try { await B().refresh(); } catch(e){} } App.closeModal(); toast(msg, '👥'); render(); };
-    if (B()?.enabled) {
-      const call = id ? B().api.patch('/api/users/' + id, payload) : B().api.post('/api/users', payload);
-      call.then(() => done(id ? 'User updated' : name + ' added to ' + coName(companyId)))
-        .catch(e => { err(e.message); if (btn) { btn.disabled = false; btn.innerText = id ? '💾 Save changes' : '💾 Create user'; } });
-      return;
-    }
-    if (id) { const ex = [...getUsers()].find(x => x.id === id); if (ex) Object.assign(ex, payload); saveOv(OV); }
-    else { OV.users = [{ id: 'U-' + Date.now(), email, active: true, createdAt: new Date().toISOString().slice(0,10), ...payload }, ...(OV.users || [])]; saveOv(OV); }
-    done(id ? 'User updated' : name + ' added');
+    const done = async msg => { try { await B().refresh(); } catch(e){} App.closeModal(); toast(msg, '👥'); render(); };
+    const reset = () => { if (btn) { btn.disabled = false; btn.innerText = id ? '💾 Save changes' : '💾 Create user'; } };
+    // Google sign-in is checked against the server, so a user saved only in this browser can never log in
+    if (!(await B()?.ensureLive?.())) { reset(); return err('Server not reachable — user NOT created. Start the backend (npm run dev) and try again.'); }
+    try {
+      if (id) await B().api.patch('/api/users/' + id, payload); else await B().api.post('/api/users', payload);
+    } catch(e) { reset(); return err(e.message); }
+    done(id ? 'User updated' : name + ' added to ' + coName(companyId) + ' — can now sign in with Google as ' + email);
   },
   userView(id){
     const u = getUsers().find(x => x.id === id);

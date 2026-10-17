@@ -903,6 +903,28 @@
   },
   "audit_logs": [
     {
+      "id": "A-179222976313889",
+      "ts": "2026-10-17T09:36:03.138Z",
+      "actor": "Argus Admin",
+      "role": "company_admin",
+      "action": "product.delete",
+      "entity": "product",
+      "entityId": "P-MVC7AGCV8H",
+      "companyId": "C-ARGUS",
+      "summary": "Deleted SKU ARG-ER32-CHK"
+    },
+    {
+      "id": "A-179222970172180",
+      "ts": "2026-10-17T09:35:01.726Z",
+      "actor": "Argus Admin",
+      "role": "company_admin",
+      "action": "product.create",
+      "entity": "product",
+      "entityId": "P-MVC7AGCV8H",
+      "companyId": "C-ARGUS",
+      "summary": "Created SKU ARG-ER32-CHK in C-ARGUS"
+    },
+    {
       "id": "A-179222527128676",
       "ts": "2026-10-17T08:21:11.286Z",
       "actor": "ARGUS TECHNOLOGIES",
