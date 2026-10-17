@@ -20,7 +20,29 @@
     return j.data;
   }
   B.api = { get: (u) => req('GET', u), post: (u, b) => req('POST', u, b), put: (u, b) => req('PUT', u, b), patch: (u, b) => req('PATCH', u, b), delete: (u) => req('DELETE', u) };
+  /* upload straight to Supabase Storage via signed URLs (works on Vercel, where request bodies are
+     capped at 4.5 MB and the disk is wiped); falls back to the server upload when Storage isn't set up */
+  const MAX_MB = 50;
   B.upload = async (files) => {
+    files = [...files];
+    for (const f of files) {
+      if (!/^(image|video)\//.test(f.type || '')) throw new Error(f.name + ': only images and videos can be uploaded');
+      if (f.size > MAX_MB * 1024 * 1024) throw new Error(`${f.name} is ${(f.size / 1048576).toFixed(1)} MB — max ${MAX_MB} MB`);
+    }
+    let signed = null;
+    try {
+      signed = await B.api.post('/api/uploads/sign', { files: files.map(f => ({ name: f.name, type: f.type, size: f.size })) });
+    } catch (e) {
+      if (!/not configured/i.test(e.message)) throw e;
+    }
+    if (!signed) return B.uploadViaServer(files);
+    return Promise.all(files.map(async (f, i) => {
+      const r = await fetch(signed[i].signedUrl, { method: 'PUT', headers: { 'Content-Type': f.type, 'cache-control': 'max-age=31536000', 'x-upsert': 'false' }, body: f });
+      if (!r.ok) { const j = await r.json().catch(() => ({})); throw new Error(f.name + ': upload failed — ' + (j.message || j.error || ('HTTP ' + r.status))); }
+      return signed[i].publicUrl;
+    }));
+  };
+  B.uploadViaServer = async (files) => {
     const s = ses() || { role: 'sales_user', companyId: 'C-ARGUS', name: 'Argus User' };
     const t = (window.Auth && window.Auth.token()) || null;
     const cid = s.role === 'super_admin' ? (s.companyId || '') : (s.companyId || 'C-ARGUS');

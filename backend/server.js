@@ -593,11 +593,59 @@ app.get('/api/catalog', (req, res) => {
   ok(res, withCo(list));
 });
 
-/* uploads (local disk; Supabase Storage later) */
-const storage = multer.diskStorage({ destination: UP_DIR, filename: (_r, f, cb) => cb(null, Date.now() + '-' + f.originalname.replace(/[^a-zA-Z0-9.]+/g, '_')) });
-const upload = multer({ storage, limits: { fileSize: 50 * 1024 * 1024 } });
-app.post('/api/uploads', upload.array('files', 10), (req, res) => ok(res, (req.files || []).map(f => '/uploads/' + f.filename)));
+/* uploads → Supabase Storage (public `retail-media` bucket) when configured; local disk only for offline dev.
+   Vercel caps request bodies at 4.5 MB and wipes its tmp dir, so the browser uploads straight to Storage
+   with a signed URL from /api/uploads/sign; the server never handles the file bytes. */
+const MEDIA_TYPES = /^(image|video)\//;
+const safeName = n => String(n || 'file').replace(/[^a-zA-Z0-9.]+/g, '_').slice(-80);
+const mediaPath = (req, name) => `${req.ctx.companyId || 'platform'}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${safeName(name)}`;
+app.post('/api/uploads/sign', async (req, res) => {
+  if (!isAdmin(req)) return res.status(403).json({ error: 'admin only' });
+  if (!SB.enabled) return res.status(501).json({ error: 'Supabase Storage not configured', fallback: true });
+  const files = Array.isArray(req.body.files) ? req.body.files.slice(0, 10) : [];
+  if (!files.length) return res.status(400).json({ error: 'files[] required' });
+  for (const f of files) {
+    if (!MEDIA_TYPES.test(f.type || '')) return res.status(400).json({ error: `${f.name}: only images and videos can be uploaded` });
+    if (!(f.size > 0) || f.size > SB.MEDIA_MAX_BYTES) return res.status(400).json({ error: `${f.name}: file must be under ${SB.MEDIA_MAX_BYTES / 1024 / 1024} MB` });
+  }
+  try {
+    await SB.ensureMediaBucket();
+    const out = [];
+    for (const f of files) {
+      const p = mediaPath(req, f.name);
+      const { data, error } = await SB.admin.storage.from(SB.MEDIA_BUCKET).createSignedUploadUrl(p);
+      if (error) throw error;
+      out.push({ name: f.name, path: p, signedUrl: data.signedUrl, publicUrl: SB.mediaPublicUrl(p) });
+    }
+    ok(res, out);
+  } catch (e) { res.status(502).json({ error: 'Storage error: ' + e.message }); }
+});
+const upload = SB.enabled
+  ? multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } })
+  : multer({ storage: multer.diskStorage({ destination: UP_DIR, filename: (_r, f, cb) => cb(null, Date.now() + '-' + safeName(f.originalname)) }), limits: { fileSize: 50 * 1024 * 1024 } });
+/* multipart fallback (small files / clients without signed-URL support) */
+app.post('/api/uploads', (req, res, next) => isAdmin(req) ? next() : res.status(403).json({ error: 'admin only' }), upload.array('files', 10), async (req, res) => {
+  const files = req.files || [];
+  if (files.some(f => !MEDIA_TYPES.test(f.mimetype))) return res.status(400).json({ error: 'only images and videos can be uploaded' });
+  if (!SB.enabled) return ok(res, files.map(f => '/uploads/' + f.filename));
+  try {
+    await SB.ensureMediaBucket();
+    const urls = [];
+    for (const f of files) {
+      const p = mediaPath(req, f.originalname);
+      const { error } = await SB.admin.storage.from(SB.MEDIA_BUCKET).upload(p, f.buffer, { contentType: f.mimetype, upsert: false });
+      if (error) throw error;
+      urls.push(SB.mediaPublicUrl(p));
+    }
+    ok(res, urls);
+  } catch (e) { res.status(502).json({ error: 'Storage error: ' + e.message }); }
+});
 app.use('/uploads', express.static(UP_DIR));
+/* best-effort removal of a file we stored; never blocks the request */
+function removeStoredMedia(url) {
+  const p = SB.enabled && SB.mediaPathFromUrl(url);
+  if (p) SB.admin.storage.from(SB.MEDIA_BUCKET).remove([p]).catch(() => {});
+}
 
 /* orders — server computes totals, validates + deducts stock atomically.
    Quotation-only (price null) products are rejected: submit an RFQ instead. */
@@ -788,6 +836,7 @@ app.delete('/api/media/:id', scopeCompany, (req, res) => {
   const p = db.products.find(x => x.id === m.productId);
   if (p) { if (m.type === 'image') p.images = (p.images || []).filter(u => u !== m.url); if (m.type === 'video' && p.video === m.url) p.video = ''; }
   save();
+  if (!db.products.some(x => (x.images || []).includes(m.url) || x.video === m.url)) removeStoredMedia(m.url);
   audit(req, 'media.delete', 'media', m.id, m.companyId, `Deleted ${m.type} of ${m.sku || m.productId}`);
   ok(res, { deleted: true });
 });

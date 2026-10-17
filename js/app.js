@@ -1279,7 +1279,15 @@ window.App={
     await B()?.ensureLive?.();
     if (B()?.enabled && B().upload && inp.files && inp.files.length) {
       toast('Uploading media...', '⏳');
-      B().upload(inp.files).then(urls => {
+      const btn = $('#f_save');
+      if (btn) { btn.disabled = true; btn.dataset.label = btn.dataset.label || btn.innerText; btn.innerText = '⏳ Uploading media…'; }
+      const job = B().upload(inp.files);
+      App._uploads = (App._uploads || []).concat(job);
+      job.finally(() => {
+        App._uploads = (App._uploads || []).filter(j => j !== job);
+        const b = $('#f_save'); if (b && !App._uploads.length) { b.disabled = false; b.innerText = b.dataset.label || b.innerText; }
+      }).catch(() => {});
+      job.then(urls => {
         if (isVid) w.innerHTML = '';
         urls.forEach(u => {
           const el = isVid ? document.createElement('video') : document.createElement('img');
@@ -1321,6 +1329,7 @@ window.App={
     if(!sku) return fail('SKU required');
     if(price!=null&&!(price>0)) return fail('Price must be > 0 or empty (quotation-only)');
     if(stockRaw===''||!(stock>=0)) return fail('Valid stock (0 or more) required');
+    if ((App._uploads || []).length) return fail('Media is still uploading — wait for it to finish, then publish');
     if (btn) { btn.disabled = true; btn.innerText = 'Saving…'; }
     const live = !!(await B()?.ensureLive?.());
     const targetCo = ($('#f_co')||{}).value || me?.companyId || '';
