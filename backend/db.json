@@ -269,6 +269,104 @@
   ],
   "products": [
     {
+      "id": "P-ARGUS-01",
+      "sku": "ARG-COLLET-01",
+      "companyId": "C-ARGUS",
+      "name": "ER32 Precision Collet Set (18 pcs)",
+      "brand": "Argus",
+      "mpn": "ARG-ER32-18",
+      "short": "ER32 • 3–20mm • Runout ≤ 0.005mm • AA Grade",
+      "price": 4500,
+      "uom": "Set",
+      "moq": 1,
+      "leadTime": "Ex-stock",
+      "warehouse": "WH-Pune-01",
+      "stock": 25,
+      "category": "workholding",
+      "visible": true,
+      "featured": true,
+      "sold": 12,
+      "created": "2026-10-17",
+      "desc": "Ultra-precision ER32 spring collet set covering 3-20mm with wrench in a durable fitted case.",
+      "specs": {
+        "Type": "ER32",
+        "Range": "3–20 mm",
+        "Runout": "≤ 0.005 mm"
+      },
+      "images": [
+        "https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?auto=format&fit=crop&w=700&q=80"
+      ],
+      "video": "",
+      "active": true,
+      "archived": false
+    },
+    {
+      "id": "P-ARGUS-02",
+      "sku": "ARG-CNMG-01",
+      "companyId": "C-ARGUS",
+      "name": "Carbide Turning Insert CNMG 120408 (Pack of 10)",
+      "brand": "Argus",
+      "mpn": "ARG-CNMG120408",
+      "short": "CNMG 120408 • CVD coated • High durability",
+      "price": 1250,
+      "uom": "Pack",
+      "moq": 2,
+      "leadTime": "Ex-stock",
+      "warehouse": "WH-Pune-01",
+      "stock": 120,
+      "category": "cutting-tools",
+      "visible": true,
+      "featured": true,
+      "sold": 45,
+      "created": "2026-10-17",
+      "desc": "Precision CVD-coated carbide turning inserts for steel and cast iron CNC turning operations.",
+      "specs": {
+        "Insert": "CNMG 120408",
+        "Coating": "CVD",
+        "Work material": "Steel, CI",
+        "Pack qty": "10 nos"
+      },
+      "images": [
+        "https://images.unsplash.com/photo-1537462715879-360eeb61a0ad?auto=format&fit=crop&w=700&q=80"
+      ],
+      "video": "",
+      "active": true,
+      "archived": false
+    },
+    {
+      "id": "P-ARGUS-03",
+      "sku": "ARG-EM10-4F",
+      "companyId": "C-ARGUS",
+      "name": "Solid Carbide End Mill Ø10mm 4-Flute AlCrN",
+      "brand": "Argus",
+      "mpn": "ARG-EM10X4-ALCRN",
+      "short": "Ø10 • 4-flute • AlCrN • 55 HRC",
+      "price": 1450,
+      "uom": "Pc",
+      "moq": 2,
+      "leadTime": "Ex-stock",
+      "warehouse": "WH-Pune-01",
+      "stock": 65,
+      "category": "cutting-tools",
+      "visible": true,
+      "featured": true,
+      "sold": 28,
+      "created": "2026-10-17",
+      "desc": "4-flute solid carbide end mill with AlCrN coating for hardened steels up to 55 HRC.",
+      "specs": {
+        "Diameter": "Ø10 mm",
+        "Flutes": "4",
+        "Coating": "AlCrN",
+        "Max hardness": "55 HRC"
+      },
+      "images": [
+        "https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?auto=format&fit=crop&w=700&q=80"
+      ],
+      "video": "",
+      "active": true,
+      "archived": false
+    },
+    {
       "id": "P-2036",
       "sold": 0,
       "featured": false,
