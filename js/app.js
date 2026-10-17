@@ -128,19 +128,19 @@ function topbar(){
   const roleLabel = (me.role || '').replace('_', ' ');
   return `<div class="top-strip"><div class="topbar-inner"><span>ARGUSCNC ERP • Creating Future Factories • GST invoice on all orders</span><span>${me.name} • ${roleLabel}${me.companyId?' • '+coName(me.companyId):''}</span></div></div>
   <div class="topbar"><div class="topbar-inner">
-    <a href="#/store/home" class="logo" style="display:flex;align-items:center;gap:10px"><img src="assets/argus-logo.png" alt="ARGUSCNC" style="height:34px;width:auto;object-fit:contain"></a>
+    <a href="#/store/home" onclick="App.navigate('#/store/home', event)" class="logo" style="display:flex;align-items:center;gap:10px"><img src="assets/argus-logo.png" alt="ARGUSCNC" style="height:34px;width:auto;object-fit:contain"></a>
     <div class="searchbar"><input id="gSearch" placeholder="Search SKU, part number, brand, product…" value="${ui.q||''}"><button onclick="App.goSearch()">Search</button></div>
     <div class="navlinks">
       <span class="pill active" title="${me.email||''}">👤 ${me.name} (${roleLabel})</span>
       <button class="pill" onclick="App.logout()">Sign out</button>
-      <a class="icon-btn" href="#/store/cart">🧾<span class="count">${c}</span></a>
-      <a class="avatar" href="#/store/profile" title="${me.name} — My profile">${(me.name||'U')[0]}</a>
+      <a class="icon-btn" href="#/store/cart" onclick="App.navigate('#/store/cart', event)">🧾<span class="count">${c}</span></a>
+      <a class="avatar" href="#/store/profile" onclick="App.navigate('#/store/profile', event)" title="${me.name} — My profile">${(me.name||'U')[0]}</a>
       <button class="icon-btn" title="Logout" onclick="App.logout()">⏻</button>
     </div></div></div>`;
 }
 function side(){
   const h = location.hash;
-  const link=(href,label,icon,badge='')=>`<a class="side-link ${h.startsWith(href)?'active':''}" href="${href}"><span>${icon}</span>${label}${badge?`<span class="dot">${badge}</span>`:''}</a>`;
+  const link=(href,label,icon,badge='')=>`<a class="side-link ${h.startsWith(href)?'active':''}" href="${href}" onclick="App.navigate('${href}', event)"><span>${icon}</span>${label}${badge?`<span class="dot">${badge}</span>`:''}</a>`;
   const myCoId = me.companyId;
   const openQ = getQuotes().filter(q=>(!myCoId || q.companyId===myCoId)&&q.status==='Pending').length;
   if(me.role==='super_admin') return `<aside class="sidebar"><div class="side-title">OVERVIEW</div>
@@ -600,10 +600,15 @@ function vProducts(){
     }
     return true;
   });
-  return `<div class="section-head"><h2>Industrial catalog (${ps.length} SKUs)</h2><div><a class="btn btn-ghost btn-sm" href="#/admin/media">Media library</a> <a class="btn btn-primary btn-sm" href="#/admin/products/new">+ Add product</a></div></div>
+  const mediaLink = isSuper ? '#/super/media' : '#/admin/media';
+  const newProdLink = isSuper ? '#/super/products/new' : '#/admin/products/new';
+  return `<div class="section-head"><h2>Industrial catalog (${ps.length} SKUs)</h2><div><a class="btn btn-ghost btn-sm" href="${mediaLink}">Media library</a> <a class="btn btn-primary btn-sm" href="${newProdLink}">+ Add product</a></div></div>
   <div class="card"><div class="card-pad"><div class="toolbar"><input placeholder="Search name, SKU, brand, MPN…" value="${ui.adminQ||''}" oninput="App.f(event,'aq')"></div>
   <div class="table-wrap"><table><tr><th>Product</th><th>Brand</th><th>Price</th><th>Stock</th><th>Visible</th><th>Action</th></tr>
-  ${ps.length ? ps.map(p=>`<tr><td><div style="display:flex;gap:10px;align-items:center"><img class="thumb" src="${img0(p)}" onerror="${NOIMG_ERR}"><div><b>${p.name}</b><div class="hint">${p.sku||p.id}${p.mpn?' • MPN '+p.mpn:''}</div></div></div></td><td>${p.brand||'—'}</td><td>${p.price!=null?`<b>${fmt(p.price)}</b> <span class="hint">/ ${p.uom||'Pc'}</span>`:`<span class="status s-ready">RFQ</span>`}</td><td>${p.stock<=10?`<b style="color:#D97706">${p.stock} low</b>`:p.stock} <span class="hint">${p.uom||''}</span></td><td><button class="status ${p.visible?'s-active':'s-cancelled'}" onclick="App.toggleVis('${p.id}')">${p.visible?'Visible':'Hidden'}</button></td><td><a class="btn btn-ghost btn-sm" href="#/admin/products/edit/${p.id}">Edit</a> <button class="btn btn-ghost btn-sm" style="color:#DC2626;padding:4px 8px;margin-left:4px" title="Delete product" onclick="App.deleteProduct('${p.id}')">🗑️</button></td></tr>`).join('') : `<tr><td colspan="6"><div class="empty" style="padding:32px;text-align:center"><div class="big">📦</div><h3>No products in catalog</h3><p class="hint">Your company catalog is empty. Click "+ Add product" above to create your first SKU.</p></div></td></tr>`}</table></div></div></div>`;
+  ${ps.length ? ps.map(p=>{
+    const editLink = isSuper ? `#/super/products/edit/${p.id}` : `#/admin/products/edit/${p.id}`;
+    return `<tr><td><div style="display:flex;gap:10px;align-items:center"><img class="thumb" src="${img0(p)}" onerror="${NOIMG_ERR}"><div><b>${p.name}</b><div class="hint">${p.sku||p.id}${p.mpn?' • MPN '+p.mpn:''}</div></div></div></td><td>${p.brand||'—'}</td><td>${p.price!=null?`<b>${fmt(p.price)}</b> <span class="hint">/ ${p.uom||'Pc'}</span>`:`<span class="status s-ready">RFQ</span>`}</td><td>${p.stock<=10?`<b style="color:#D97706">${p.stock} low</b>`:p.stock} <span class="hint">${p.uom||''}</span></td><td><button class="status ${p.visible?'s-active':'s-cancelled'}" onclick="App.toggleVis('${p.id}')">${p.visible?'Visible':'Hidden'}</button></td><td><a class="btn btn-ghost btn-sm" href="${editLink}">Edit</a> <button class="btn btn-ghost btn-sm" style="color:#DC2626;padding:4px 8px;margin-left:4px" title="Delete product" onclick="App.deleteProduct('${p.id}')">🗑️</button></td></tr>`;
+  }).join('') : `<tr><td colspan="6"><div class="empty" style="padding:32px;text-align:center"><div class="big">📦</div><h3>No products in catalog</h3><p class="hint">Your company catalog is empty. Click "+ Add product" above to create your first SKU.</p></div></td></tr>`}</table></div></div></div>`;
 }
 function vProductForm(editId, forCo){
   const p=editId?prodById(editId):{name:'',sku:'',brand:'',mpn:'',short:'',price:'',uom:'Pc',moq:1,leadTime:'',warehouse:'',stock:'',category:(storeCats()[0]||{}).id||'cutting-tools',visible:true,desc:'',specsText:'',images:[],video:''};
@@ -768,14 +773,16 @@ function vMedia(){
   const myCoId = me.companyId;
   const isSuper = me.role === 'super_admin';
   const ps=getProducts().filter(p=>isSuper || p.companyId===myCoId);
-  return `<div class="section-head"><h2>Media library</h2><a class="btn btn-primary btn-sm" href="#/admin/products/new">+ Upload via product</a></div>
+  const upLink = isSuper ? '#/super/products/new' : '#/admin/products/new';
+  return `<div class="section-head"><h2>Media library</h2><a class="btn btn-primary btn-sm" href="${upLink}">+ Upload via product</a></div>
   <div class="card"><div class="card-pad"><div class="prod-grid" style="grid-template-columns:repeat(3,1fr)">${ps.length ? ps.flatMap(p=>((p.images||[]).slice(0,2)).map(u=>`<div class="prod"><div class="prod-img"><img src="${u}" onerror="${NOIMG_ERR}"></div><div class="prod-body"><b style="font-size:13px">${p.name}</b><span class="hint">${p.sku||''} • primary image</span></div></div>`)).join('') : '<div class="empty" style="grid-column:1/-1;padding:32px;text-align:center"><div class="big">🖼️</div><p class="hint">No product media uploaded yet for this company.</p></div>'}</div>
   <p class="hint">Company-scoped media. Videos stream with lazy loading + error fallback on the product page.</p></div></div>`;
 }
 function vCats(){
   const cats=getCats();
-  const myCoId = me.companyId;
-  const coProds = getProducts().filter(p=>!myCoId || p.companyId===myCoId);
+  const myCoId = me?.companyId;
+  const isSuper = me?.role === 'super_admin';
+  const coProds = isSuper ? getProducts() : getProducts().filter(p=>!myCoId || p.companyId===myCoId);
   return `<div class="section-head"><h2>Categories (${cats.length})</h2><button class="btn btn-primary btn-sm" onclick="App.addCat()">+ New category</button></div>
   <div class="card"><div class="card-pad"><div class="cat-row" style="flex-wrap:wrap">${cats.map(c=>`<span class="cat-chip">${c.icon} ${c.name} <b>• ${coProds.filter(p=>p.category===c.id).length}</b></span>`).join('')}</div>
   <div class="table-wrap" style="margin-top:12px"><table><tr><th>Category</th><th>Scope</th><th>Description</th><th>SKUs</th><th>Status</th><th>Action</th></tr>${cats.map(c=>{
@@ -801,7 +808,7 @@ function vOrdersAdmin(){
   <div class="card"><div class="card-pad"><div class="toolbar"><input placeholder="Search order / company / PO ref…" value="${ui.orderQ||''}" oninput="App.f(event,'oq')">
   <select onchange="App.f(event,'os')">${['all','Pending','Confirmed','Processing','Ready for Dispatch','Shipped','Delivered','Cancelled'].map(s=>`<option ${st===s?'selected':''}>${s==='all'?'All statuses':s}</option>`).join('')}</select></div>
   <div class="table-wrap"><table><tr><th>Order</th><th>Sales user</th><th>Customer</th><th>Items</th><th>Total</th><th>Status</th></tr>
-  ${os.length ? os.map(o=>`<tr><td><a href="#/admin/orders/${o.id}"><b>${o.id}</b></a><div class="hint">${o.date}${o.poRef?' • '+o.poRef:''}</div></td><td>${o.salesUser}${isSuper?`<div class="hint">${coName(o.companyId)}</div>`:''}</td><td>${o.companyName||o.customer}<div class="hint">${o.mobile} • ${o.city}</div></td><td>${o.items.reduce((a,i)=>a+i.qty,0)}</td><td><b>${fmt(o.total)}</b></td><td>${statusBadge(o.status)}</td></tr>`).join('') : '<tr><td colspan=6><div class="empty">No orders found for this company.</div></td></tr>'}</table></div></div></div>`;
+  ${os.length ? os.map(o=>`<tr><td><a href="#/${isSuper?'super':'admin'}/orders/${o.id}"><b>${o.id}</b></a><div class="hint">${o.date}${o.poRef?' • '+o.poRef:''}</div></td><td>${o.salesUser}${isSuper?`<div class="hint">${coName(o.companyId)}</div>`:''}</td><td>${o.companyName||o.customer}<div class="hint">${o.mobile} • ${o.city}</div></td><td>${o.items.reduce((a,i)=>a+i.qty,0)}</td><td><b>${fmt(o.total)}</b></td><td>${statusBadge(o.status)}</td></tr>`).join('') : '<tr><td colspan=6><div class="empty">No orders found for this company.</div></td></tr>'}</table></div></div></div>`;
 }
 function vQuotesAdmin(){
   const st=ui.quoteStatus;
@@ -837,7 +844,8 @@ function settingsForm(cid, s){
 }
 function vSettings(){
   const myCoId = me?.companyId;
-  if (me?.role === 'super_admin' && !myCoId) {
+  const h = location.hash || '';
+  if (h.includes('/super/settings') || (me?.role === 'super_admin' && !myCoId)) {
     setTimeout(()=>App.globalSettingsLoad(), 0);
     return `<div class="section-head"><h2>Global platform settings</h2></div><div class="card"><div class="card-pad" id="gSetWrap"><div class="skel" style="min-height:120px"></div></div></div>`;
   }
@@ -1078,6 +1086,7 @@ function render(){
   else if(seg[0]==='super'&&seg[1]==='companies'&&seg[3]==='edit'){ html=vCompanyForm(seg[2]); }
   else if(seg[0]==='super'&&seg[1]==='companies'&&seg[3]==='products'&&seg[4]==='new'){ html=vProductForm('', seg[2]); }
   else if(R==='super/products/new')html=vProductForm('');
+  else if(seg[0]==='super'&&seg[1]==='products'&&((seg[2]==='edit'&&seg[3])||(seg[3]==='edit'&&seg[2])))html=vProductForm(seg[3]||seg[2]);
   else if(seg[0]==='super'&&seg[1]==='orders'&&seg[2])html=orderDetail(seg[2],'#/super/orders');
   else if(seg[0]==='super'&&seg[1]==='companies'&&seg[2]){
     const _id=seg[2], _tab=qp.tab||'overview';
@@ -1122,6 +1131,18 @@ function render(){
 window.App={
   toast:(m,i)=>toast(m,i),
   rerender(){ render(); },
+  navigate(href, e){
+    if (e) {
+      if (typeof e.preventDefault === 'function') e.preventDefault();
+      if (typeof e.stopPropagation === 'function') e.stopPropagation();
+    }
+    App._dirty = false;
+    if (location.hash !== href) {
+      location.hash = href;
+    }
+    render();
+    window.scrollTo({top: 0});
+  },
   goSearch(){ const v=$('#gSearch').value; ui.q=v; location.hash='#/store/listing'; if(location.hash==='#/store/listing')render(); },
   carouselStart(){
     clearInterval(carouselTimer);
