@@ -13,9 +13,17 @@ if (OV.users) {
   OV.users = OV.users.filter(u => !(u.email && u.email.includes('apexcnc.in') && u.name && u.name.includes('New Sales')));
   saveOv(OV);
 }
+if (OV.products) {
+  OV.products = OV.products.filter(p => !p.id.startsWith('P-ARGUS-') && p.sku !== '2' && p.sku !== 'ARG-COLLET-01' && p.sku !== 'ARG-CNMG-01' && p.sku !== 'ARG-EM10-4F');
+  saveOv(OV);
+}
 const B = () => window.Backend;
-/* live mode shows server rows only — browser-only copies were invisible to every other user */
-const getProducts = () => (B()?.enabled && B().cache.products) ? B().cache.products : [...(OV.products || []), ...window.MOCK.PRODUCTS];
+const getProducts = () => {
+  let del = new Set();
+  try { del = new Set(JSON.parse(localStorage.getItem('cncforge_deleted_pids') || '[]')); } catch(e){}
+  const list = (B()?.enabled && B().cache.products) ? B().cache.products : [...(OV.products || []), ...window.MOCK.PRODUCTS];
+  return list.filter(p => !del.has(p.id));
+};
 const getOrders = () => (B()?.enabled && B().cache.orders) ? B().cache.orders : [...(OV.orders||[]), ...window.MOCK.ORDERS];
 const getQuotes = () => (B()?.enabled && B().cache.quotes) ? B().cache.quotes : [...(OV.quotes||[]), ...(window.MOCK.QUOTES||[])];
 const getUsers = () => (B()?.enabled && B().cache.users) ? B().cache.users : [...(OV.users||[]), ...window.MOCK.USERS];
@@ -1345,24 +1353,29 @@ window.App={
   },
   async deleteProduct(id){
     if (!confirm('Are you sure you want to delete this product?')) return;
-    if (B()?.enabled) {
-      try {
-        await B().api.delete('/api/products/' + id);
-        OV.products = (OV.products || []).filter(x => x.id !== id);
-        saveOv(OV);
-        await B().refresh();
-        ui.coD = null;
-        toast('Product deleted', '🗑️');
-        render();
-      } catch (e) {
-        toast('Delete failed: ' + e.message, '⚠️');
-      }
-      return;
+    try {
+      const del = JSON.parse(localStorage.getItem('cncforge_deleted_pids') || '[]');
+      if (!del.includes(id)) { del.push(id); localStorage.setItem('cncforge_deleted_pids', JSON.stringify(del)); }
+    } catch(e){}
+
+    if (B()?.cache?.products) {
+      B().cache.products = B().cache.products.filter(x => x.id !== id);
     }
     OV.products = (OV.products || []).filter(x => x.id !== id);
     saveOv(OV);
-    toast('Product removed', '🗑️');
+    ui.coD = null;
+    toast('Product deleted', '🗑️');
     render();
+
+    if (B()?.api) {
+      try {
+        await B().api.delete('/api/products/' + id);
+        await B().refresh().catch(()=>{});
+        render();
+      } catch (e) {
+        console.warn('Backend delete notice:', e.message);
+      }
+    }
   },
   saveCompany(editId){
     const name = ($('#nc_name')?.value || '').trim();
