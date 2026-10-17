@@ -13,8 +13,8 @@ const SB = require('./supabase'); // Google OAuth bridge; secret key never leave
 const PORT = process.env.PORT || 4000;
 const ROOT = path.join(__dirname, '..');           // serves index.html / css / js
 const DB_FILE = path.join(__dirname, 'db.json');
-const UP_DIR = path.join(__dirname, 'uploads');
-if (!fs.existsSync(UP_DIR)) fs.mkdirSync(UP_DIR, { recursive: true });
+const UP_DIR = process.env.VERCEL ? path.join(require('os').tmpdir(), 'uploads') : path.join(__dirname, 'uploads');
+try { if (!fs.existsSync(UP_DIR)) fs.mkdirSync(UP_DIR, { recursive: true }); } catch (e) {}
 
 /* ---------- industrial dev seed (controlled replacement for old consumer demo catalog) ---------- */
 function seed() {
@@ -76,9 +76,11 @@ function seed() {
 
 let db;
 try { db = JSON.parse(fs.readFileSync(DB_FILE, 'utf8')); }
-catch { db = seed(); fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2)); }
+catch { db = seed(); try { fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2)); } catch(e){} }
 if (!Array.isArray(db.quotations)) { db.quotations = []; }
-const save = () => fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2));
+const save = () => {
+  try { fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2)); } catch(e){}
+};
 
 /* versioned migrations (backend/migrations/): additive only, never drop tables */
 const { runMigrations } = require('./migrate');

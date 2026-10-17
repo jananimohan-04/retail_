@@ -7,7 +7,14 @@
       const r = await fetch('/api/config');
       const j = await r.json();
       A.config = j.data || {};
-    } catch (e) { A.ready = true; return false; }
+    } catch (e) { /* serverless cold start fallback */ }
+    if (!A.config || !A.config.supabaseUrl) {
+      A.config = {
+        supabaseUrl: 'https://eafntyjigdklcwzhyoyu.supabase.co',
+        publishableKey: 'sb_publishable_VSlf63OkNkOta4shyywA-w__j6PPq_D',
+        googleEnabled: true
+      };
+    }
     if (!A.config.googleEnabled || !window.supabase) { A.ready = true; return false; }
     try {
       A.client = window.supabase.createClient(A.config.supabaseUrl, A.config.publishableKey);
