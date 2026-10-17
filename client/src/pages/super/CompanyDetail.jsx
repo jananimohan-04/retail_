@@ -487,7 +487,7 @@ function SettingsTab({ id }) {
     <>
       <PageHead title="Store settings" desc="Company overrides — blank fields fall back to global defaults." />
       <div className="form-grid">
-        <Field label="Store name"><input value={f.storeName} onChange={set('storeName')} placeholder={ph('storeName', 'e.g. Apex Industrial Store')} /></Field>
+        <Field label="Store name"><input value={f.storeName} onChange={set('storeName')} placeholder={ph('storeName', 'e.g. Argus Industrial Store')} /></Field>
         <Field label="Default warehouse"><input value={f.warehouse} onChange={set('warehouse')} placeholder="WH-Pune-01" /></Field>
         <Field label="Tax % (GST)"><input type="number" value={f.taxPct} onChange={set('taxPct')} placeholder={ph('taxPct', '18')} /></Field>
         <Field label="Order prefix"><input value={f.orderPrefix} onChange={set('orderPrefix')} placeholder={ph('orderPrefix', 'ORD-')} /></Field>

@@ -73,7 +73,7 @@ export function CompanyFormFields({ v, on, errors = {}, isNew, codeLocked }) {
       <div className="co-col" style={col}>
         <div className="co-col-title" style={{ fontWeight: 800, fontSize: 13 }}>🏢 Company Profile</div>
         <Field label="Company Name" req error={errors.name}>
-          <input id="nc_name" value={v.name} onChange={set('name')} placeholder="e.g. Apex CNC Works" />
+          <input id="nc_name" value={v.name} onChange={set('name')} placeholder="e.g. Argus Precision Works" />
         </Field>
         <Field label={isNew ? 'Company Code * (unique)' : 'Company Code * (locked)'} req error={errors.code}>
           <input id="nc_code" value={v.code} onChange={set('code')} disabled={codeLocked} placeholder="e.g. C-D" style={{ textTransform: 'uppercase' }} />
