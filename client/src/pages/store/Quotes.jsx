@@ -24,7 +24,7 @@ export default function Quotes() {
   const prodById = (pid) => products.find((p) => p.id === pid) || { name: pid, sku: pid, images: [] };
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto">
+    <div className="space-y-6 w-full">
       {/* Header */}
       <div className="flex items-center justify-between gap-4 flex-wrap pb-2 border-b border-slate-200">
         <div>

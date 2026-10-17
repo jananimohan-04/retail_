@@ -60,7 +60,7 @@ export default function OrderDetail() {
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2 }}
-      className="space-y-6 max-w-5xl mx-auto"
+      className="space-y-6 w-full"
     >
       {/* Header Bar */}
       <div className="flex items-center justify-between gap-4 flex-wrap pb-2 border-b border-slate-200">

@@ -47,7 +47,7 @@ export default function Confirmation() {
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="max-w-3xl mx-auto space-y-6"
+      className="w-full max-w-4xl mx-auto space-y-6"
     >
       {/* Hero Banner */}
       <div className="bg-gradient-to-br from-slate-900 via-blue-950 to-blue-900 text-white rounded-3xl p-8 sm:p-10 shadow-xl relative overflow-hidden text-center">
