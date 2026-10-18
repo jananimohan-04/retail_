@@ -22,10 +22,30 @@ const STAGE_STYLE = {
 };
 
 export function StageBadge({ stage, label }) {
-  const s = STAGE_STYLE[stage] || { bg: 'bg-slate-100', text: 'text-slate-600', border: 'border-slate-200' };
+  let displayLabel = label;
+  let customStyle = STAGE_STYLE[stage];
+
+  if (['submitted_to_finance', 'finance_review', 'pricing_saved'].includes(stage)) {
+    displayLabel = 'Waiting for Finance';
+    customStyle = { bg: 'bg-indigo-50', text: 'text-indigo-700', border: 'border-indigo-200' };
+  } else if (stage === 'content_pending') {
+    displayLabel = 'Needs Content';
+    customStyle = { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200' };
+  } else if (stage === 'content_in_progress') {
+    displayLabel = 'In Progress';
+    customStyle = { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200' };
+  } else if (stage === 'published') {
+    displayLabel = 'Published';
+    customStyle = { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200' };
+  } else if (stage === 'returned_for_correction') {
+    displayLabel = 'Needs Correction';
+    customStyle = { bg: 'bg-rose-50', text: 'text-rose-700', border: 'border-rose-200' };
+  }
+
+  const s = customStyle || STAGE_STYLE[stage] || { bg: 'bg-slate-100', text: 'text-slate-600', border: 'border-slate-200' };
   return (
     <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wide border whitespace-nowrap ${s.bg} ${s.text} ${s.border}`}>
-      {label || String(stage || '—').replace(/_/g, ' ')}
+      {displayLabel || String(stage || '—').replace(/_/g, ' ')}
     </span>
   );
 }
@@ -47,17 +67,14 @@ export default function ContentWriter() {
 /* ---------------------------------------------------------------- queue */
 const TABS = [
   { id: 'all', label: 'All Products', stages: 'all' },
-  { id: 'mine', label: 'Needs Content', stages: 'content_pending,content_in_progress,returned_for_correction' },
-  { id: 'content_pending', label: 'New from ERP', stages: 'content_pending' },
+  { id: 'needs_content', label: 'Needs Content', stages: 'content_pending,returned_for_correction' },
   { id: 'content_in_progress', label: 'In Progress', stages: 'content_in_progress' },
-  { id: 'returned_for_correction', label: 'Returned to me', stages: 'returned_for_correction' },
-  { id: 'submitted_to_finance', label: 'With Finance', stages: 'submitted_to_finance,finance_review,pricing_saved' },
-  { id: 'published', label: 'Published', stages: 'published' }
+  { id: 'published', label: 'Published', stages: 'submitted_to_finance,finance_review,pricing_saved,published' }
 ];
 
 function ContentQueue() {
   const [data, setData] = useState(null);
-  const [tab, setTab] = useState('mine');
+  const [tab, setTab] = useState('all');
   const [q, setQ] = useState('');
   const [page, setPage] = useState(1);
   const [busy, setBusy] = useState(true);
@@ -79,8 +96,15 @@ function ContentQueue() {
   }, [load]);
 
   const counts = (data && data.counts) || {};
-  const mine = (counts.content_pending || 0) + (counts.content_in_progress || 0) + (counts.returned_for_correction || 0);
   const rows = (data && data.rows) || [];
+
+  const tabCount = (t) => {
+    if (t.id === 'all') return (data && data.total) || 0;
+    if (t.id === 'needs_content') return (counts.content_pending || 0) + (counts.returned_for_correction || 0);
+    if (t.id === 'content_in_progress') return counts.content_in_progress || 0;
+    if (t.id === 'published') return (counts.submitted_to_finance || 0) + (counts.finance_review || 0) + (counts.pricing_saved || 0) + (counts.published || 0);
+    return 0;
+  };
 
   return (
     <>
@@ -92,10 +116,10 @@ function ContentQueue() {
       />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-        <StatTile value={mine} label="Waiting on you" sub="Pending · In progress · Returned" tone="amber" />
-        <StatTile value={counts.returned_for_correction || 0} label="Returned for correction" sub="Finance left comments" tone="red" />
-        <StatTile value={(counts.submitted_to_finance || 0) + (counts.finance_review || 0) + (counts.pricing_saved || 0)} label="With Finance" sub="Awaiting pricing / approval" tone="blue" />
-        <StatTile value={counts.published || 0} label="Published" sub="Visible to Salespeople" tone="emerald" />
+        <StatTile value={(data && data.total) || 0} label="All Products" sub="Full catalog overview" tone="blue" />
+        <StatTile value={(counts.content_pending || 0) + (counts.returned_for_correction || 0)} label="Needs Content" sub="New from ERP awaiting copy" tone="amber" />
+        <StatTile value={counts.content_in_progress || 0} label="In Progress" sub="Drafts currently being edited" tone="blue" />
+        <StatTile value={(counts.submitted_to_finance || 0) + (counts.finance_review || 0) + (counts.pricing_saved || 0) + (counts.published || 0)} label="Published" sub={`${counts.published || 0} live · ${(counts.submitted_to_finance || 0) + (counts.finance_review || 0) + (counts.pricing_saved || 0)} waiting finance`} tone="emerald" />
       </div>
 
       <div className="flex items-center gap-3 flex-wrap mb-4">
@@ -105,11 +129,14 @@ function ContentQueue() {
               key={t.id}
               type="button"
               onClick={() => { setTab(t.id); setPage(1); }}
-              className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer flex items-center gap-2 ${
                 tab === t.id ? 'bg-white text-slate-900 shadow-xs border border-slate-200/60' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-200/60'
               }`}
             >
-              {t.label}
+              <span>{t.label}</span>
+              <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono ${tab === t.id ? 'bg-slate-100 text-slate-800' : 'bg-slate-200/70 text-slate-600'}`}>
+                {tabCount(t)}
+              </span>
             </button>
           ))}
         </div>
@@ -314,7 +341,7 @@ function ContentEditor({ id }) {
         if (!silent) toast('Media uploaded', '📎');
       }
       load();
-      if (!silent) toast('Content saved', '💾');
+      if (!silent) toast('Draft saved (moved to In Progress)', '💾');
     } catch (e) {
       setStaged((s) => s.map((x) => (x.status === 'uploading' ? { ...x, status: 'ready', error: e.message } : x)));
       toast(e.message, '⚠️');

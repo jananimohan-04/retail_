@@ -222,13 +222,13 @@ const WF = {
 };
 const WF_STAGES = [WF.PENDING, WF.IN_PROGRESS, WF.SUBMITTED, WF.REVIEW, WF.RETURNED, WF.PRICED, WF.PUBLISHED];
 const WF_LABELS = {
-  content_pending: 'ERP Product Received',
-  content_in_progress: 'Content In Progress',
-  submitted_to_finance: 'Submitted To Finance',
-  finance_review: 'Finance Review',
-  returned_for_correction: 'Returned For Correction',
-  pricing_saved: 'Pricing Saved',
-  published: 'Published To Sales'
+  content_pending: 'Needs Content',
+  content_in_progress: 'In Progress',
+  submitted_to_finance: 'Waiting for Finance',
+  finance_review: 'Waiting for Finance',
+  returned_for_correction: 'Needs Correction',
+  pricing_saved: 'Waiting for Finance',
+  published: 'Published'
 };
 /* legacy aliases seen in existing data → canonical stage. Anything unrecognised
    falls back to PENDING so a product can never become un-actionable for every role. */

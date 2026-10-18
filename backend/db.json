@@ -205,9 +205,24 @@
       "erp_synced": true,
       "erp_item_id": "b5f2cce1-4dc6-4815-b49b-961af6df4907",
       "erp_last_synced_at": "2026-10-18T17:15:47.667Z",
-      "workflow_stage": "content_pending",
+      "workflow_stage": "content_in_progress",
       "created": "2026-10-18",
-      "sold": 0
+      "sold": 0,
+      "workflow_updated_at": "2026-10-18T18:12:21.583Z",
+      "workflow_history": [
+        {
+          "id": "W1MVE57LJK",
+          "action": "content.start",
+          "from": "content_pending",
+          "to": "content_in_progress",
+          "stage": "Content In Progress",
+          "by": "Janani Mohan",
+          "byRole": "super_admin",
+          "companyId": "C-ARGUS",
+          "ts": "2026-10-18T18:12:21.584Z",
+          "note": ""
+        }
+      ]
     },
     {
       "id": "P-MVE3666OTZ",
@@ -291,7 +306,9 @@
       "archived": false,
       "featured": false,
       "specs": {},
-      "images": [],
+      "images": [
+        "/uploads/seo_aerospace_bit.jpg"
+      ],
       "video": "",
       "companyId": "C-ARGUS",
       "erp_synced": true,
@@ -431,15 +448,15 @@
   },
   "audit_logs": [
     {
-      "id": "A-179234530376294",
-      "ts": "2026-10-18T17:41:43.762Z",
-      "actor": "Argus User",
-      "role": "sales_user",
-      "action": "erp.sync_updated",
+      "id": "A-179234714167557",
+      "ts": "2026-10-18T18:12:21.689Z",
+      "actor": "Janani Mohan",
+      "role": "super_admin",
+      "action": "workflow.content_start",
       "entity": "product",
-      "entityId": "P-MVE3666OTZ",
+      "entityId": "P-MVE36US3V8",
       "companyId": "C-ARGUS",
-      "summary": "Updated SKU 2 from ERP (stock: 100000)"
+      "summary": "Content started for test"
     },
     {
       "id": "A-179234529109014",
