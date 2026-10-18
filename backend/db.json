@@ -178,6 +178,36 @@
   ],
   "products": [
     {
+      "id": "P-MVE2LO5JC9",
+      "name": "Precision CNC Drill Bit 12mm",
+      "sku": "ARG-DRILL-100",
+      "brand": "ArgusCNC",
+      "mpn": "",
+      "short": "Precision CNC Drill Bit 12mm",
+      "desc": "Precision CNC Drill Bit 12mm",
+      "price": null,
+      "uom": "Pc",
+      "stock": 40,
+      "moq": 1,
+      "leadTime": "Ex-stock",
+      "warehouse": "Retail Store Warehouse",
+      "category": "cnc-machines",
+      "visible": false,
+      "active": true,
+      "archived": false,
+      "featured": false,
+      "specs": {},
+      "images": [],
+      "video": "",
+      "companyId": "C-ARGUS",
+      "erp_synced": true,
+      "erp_item_id": "",
+      "erp_last_synced_at": "2026-10-18T16:59:55.399Z",
+      "workflow_stage": "content_pending",
+      "created": "2026-10-18",
+      "sold": 0
+    },
+    {
       "id": "P-MVCLL5E3UF",
       "name": "High Precision CNC Milling Bit 10mm",
       "sku": "ARG-PRECISION-8891",
@@ -338,6 +368,28 @@
     "version": 10
   },
   "audit_logs": [
+    {
+      "id": "A-179234279540654",
+      "ts": "2026-10-18T16:59:55.406Z",
+      "actor": "Argus User",
+      "role": "sales_user",
+      "action": "erp.sync_updated",
+      "entity": "product",
+      "entityId": "P-MVE2LO5JC9",
+      "companyId": "C-ARGUS",
+      "summary": "Updated SKU ARG-DRILL-100 from ERP (stock: 40)"
+    },
+    {
+      "id": "A-179234275931255",
+      "ts": "2026-10-18T16:59:19.312Z",
+      "actor": "Argus User",
+      "role": "sales_user",
+      "action": "erp.sync_created",
+      "entity": "product",
+      "entityId": "P-MVE2LO5JC9",
+      "companyId": "C-ARGUS",
+      "summary": "Created SKU ARG-DRILL-100 from ERP"
+    },
     {
       "id": "AUD-1792268806689",
       "ts": "2026-10-17T20:26:46.689Z",

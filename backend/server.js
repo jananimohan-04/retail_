@@ -242,9 +242,9 @@ const WF_STAGE_ALIASES = {
 const normalizeStage = s => (!s ? null : (WF_STAGES.includes(s) ? s : (WF_STAGE_ALIASES[s] || WF.PENDING)));
 /* stages where content may still be edited by a Content Writer */
 const WF_CONTENT_EDITABLE = [WF.PENDING, WF.IN_PROGRESS, WF.RETURNED];
-/* legacy / admin-created products carry no workflow_stage and keep their old behaviour */
-const stageOf = p => normalizeStage(p && p.workflow_stage);
-const isPublishedProduct = p => !p.workflow_stage || stageOf(p) === WF.PUBLISHED;
+/* legacy / admin-created products carry no workflow_stage and default based on visibility */
+const stageOf = p => normalizeStage(p && (p.workflow_stage || (p.visible ? WF.PUBLISHED : WF.PENDING)));
+const isPublishedProduct = p => stageOf(p) === WF.PUBLISHED;
 /* the single rule that keeps unpublished workflow products out of the Sales catalog */
 const salesVisible = p => p.visible !== false && !p.archived && isPublishedProduct(p);
 const wfCounts = list => WF_STAGES.reduce((a, s) => (a[s] = list.filter(p => stageOf(p) === s).length, a), {});
@@ -275,7 +275,10 @@ function wfFind(req, res) {
   if (!p) { res.status(404).json({ error: 'Product not found' }); return null; }
   const co = req.companyId || req.ctx.companyId;
   if (req.ctx.role !== 'super_admin' && p.companyId !== co) { res.status(403).json({ error: 'Cross-company access denied' }); return null; }
-  if (!p.workflow_stage) { res.status(400).json({ error: 'Product is not part of the ERP publishing workflow' }); return null; }
+  if (!p.workflow_stage) {
+    p.workflow_stage = stageOf(p) || WF.PENDING;
+    save();
+  }
   return p;
 }
 const wfGuard = (req, res, roles) => {
@@ -1036,7 +1039,7 @@ const wfDecorate = p => ({
 app.get('/api/workflow', scopeCompany, (req, res) => {
   if (!wfGuard(req, res, isWorkflowStaff)) return;
   const co = req.companyId || req.ctx.companyId;
-  const scoped = db.products.filter(p => p.workflow_stage && (req.ctx.role === 'super_admin'
+  const scoped = db.products.filter(p => (req.ctx.role === 'super_admin'
     ? (!req.query.companyId || req.query.companyId === 'all' || p.companyId === req.query.companyId)
     : p.companyId === co));
   const counts = wfCounts(scoped);
@@ -1333,15 +1336,22 @@ function syncSingleErpProduct(item, companyId) {
     rate
   } = item;
 
-  if (!sku || !String(sku).trim()) throw new Error('Product SKU is required');
-  if (!name || !String(name).trim()) throw new Error('Product Name is required');
+  const rawSku = item.sku || item.code || item.item_code || item.itemCode || item.part_number || item.part_no || item.product || item.erp_item_id || item.id || '';
+  let cleanSku = String(rawSku).trim();
+  if (!cleanSku) {
+    const namePart = (item.name || item.item_name || 'ITEM').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8) || 'ITEM';
+    cleanSku = `SKU-${namePart}-${Date.now().toString(36).slice(-4).toUpperCase()}`;
+  }
 
-  const cleanSku = String(sku).trim();
-  const cleanName = String(name).trim();
+  const rawName = item.name || item.item_name || item.itemName || item.title || item.description || cleanSku || 'ERP Product';
+  const cleanName = String(rawName).trim();
   const stockQty = Math.max(0, Number(stock ?? 0));
   const finalErpId = erp_item_id || item.id || '';
+  const isActive = (status || 'Active').toLowerCase() === 'active';
+
+  // Explicit sync from ERP: treat as Retail item unless explicitly marked non-retail or inactive
   const isRetail = (is_retail_warehouse !== false) && (is_retail !== false);
-  const isEligible = isRetail && (status || 'Active').toLowerCase() === 'active';
+  const effectiveWarehouse = (warehouse && warehouse !== 'Other Warehouse') ? warehouse : 'Retail Store Warehouse';
 
   // Find existing product by ERP ID or (SKU + Company)
   let p = db.products.find(x => x.companyId === companyId && (
@@ -1349,19 +1359,18 @@ function syncSingleErpProduct(item, companyId) {
     x.sku.toLowerCase() === cleanSku.toLowerCase()
   ));
 
-  // Case 1: NOT in retail warehouse or Inactive
-  if (!isEligible) {
+  // Case 1: Inactive item
+  if (!isActive) {
     if (p) {
-      // Deactivate / hide in store, preserve product record & order history
       p.visible = false;
       p.active = false;
       p.stock = stockQty;
-      p.warehouse = warehouse || p.warehouse || 'Other Warehouse';
+      p.warehouse = effectiveWarehouse;
       p.erp_synced = true;
       p.erp_last_synced_at = new Date().toISOString();
       return { action: 'deactivated', product: p };
     }
-    return { action: 'ignored', message: 'Item is not assigned to Retail Store warehouse' };
+    return { action: 'ignored', message: 'Inactive item not added to Retail Store' };
   }
 
   // Case 2: In retail warehouse and Active
@@ -1374,7 +1383,7 @@ function syncSingleErpProduct(item, companyId) {
     p.sku = cleanSku;
     p.name = cleanName;
     p.stock = stockQty; // ERP is source of truth for stock!
-    p.warehouse = warehouse || p.warehouse || 'Retail Store Warehouse';
+    p.warehouse = effectiveWarehouse;
     p.uom = uom || p.uom || 'Pc';
     p.active = true;
     p.archived = false;
@@ -1416,7 +1425,7 @@ function syncSingleErpProduct(item, companyId) {
     stock: stockQty,
     moq: 1,
     leadTime: 'Ex-stock',
-    warehouse: warehouse || 'Retail Store Warehouse',
+    warehouse: effectiveWarehouse,
     category: catId,
     visible: false, // initial draft state for Content Writer & Finance review!
     active: true,

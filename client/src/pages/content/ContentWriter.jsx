@@ -46,6 +46,7 @@ export default function ContentWriter() {
 
 /* ---------------------------------------------------------------- queue */
 const TABS = [
+  { id: 'all', label: 'All Products', stages: 'all' },
   { id: 'mine', label: 'Needs Content', stages: 'content_pending,content_in_progress,returned_for_correction' },
   { id: 'content_pending', label: 'New from ERP', stages: 'content_pending' },
   { id: 'content_in_progress', label: 'In Progress', stages: 'content_in_progress' },
