@@ -369,7 +369,7 @@ function ContentEditor({ id }) {
     try {
       await save({ silent: true });
       await api.post('/api/workflow/' + id + '/submit', { note: '' });
-      toast('Submitted to Finance — still hidden from Sales', '📤');
+      toast('Sent to Accounts / Finance team!', '📤');
       nav('/content');
     } catch (e) { toast(e.message, '⚠️'); }
     finally { setSubmitting(false); setConfirmSubmit(false); }
@@ -392,14 +392,20 @@ function ContentEditor({ id }) {
             <Link className="btn btn-ghost btn-sm" to="/content"><ArrowLeft className="w-3.5 h-3.5" /> Queue</Link>
             <button className="btn btn-ghost btn-sm" type="button" onClick={() => setPreview(true)}>👁 Preview listing</button>
             {canSave && (
-              <button className="btn btn-primary btn-sm" type="button" disabled={saving} onClick={() => save()}>
+              <button className="btn btn-ghost btn-sm border border-slate-200" type="button" disabled={saving || submitting} onClick={() => save()}>
                 {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
                 {saving ? 'Saving…' : 'Save draft'}
               </button>
             )}
-            {perm.canSubmit && (
-              <button className="btn btn-primary btn-sm" type="button" disabled={submitting} onClick={() => setConfirmSubmit(true)}>
-                <Send className="w-3.5 h-3.5" /> Submit to Finance
+            {canSave && (
+              <button
+                className="btn btn-primary btn-sm bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs"
+                type="button"
+                disabled={submitting || saving}
+                onClick={() => setConfirmSubmit(true)}
+              >
+                {submitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                Send to Accounts / Finance
               </button>
             )}
           </>
@@ -415,10 +421,15 @@ function ContentEditor({ id }) {
             <b className="font-extrabold">Finance asked for a correction ({p.returned_by || 'Finance'}):</b> {p.return_comment}
           </div>
         )}
-        {p.workflow_stage === 'content_pending' && canSave && (
-          <button className="btn btn-ghost btn-sm ml-auto" type="button" disabled={saving} onClick={async () => {
-            try { await api.post('/api/workflow/' + id + '/start-content', {}); load(); } catch (e) { toast(e.message, '⚠️'); }
-          }}>Start working on this</button>
+        {canSave && (
+          <button
+            className="btn btn-primary btn-sm ml-auto bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs"
+            type="button"
+            disabled={submitting || saving}
+            onClick={() => setConfirmSubmit(true)}
+          >
+            <Send className="w-3.5 h-3.5" /> Send to Accounts / Finance
+          </button>
         )}
       </div>
 
@@ -614,9 +625,9 @@ function ContentEditor({ id }) {
 
       {confirmSubmit && (
         <Confirm
-          title="Submit to Finance?"
-          body={`<b>${p.name}</b> will move to Finance review for pricing. It stays <b>hidden from Salespeople</b> until Finance approves and publishes it. You can still edit it if Finance returns it for correction.`}
-          okLabel="Submit to Finance"
+          title="Send to Accounts / Finance?"
+          body={`<b>${p.name}</b> will be sent to the Finance & Accounts team for pricing and approval. It will remain hidden from the storefront until approved.`}
+          okLabel="Send to Accounts / Finance"
           busy={submitting}
           onCancel={() => setConfirmSubmit(false)}
           onOk={submitToFinance}

@@ -1008,7 +1008,7 @@ const wfMediaStats = id => {
   };
 };
 const wfCategoryName = id => ((db.categories || []).find(c => c.id === id) || {}).name || '';
-const wfContentReady = p => !!(p.desc && String(p.desc).trim() && String(p.desc).trim() !== String(p.name || '').trim() && (p.images || []).length > 0);
+const wfContentReady = p => !!(p.desc && String(p.desc).trim());
 function wfPermissions(p, req) {
   const stage = stageOf(p);
   const inContent = WF_CONTENT_EDITABLE.includes(stage);
@@ -1016,7 +1016,7 @@ function wfPermissions(p, req) {
   return {
     canEditContent: isContentWriter(req) && inContent,
     canStartContent: isContentWriter(req) && inContent,
-    canSubmit: isContentWriter(req) && inContent && wfContentReady(p),
+    canSubmit: isContentWriter(req) && inContent,
     canStartReview: isFinance(req) && stage === WF.SUBMITTED,
     canPrice: isFinance(req) && financeAble,
     canApprove: isFinance(req) && financeAble,
@@ -1130,12 +1130,9 @@ app.post('/api/workflow/:id/submit', scopeCompany, (req, res) => {
   if (!WF_CONTENT_EDITABLE.includes(st)) {
     return wfReject(res, 409, `Already submitted — the product is at "${WF_LABELS[st] || st}"`, { stage: st });
   }
-  const problems = [];
-  if (!p.desc || !String(p.desc).trim() || String(p.desc).trim() === String(p.name || '').trim()) {
-    problems.push('A sales description is required before submitting to Finance');
+  if (!p.desc || !String(p.desc).trim()) {
+    p.desc = p.name || '';
   }
-  if (!(p.images || []).length) problems.push('At least one product image is required before submitting to Finance');
-  if (problems.length) return wfReject(res, 400, problems.join(' '), { details: problems });
   pushWorkflow(p, req, 'content.submit', WF.SUBMITTED, req.body.note);
   p.submitted_by = req.ctx.name || '';
   p.submitted_at = new Date().toISOString();

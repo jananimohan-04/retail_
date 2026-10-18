@@ -208,7 +208,7 @@
       "workflow_stage": "content_in_progress",
       "created": "2026-10-18",
       "sold": 0,
-      "workflow_updated_at": "2026-10-18T18:12:21.583Z",
+      "workflow_updated_at": "2026-10-18T18:40:53.492Z",
       "workflow_history": [
         {
           "id": "W1MVE57LJK",
@@ -221,8 +221,34 @@
           "companyId": "C-ARGUS",
           "ts": "2026-10-18T18:12:21.584Z",
           "note": ""
+        },
+        {
+          "id": "W2MVE682W4",
+          "action": "content.save",
+          "from": "content_in_progress",
+          "to": "content_in_progress",
+          "stage": "In Progress",
+          "by": "Janani Mohan",
+          "byRole": "super_admin",
+          "companyId": "C-ARGUS",
+          "ts": "2026-10-18T18:40:43.684Z",
+          "note": ""
+        },
+        {
+          "id": "W3MVE68AGK",
+          "action": "content.save",
+          "from": "content_in_progress",
+          "to": "content_in_progress",
+          "stage": "In Progress",
+          "by": "Janani Mohan",
+          "byRole": "super_admin",
+          "companyId": "C-ARGUS",
+          "ts": "2026-10-18T18:40:53.493Z",
+          "note": ""
         }
-      ]
+      ],
+      "content_by": "Janani Mohan",
+      "content_updated_at": "2026-10-18T18:40:53.492Z"
     },
     {
       "id": "P-MVE3666OTZ",
@@ -448,15 +474,15 @@
   },
   "audit_logs": [
     {
-      "id": "A-179234714167557",
-      "ts": "2026-10-18T18:12:21.689Z",
+      "id": "A-179234885350242",
+      "ts": "2026-10-18T18:40:53.502Z",
       "actor": "Janani Mohan",
       "role": "super_admin",
-      "action": "workflow.content_start",
+      "action": "workflow.content_save",
       "entity": "product",
       "entityId": "P-MVE36US3V8",
       "companyId": "C-ARGUS",
-      "summary": "Content started for test"
+      "summary": "Saved content for test"
     },
     {
       "id": "A-179234529109014",
