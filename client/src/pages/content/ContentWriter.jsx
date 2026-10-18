@@ -7,7 +7,7 @@ import { api, uploadFiles, imgFallback } from '../../api';
 import { PageHead, Empty, Skeleton, Pager, Field, Modal, Confirm, toast } from '../../components/ui';
 import {
   ArrowLeft, CheckCircle2, CircleAlert, FileText, Film, ImageIcon,
-  Loader2, MonitorPlay, Plus, Save, Send, Trash2, Upload
+  Loader2, MonitorPlay, Package, Plus, Save, Send, Trash2, Upload
 } from 'lucide-react';
 
 /* ---------------------------------------------------------------- stage chips */
@@ -153,11 +153,17 @@ function ContentQueue() {
                 <tr key={p.id} className="hover:bg-slate-50/80 transition-colors">
                   <td className="px-4 py-3 max-w-[280px]">
                     <div className="flex items-center gap-2.5">
-                      <img
-                        src={(p.images || [])[0] || imgFallback(p.id, 96, 96)}
-                        alt=""
-                        className="w-10 h-10 rounded-xl object-cover border border-slate-200 flex-shrink-0"
-                      />
+                      <div className="w-10 h-10 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center flex-shrink-0 text-slate-400 overflow-hidden relative">
+                        <Package className="w-5 h-5 text-slate-400" />
+                        {(p.images || [])[0] && (
+                          <img
+                            src={p.images[0]}
+                            alt=""
+                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                            className="absolute inset-0 w-full h-full object-cover"
+                          />
+                        )}
+                      </div>
                       <div className="min-w-0">
                         <div className="font-bold text-slate-900 truncate">{p.name}</div>
                         <div className="text-[11px] text-slate-500 font-mono truncate">{p.sku || p.id}{p.brand ? ' · ' + p.brand : ''}</div>
