@@ -118,11 +118,39 @@ function ContentQueue() {
         actions={<Link className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors" to="/finance">Finance queue →</Link>}
       />
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-        <StatTile value={(data && data.total) || 0} label="All Products" sub="Full catalog overview" tone="blue" />
-        <StatTile value={(counts.content_pending || 0) + (counts.returned_for_correction || 0)} label="Needs Content" sub="New from ERP awaiting copy" tone="amber" />
-        <StatTile value={counts.content_in_progress || 0} label="In Progress" sub="Drafts currently being edited" tone="blue" />
-        <StatTile value={(counts.submitted_to_finance || 0) + (counts.finance_review || 0) + (counts.pricing_saved || 0) + (counts.published || 0)} label="Published" sub={`${counts.published || 0} live · ${(counts.submitted_to_finance || 0) + (counts.finance_review || 0) + (counts.pricing_saved || 0)} waiting finance`} tone="emerald" />
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 mb-3.5">
+        <StatTile
+          value={(data && data.total) || 0}
+          label="All Products"
+          sub="Full catalog overview"
+          tone="blue"
+          onClick={() => { setTab('all'); setPage(1); }}
+          active={tab === 'all'}
+        />
+        <StatTile
+          value={(counts.content_pending || 0) + (counts.returned_for_correction || 0)}
+          label="Needs Content"
+          sub="New from ERP awaiting copy"
+          tone="amber"
+          onClick={() => { setTab('needs_content'); setPage(1); }}
+          active={tab === 'needs_content'}
+        />
+        <StatTile
+          value={counts.content_in_progress || 0}
+          label="In Progress"
+          sub="Drafts currently being edited"
+          tone="blue"
+          onClick={() => { setTab('content_in_progress'); setPage(1); }}
+          active={tab === 'content_in_progress'}
+        />
+        <StatTile
+          value={(counts.submitted_to_finance || 0) + (counts.finance_review || 0) + (counts.pricing_saved || 0) + (counts.published || 0)}
+          label="Published"
+          sub={`${counts.published || 0} live · ${(counts.submitted_to_finance || 0) + (counts.finance_review || 0) + (counts.pricing_saved || 0)} waiting finance`}
+          tone="emerald"
+          onClick={() => { setTab('published'); setPage(1); }}
+          active={tab === 'published'}
+        />
       </div>
 
       <div className="flex items-center gap-3 flex-wrap mb-4">
@@ -229,7 +257,7 @@ function ContentQueue() {
   );
 }
 
-function StatTile({ value, label, sub, tone }) {
+function StatTile({ value, label, sub, tone, onClick, active }) {
   const tones = {
     amber: 'from-amber-500 to-orange-500',
     red: 'from-rose-500 to-red-500',
@@ -237,11 +265,18 @@ function StatTile({ value, label, sub, tone }) {
     emerald: 'from-emerald-500 to-teal-500'
   };
   return (
-    <div className={`rounded-2xl p-4 text-white bg-gradient-to-br ${tones[tone] || tones.blue} shadow-xs min-h-[92px] flex flex-col justify-between`}>
-      <div className="text-2xl font-black font-mono tracking-tight">{value}</div>
-      <div>
-        <div className="text-xs font-bold opacity-95">{label}</div>
-        {sub && <div className="text-[10px] opacity-80 mt-0.5">{sub}</div>}
+    <div
+      onClick={onClick}
+      className={`rounded-xl px-3 py-2 text-white bg-gradient-to-br ${tones[tone] || tones.blue} shadow-xs min-h-[56px] flex flex-col justify-between transition-all ${
+        onClick ? 'cursor-pointer hover:opacity-95 hover:scale-[1.01] active:scale-[0.98]' : ''
+      } ${active ? 'ring-2 ring-offset-2 ring-slate-800' : ''}`}
+    >
+      <div className="flex items-baseline justify-between gap-1">
+        <div className="text-lg sm:text-xl font-black font-mono tracking-tight leading-none">{value}</div>
+      </div>
+      <div className="mt-0.5 min-w-0">
+        <div className="text-[11px] font-bold opacity-95 leading-tight truncate">{label}</div>
+        {sub && <div className="text-[9.5px] opacity-80 mt-0.5 leading-tight truncate">{sub}</div>}
       </div>
     </div>
   );
