@@ -341,9 +341,6 @@ function CompaniesTab({ q, setQ, status, setStatus, ind, setInd, city, setCity, 
   if (err) return <Empty title={'⚠️ ' + err} />;
   return (
     <>
-      <div className="toolbar">
-        <input placeholder="🔍 Search name, code, email, city…" value={q} onChange={(e) => setQ(e.target.value)} />
-      </div>
       <DataTable
         rowKey={(r) => r.id}
         empty="No companies match."
