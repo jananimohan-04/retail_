@@ -219,7 +219,7 @@ export const Topbar = forwardRef(function Topbar({ onMobileToggle, sidebarOpen, 
 
   return (
     <header ref={ref} className="sticky top-0 z-50 bg-[#0B1329] backdrop-blur-md border-b border-slate-800 shadow-md shadow-slate-950/20 w-full text-slate-100">
-      <div className="w-full px-3 sm:px-5 h-14 flex items-center justify-between gap-3">
+      <div className="w-full px-3 sm:px-5 h-15 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2.5 flex-shrink-0">
           <button
             type="button"
@@ -230,8 +230,8 @@ export const Topbar = forwardRef(function Topbar({ onMobileToggle, sidebarOpen, 
             <Menu className="w-5 h-5" />
           </button>
 
-          <Link to="/store/home" className="flex items-center gap-2 group flex-shrink-0 bg-white px-2.5 py-1 rounded-xl shadow-xs border border-white/20 transition-transform hover:scale-105 duration-200">
-            <img src="assets/argus-logo.png" alt="ARGUSCNC" className="h-6 w-auto object-contain" />
+          <Link to="/store/home" className="flex items-center gap-2 group flex-shrink-0 bg-white px-3 py-1.5 rounded-xl shadow-xs border border-white/20 transition-transform hover:scale-105 duration-200">
+            <img src="assets/argus-logo.png" alt="ARGUSCNC" className="h-7 sm:h-8 w-auto object-contain" />
           </Link>
 
           {!noSide && (
@@ -239,7 +239,7 @@ export const Topbar = forwardRef(function Topbar({ onMobileToggle, sidebarOpen, 
               type="button"
               onClick={onToggleSidebar}
               title={sidebarOpen ? "Collapse sidebar to Full Page view" : "Expand sidebar with full labels"}
-              className={`hidden lg:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border transition-all text-xs font-bold cursor-pointer shadow-xs ${
+              className={`hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-all text-xs font-bold cursor-pointer shadow-xs ml-3 sm:ml-4 ${
                 !sidebarOpen
                   ? 'bg-gradient-to-r from-orange-500 to-amber-600 text-white border-orange-500 hover:from-orange-600 hover:to-amber-700 shadow-sm shadow-orange-500/30'
                   : 'bg-slate-800/90 border-slate-700/80 text-slate-300 hover:bg-slate-700 hover:text-white'
