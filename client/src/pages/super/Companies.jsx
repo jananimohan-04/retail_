@@ -337,27 +337,12 @@ export default function Companies({ tab: tabProp }) {
 
 /* ---------------- companies tab ---------------- */
 function CompaniesTab({ q, setQ, status, setStatus, ind, setInd, city, setCity, cos, data, loading, err, page, setPage, onDetails, onEdit, onToggle }) {
-  const inds = [...new Set([...cos.map((c) => c.industry).filter(Boolean), ...(ind !== 'all' ? [ind] : [])])];
-  const cities = [...new Set([...cos.map((c) => c.city).filter(Boolean), ...(city !== 'all' ? [city] : [])])];
   if (loading) return <Skeleton h={220} />;
   if (err) return <Empty title={'⚠️ ' + err} />;
   return (
     <>
       <div className="toolbar">
         <input placeholder="🔍 Search name, code, email, city…" value={q} onChange={(e) => setQ(e.target.value)} />
-        <select value={status} onChange={(e) => setStatus(e.target.value)}>
-          <option value="all">All statuses</option>
-          <option value="active">Active</option>
-          <option value="suspended">Suspended</option>
-        </select>
-        <select value={ind} onChange={(e) => setInd(e.target.value)}>
-          <option value="all">All industries</option>
-          {inds.map((i) => <option key={i} value={i}>{i}</option>)}
-        </select>
-        <select value={city} onChange={(e) => setCity(e.target.value)}>
-          <option value="all">All cities</option>
-          {cities.map((i) => <option key={i} value={i}>{i}</option>)}
-        </select>
       </div>
       <DataTable
         rowKey={(r) => r.id}
