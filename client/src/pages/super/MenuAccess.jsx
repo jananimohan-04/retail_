@@ -431,94 +431,97 @@ export default function MenuAccess() {
           ========================================================================= */}
       {activeTab === 'roles' && (
         <div className="space-y-6">
-          {/* Role Selector Grid */}
-          <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-extrabold uppercase tracking-widest text-slate-400">Select Role to Configure</span>
-              <span className="text-[11px] font-semibold text-slate-500">{roles.length} Roles available</span>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
-              {roles.map(r => {
-                const isSel = r.id === selectedRoleId;
-                const permsCount = (rolePermissions[r.id] || []).length;
-                return (
-                  <button
-                    key={r.id}
-                    onClick={() => setSelectedRoleId(r.id)}
-                    className={`flex flex-col text-left p-3 rounded-xl border transition-all cursor-pointer ${
-                      isSel
-                        ? 'bg-blue-50/80 border-blue-500 ring-2 ring-blue-500/20 text-blue-900 shadow-xs'
-                        : 'bg-slate-50/60 border-slate-200 hover:bg-slate-100 hover:border-slate-300 text-slate-700'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between w-full mb-1">
-                      <span className={`text-[10px] font-extrabold uppercase px-1.5 py-0.5 rounded ${
-                        r.category === 'internal' ? 'bg-slate-200 text-slate-700' : 'bg-emerald-100 text-emerald-800'
-                      }`}>
-                        {r.category === 'internal' ? 'Internal' : 'Partner'}
+          {/* Top Control Deck: Role Selector on Left, Role Details & Actions on Right */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
+            {/* Left: Select Role to Configure */}
+            <div className="lg:col-span-5 bg-white p-4.5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
+              <div className="flex items-center justify-between mb-2.5">
+                <span className="text-xs font-extrabold uppercase tracking-widest text-slate-400">Select Role to Configure</span>
+                <span className="text-[11px] font-semibold text-slate-500">{roles.length} Roles available</span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 gap-2">
+                {roles.map(r => {
+                  const isSel = r.id === selectedRoleId;
+                  const permsCount = (rolePermissions[r.id] || []).length;
+                  return (
+                    <button
+                      key={r.id}
+                      onClick={() => setSelectedRoleId(r.id)}
+                      className={`flex flex-col text-left p-2.5 rounded-xl border transition-all cursor-pointer ${
+                        isSel
+                          ? 'bg-blue-50/80 border-blue-500 ring-2 ring-blue-500/20 text-blue-900 shadow-xs'
+                          : 'bg-slate-50/60 border-slate-200 hover:bg-slate-100 hover:border-slate-300 text-slate-700'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between w-full mb-1">
+                        <span className={`text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded ${
+                          r.category === 'internal' ? 'bg-slate-200 text-slate-700' : 'bg-emerald-100 text-emerald-800'
+                        }`}>
+                          {r.category === 'internal' ? 'Internal' : 'Partner'}
+                        </span>
+                        {isSel && <Check className="w-3.5 h-3.5 text-blue-600" />}
+                      </div>
+                      <span className="text-xs font-bold truncate leading-snug">{r.name}</span>
+                      <span className="text-[10px] text-slate-500 mt-0.5">
+                        {permsCount} pages active
                       </span>
-                      {isSel && <Check className="w-3.5 h-3.5 text-blue-600" />}
-                    </div>
-                    <span className="text-xs font-bold truncate leading-snug">{r.name}</span>
-                    <span className="text-[10px] text-slate-500 mt-1">
-                      {permsCount} pages active
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Right: Default Menu Permissions: [Role Name] */}
+            <div className="lg:col-span-7 bg-white p-4.5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between gap-3">
+              <div className="flex items-start gap-3">
+                <div className="p-2.5 bg-blue-100/60 text-blue-700 rounded-xl flex-shrink-0 mt-0.5">
+                  <SlidersHorizontal className="w-4 h-4" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2 flex-wrap">
+                    <span>Default Menu Permissions: <span className="text-blue-600 font-extrabold">{activeRole?.name}</span></span>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-100 text-blue-800">
+                      {curRolePerms.length} / {getAllPageIds().length} Pages Enabled
                     </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Action Toolbar for Role */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white px-5 py-4 rounded-2xl border border-slate-200/80 shadow-xs">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100/60 text-blue-700 rounded-lg">
-                <SlidersHorizontal className="w-4 h-4" />
+                  </h3>
+                  <p className="text-[11px] text-slate-500 leading-relaxed mt-1">
+                    {activeRole?.id === 'sales_user' || activeRole?.category === 'sales_partner'
+                      ? 'Changes made here apply to all Partner users (Regional, Channel, Referral, Direct Sales) unless specifically overridden in User Overrides.'
+                      : `Changes made here apply to all users assigned the ${activeRole?.name} role unless overridden.`}
+                  </p>
+                </div>
               </div>
-              <div>
-                <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                  <span>Default Menu Permissions: <span className="text-blue-600">{activeRole?.name}</span></span>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-100 text-blue-800">
-                    {curRolePerms.length} / {getAllPageIds().length} Pages Enabled
-                  </span>
-                </h3>
-                <p className="text-[11px] text-slate-500">
-                  {activeRole?.id === 'sales_user' || activeRole?.category === 'sales_partner'
-                    ? 'Changes made here apply to all Partner users (Regional, Channel, Referral, Direct Sales) unless specifically overridden in User Overrides.'
-                    : `Changes made here apply to all users assigned the ${activeRole?.name} role unless overridden.`}
-                </p>
-              </div>
-            </div>
 
-            <div className="flex items-center gap-2 flex-wrap">
-              <button
-                onClick={handleSelectAllRole}
-                className="px-3 py-1.5 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer"
-              >
-                Select All
-              </button>
-              <button
-                onClick={handleClearAllRole}
-                className="px-3 py-1.5 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer"
-              >
-                Clear All
-              </button>
-              <button
-                onClick={handleResetRoleDefaults}
-                title="Reset to factory baseline"
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer"
-              >
-                <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
-                <span>Defaults</span>
-              </button>
-              <button
-                onClick={handleSaveRole}
-                disabled={savingRole}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold shadow-sm transition-all cursor-pointer"
-              >
-                {savingRole ? <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-                <span>Save Role Permissions</span>
-              </button>
+              <div className="flex items-center gap-2 flex-wrap pt-2.5 border-t border-slate-100 justify-end">
+                <button
+                  onClick={handleSelectAllRole}
+                  className="px-3 py-1.5 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer"
+                >
+                  Select All
+                </button>
+                <button
+                  onClick={handleClearAllRole}
+                  className="px-3 py-1.5 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer"
+                >
+                  Clear All
+                </button>
+                <button
+                  onClick={handleResetRoleDefaults}
+                  title="Reset to factory baseline"
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer"
+                >
+                  <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
+                  <span>Defaults</span>
+                </button>
+                <button
+                  onClick={handleSaveRole}
+                  disabled={savingRole}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold shadow-sm transition-all cursor-pointer"
+                >
+                  {savingRole ? <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                  <span>Save Role Permissions</span>
+                </button>
+              </div>
             </div>
           </div>
 
