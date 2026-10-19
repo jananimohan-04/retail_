@@ -105,16 +105,16 @@ export default function Product() {
 
   const buyBox = p.price == null
     ? (
-      <div className="rounded-xl border border-amber-300 bg-amber-50/70 p-4">
-        <div className="flex items-center gap-2 text-amber-900 font-extrabold text-sm">
-          <Sparkles className="w-4 h-4 text-amber-600" />
+      <div className="rounded-xl border border-amber-300 bg-amber-50/70 p-3.5">
+        <div className="flex items-center gap-2 text-amber-900 font-extrabold text-xs sm:text-sm">
+          <Sparkles className="w-4 h-4 text-amber-600 flex-shrink-0" />
           <span>Industrial Quotation Required</span>
         </div>
-        <p className="text-xs text-amber-800 mt-1 mb-3 leading-relaxed">
-          This precision item is priced on request based on order quantity, custom tolerances, and warehouse batch availability.
+        <p className="text-[11px] text-amber-800 mt-1 mb-2.5 leading-relaxed">
+          Priced on request based on order quantity, tolerances, and batch availability.
         </p>
         <button
-          className="btn btn-coral w-full font-bold shadow-xs py-2 text-sm cursor-pointer"
+          className="btn btn-coral w-full font-bold shadow-xs py-2 text-xs sm:text-sm cursor-pointer"
           type="button"
           onClick={() => setRfq(p)}
         >
@@ -124,13 +124,13 @@ export default function Product() {
     )
     : p.stock <= 0
       ? (
-        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-          <div className="font-extrabold text-slate-800 text-sm">Currently Out of Stock</div>
-          <p className="text-xs text-slate-500 mt-1 mb-3 leading-relaxed">
-            Check production lead times or submit an indent request directly to manufacturing.
+        <div className="rounded-xl border border-slate-200 bg-slate-50 p-3.5">
+          <div className="font-extrabold text-slate-800 text-xs sm:text-sm">Currently Out of Stock</div>
+          <p className="text-[11px] text-slate-500 mt-1 mb-2.5 leading-relaxed">
+            Check production lead times or submit an indent request.
           </p>
           <button
-            className="btn btn-dark w-full font-bold shadow-xs py-2 text-sm cursor-pointer"
+            className="btn btn-dark w-full font-bold shadow-xs py-2 text-xs sm:text-sm cursor-pointer"
             type="button"
             onClick={() => setRfq(p)}
           >
@@ -139,28 +139,22 @@ export default function Product() {
         </div>
       )
       : (
-        <div className="space-y-3">
-          <div className="flex items-center gap-3 flex-wrap">
-            <span className="qty flex items-center border border-slate-300 rounded-lg overflow-hidden bg-white">
-              <button type="button" className="px-3 py-1.5 hover:bg-slate-100 font-bold text-slate-700 cursor-pointer" onClick={() => stepQty(-1)}>−</button>
-              <span className="px-4 py-1.5 font-mono font-bold text-slate-900 min-w-[36px] text-center">{qty}</span>
-              <button type="button" className="px-3 py-1.5 hover:bg-slate-100 font-bold text-slate-700 cursor-pointer" onClick={() => stepQty(1)}>+</button>
+        <div className="space-y-2">
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <span className="qty flex items-center border border-slate-300 rounded-xl overflow-hidden bg-white shadow-2xs h-9">
+              <button type="button" className="px-3 hover:bg-slate-100 font-bold text-slate-700 cursor-pointer h-full" onClick={() => stepQty(-1)}>−</button>
+              <span className="px-3 font-mono font-bold text-slate-900 min-w-[32px] text-center text-xs">{qty}</span>
+              <button type="button" className="px-3 hover:bg-slate-100 font-bold text-slate-700 cursor-pointer h-full" onClick={() => stepQty(1)}>+</button>
             </span>
-            <span className="text-xs text-slate-600">
-              <b className="font-mono text-slate-900">{p.stock} {p.uom || 'units'}</b> available
-              {(p.moq || 1) > 1 && <span className="text-slate-400"> • MOQ {p.moq}</span>}
-            </span>
-          </div>
-          <div className="flex gap-2.5">
             <button
-              className="btn btn-primary flex-1 py-2 text-xs sm:text-sm font-bold shadow-xs cursor-pointer"
+              className="btn btn-primary flex-1 py-2 text-xs sm:text-sm font-bold shadow-xs cursor-pointer h-9 flex items-center justify-center gap-1.5"
               type="button"
               onClick={() => { if (addToCart(p, qty)) refresh(); }}
             >
               Add to Cart
             </button>
             <button
-              className="btn btn-coral flex-1 py-2 text-xs sm:text-sm font-bold shadow-xs cursor-pointer"
+              className="btn btn-coral flex-1 py-2 text-xs sm:text-sm font-bold shadow-xs cursor-pointer h-9 flex items-center justify-center gap-1.5"
               type="button"
               onClick={() => { if (addToCart(p, qty, { silent: true })) nav('/store/cart'); }}
             >
@@ -171,27 +165,27 @@ export default function Product() {
       );
 
   return (
-    <div className="space-y-4 max-w-7xl mx-auto pb-8">
+    <div className="space-y-3.5 max-w-7xl mx-auto pb-8">
       {/* Back to Catalog Breadcrumb */}
       <div className="flex items-center justify-between gap-2">
         <Link className="btn btn-ghost btn-sm text-xs text-slate-600 hover:text-slate-900 flex items-center gap-1.5" to="/store/listing">
-          <ArrowLeft className="w-3.5 h-3.5" /> Back to industrial catalog
+          <ArrowLeft className="w-3.5 h-3.5 text-orange-500" /> Back to industrial catalog
         </Link>
         <span className="text-xs text-slate-400 hidden sm:inline">
-          Catalog ID: <code className="font-mono text-slate-600">{p.id}</code>
+          Catalog SKU: <code className="font-mono text-slate-700 font-bold">{p.sku || p.id}</code>
         </span>
       </div>
 
       {/* Main Industrial Catalog Hero Card */}
-      <div className="rounded-2xl border border-slate-200/90 bg-white p-4 sm:p-6 shadow-2xs">
-        <div className="grid lg:grid-cols-12 gap-6 lg:gap-8 items-start">
-          {/* Left Column: Visual Gallery Showcase (7 of 12 cols) */}
-          <div className="lg:col-span-7 flex flex-col space-y-3">
-            {/* Main Display Stage */}
-            <div className="w-full aspect-[4/3] rounded-2xl border border-slate-200 bg-slate-50/70 overflow-hidden relative flex items-center justify-center shadow-inner">
+      <div className="rounded-2xl border border-slate-200/90 bg-white p-4 sm:p-5 shadow-2xs">
+        <div className="grid lg:grid-cols-12 gap-5 lg:gap-6 items-start">
+          {/* Left Column: Compact Visual Gallery (6 of 12 cols = 50%) */}
+          <div className="lg:col-span-6 flex flex-col space-y-2.5">
+            {/* Controlled Height Display Stage (max ~300px) */}
+            <div className="w-full h-[270px] sm:h-[310px] rounded-2xl border border-slate-200 bg-gradient-to-b from-slate-50/80 to-white overflow-hidden relative flex items-center justify-center p-3 shadow-inner">
               {activeMedia?.type === 'youtube' && ytId(activeMedia.url) ? (
                 <iframe
-                  className="w-full h-full"
+                  className="w-full h-full rounded-xl"
                   src={`https://www.youtube.com/embed/${ytId(activeMedia.url)}?autoplay=1`}
                   title={activeMedia.title || 'Product Video'}
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -202,43 +196,52 @@ export default function Product() {
                   src={activeMedia.url}
                   controls
                   autoPlay
-                  className="w-full h-full object-contain bg-black"
+                  className="w-full h-full object-contain rounded-xl bg-black"
                 />
               ) : activeMedia?.url ? (
                 <img
                   src={activeMedia.url}
                   onError={(e) => { e.currentTarget.src = imgFallback(p.sku || p.id, 700, 525); }}
                   alt={activeMedia.title || activeMedia.alt || p.name}
-                  className="w-full h-full object-contain p-2"
+                  className="w-full h-full object-contain"
                 />
               ) : (
-                <div className="text-center text-slate-400 p-6">
-                  <Package className="w-12 h-12 mx-auto mb-2 text-slate-300" />
-                  <p className="text-xs">No media preview available</p>
+                <div className="flex flex-col items-center justify-center text-slate-400 p-6 text-center">
+                  <div className="w-14 h-14 rounded-2xl bg-slate-100 border border-dashed border-slate-300 flex items-center justify-center text-slate-400 mb-2">
+                    <Package className="w-7 h-7 text-slate-400 stroke-1" />
+                  </div>
+                  <div className="text-xs font-bold text-slate-600">Industrial Engineering Asset</div>
+                  <div className="text-[10.5px] text-slate-400 mt-0.5">Primary photo or CAD drawing pending upload</div>
                 </div>
+              )}
+
+              {allVisualMedia.length > 1 && (
+                <span className="absolute top-2 right-2 bg-slate-900/80 text-white text-[9.5px] font-mono px-2 py-0.5 rounded-full backdrop-blur-xs">
+                  {activeMediaIndex + 1} / {allVisualMedia.length}
+                </span>
               )}
             </div>
 
             {/* Industrial Photo Caption Callout */}
             {activeMedia && (activeMedia.title || activeMedia.description || activeMedia.alt) && (
-              <div className="p-3.5 rounded-xl bg-slate-900 text-white shadow-xs border border-slate-800">
+              <div className="p-2.5 rounded-xl bg-slate-900 text-white shadow-xs border border-slate-800 text-xs">
                 {activeMedia.title && (
-                  <div className="text-xs font-bold text-white flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-orange-500 flex-shrink-0" />
+                  <div className="font-bold text-white flex items-center gap-1.5 text-xs">
+                    <span className="w-1.5 h-1.5 rounded-full bg-orange-500 flex-shrink-0" />
                     <span>{activeMedia.title}</span>
                   </div>
                 )}
                 {(activeMedia.description || activeMedia.alt) && (
-                  <div className="text-[12px] text-slate-300 mt-1 leading-relaxed">
+                  <div className="text-[11px] text-slate-300 mt-0.5 leading-relaxed">
                     {activeMedia.description || activeMedia.alt}
                   </div>
                 )}
               </div>
             )}
 
-            {/* Thumbnails Carousel / Strip */}
+            {/* Compact Thumbnails Carousel Strip */}
             {allVisualMedia.length > 1 && (
-              <div className="flex gap-2 overflow-x-auto pb-1 pt-1">
+              <div className="flex gap-2 overflow-x-auto pb-1 pt-0.5">
                 {allVisualMedia.map((m, idx) => {
                   const isSel = idx === activeMediaIndex;
                   const isYt = m.type === 'youtube';
@@ -251,24 +254,24 @@ export default function Product() {
                       key={m.id || idx}
                       type="button"
                       onClick={() => setActiveMediaIndex(idx)}
-                      className={`w-16 h-16 sm:w-20 sm:h-20 rounded-xl border-2 overflow-hidden flex-shrink-0 relative transition-all cursor-pointer bg-white ${
+                      className={`w-14 h-14 sm:w-16 sm:h-16 rounded-xl border-2 overflow-hidden flex-shrink-0 relative transition-all cursor-pointer bg-white ${
                         isSel
                           ? 'border-orange-500 ring-2 ring-orange-200 scale-102'
-                          : 'border-slate-200 opacity-75 hover:opacity-100 hover:border-slate-300'
+                          : 'border-slate-200 opacity-70 hover:opacity-100 hover:border-slate-300'
                       }`}
                       title={m.title || (isYt ? 'YouTube Video' : 'Product Photo')}
                     >
                       {isVid ? (
                         <div className="w-full h-full flex flex-col items-center justify-center bg-slate-900 text-white">
-                          <Film className="w-6 h-6 text-slate-300" />
-                          <span className="text-[8px] font-bold mt-0.5">VIDEO</span>
+                          <Film className="w-5 h-5 text-slate-300" />
+                          <span className="text-[7.5px] font-bold mt-0.5">VIDEO</span>
                         </div>
                       ) : (
                         <img src={thumb} alt="" className="w-full h-full object-cover" />
                       )}
                       {isYt && (
-                        <span className="absolute bottom-0 inset-x-0 bg-red-600 text-white text-[7.5px] font-black uppercase text-center py-0.5">
-                          ▶ YouTube
+                        <span className="absolute bottom-0 inset-x-0 bg-red-600 text-white text-[7px] font-black uppercase text-center py-0.5">
+                          ▶ YT
                         </span>
                       )}
                     </button>
@@ -278,86 +281,100 @@ export default function Product() {
             )}
           </div>
 
-          {/* Right Column: Commercial Identity & Purchase Box (5 of 12 cols) */}
-          <div className="lg:col-span-5 flex flex-col space-y-4">
+          {/* Right Column: Commercial & Technical Control Panel (6 of 12 cols = 50%) */}
+          <div className="lg:col-span-6 flex flex-col space-y-3">
             <div>
-              <div className="flex items-center gap-2 flex-wrap mb-1.5">
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide bg-slate-100 text-slate-700 border border-slate-200">
+              <div className="flex items-center gap-2 flex-wrap mb-1">
+                <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wide bg-slate-100 text-slate-700 border border-slate-200">
                   {catName(p.category)}
                 </span>
                 {availBadge(p)}
               </div>
 
-              <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-snug">
+              <h1 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight leading-snug">
                 {p.name}
               </h1>
 
               {/* SKU, MPN, Brand Row */}
-              <div className="flex items-center gap-2 flex-wrap text-xs text-slate-500 mt-1.5">
+              <div className="flex items-center gap-1.5 flex-wrap text-xs text-slate-500 mt-1">
                 <button
                   type="button"
                   onClick={copySku}
-                  className="inline-flex items-center gap-1 font-mono font-bold text-slate-800 bg-slate-100 hover:bg-slate-200 px-2 py-0.5 rounded transition-colors cursor-pointer"
+                  className="inline-flex items-center gap-1 font-mono text-[11px] font-bold text-slate-800 bg-slate-100 hover:bg-slate-200 px-2 py-0.5 rounded cursor-pointer transition-colors"
                   title="Click to copy SKU"
                 >
                   <span>SKU: {p.sku || p.id}</span>
                   {copiedSku ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3 text-slate-400" />}
                 </button>
-                {p.mpn && <span className="font-mono">MPN: <b>{p.mpn}</b></span>}
-                {p.brand && <span>Brand: <b className="text-slate-800">{p.brand}</b></span>}
+                {p.brand && (
+                  <span className="text-[11px] text-slate-600 bg-slate-50 border border-slate-200/80 px-2 py-0.5 rounded">
+                    Brand: <b className="text-slate-800">{p.brand}</b>
+                  </span>
+                )}
+                {p.mpn && (
+                  <span className="text-[11px] font-mono text-slate-600 bg-slate-50 border border-slate-200/80 px-2 py-0.5 rounded">
+                    MPN: <b>{p.mpn}</b>
+                  </span>
+                )}
               </div>
             </div>
 
-            {/* Short Description Feature Highlight */}
-            {p.short && (
-              <div className="p-3 rounded-xl bg-orange-50/60 border border-orange-200/80 text-xs text-slate-800 font-medium leading-relaxed">
+            {/* Short Description Feature Highlight (only if distinct from title) */}
+            {p.short && p.short.trim().toLowerCase() !== p.name.trim().toLowerCase() && (
+              <div className="border-l-3 border-orange-500 bg-orange-50/50 rounded-r-lg px-3 py-1.5 text-xs text-slate-700 leading-relaxed font-medium">
                 {p.short}
               </div>
             )}
 
-            {/* Commercial Price Display */}
-            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/90">
-              <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
-                Commercial Price
-              </div>
-              <div>{priceHtml(p, true)}</div>
-            </div>
-
-            {/* ERP Inventory & Supply Chain Facts */}
-            <div className="grid grid-cols-2 gap-2 p-3 rounded-xl bg-slate-50/70 border border-slate-200 text-xs">
+            {/* Compact Commercial Price & Availability Banner */}
+            <div className="flex items-baseline justify-between p-3 rounded-xl bg-gradient-to-r from-slate-50 to-orange-50/20 border border-slate-200/80">
               <div>
-                <span className="text-[10.5px] text-slate-400 font-bold uppercase">Unit of Measure</span>
-                <div className="font-bold text-slate-800 mt-0.5">{p.uom || 'Pc'}</div>
+                <span className="text-[10px] font-extrabold uppercase text-slate-400 tracking-wider">Catalog Price</span>
+                <div className="mt-0.5">{priceHtml(p, true)}</div>
               </div>
-              <div>
-                <span className="text-[10.5px] text-slate-400 font-bold uppercase">Minimum Order Qty</span>
-                <div className="font-mono font-bold text-slate-800 mt-0.5">{p.moq || 1} {p.uom || 'units'}</div>
-              </div>
-              <div>
-                <span className="text-[10.5px] text-slate-400 font-bold uppercase">Stock Location</span>
-                <div className="font-mono font-bold text-slate-800 mt-0.5">{p.warehouse || 'Central Warehouse'}</div>
-              </div>
-              <div>
-                <span className="text-[10.5px] text-slate-400 font-bold uppercase">Dispatch Lead Time</span>
-                <div className="font-bold text-slate-800 mt-0.5">{p.leadTime || 'Immediate Dispatch'}</div>
+              <div className="text-right">
+                <span className="text-[10px] font-extrabold uppercase text-slate-400 tracking-wider">Inventory Status</span>
+                <div className="text-xs font-bold text-emerald-700 flex items-center gap-1 justify-end mt-0.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  {p.stock > 0 ? `${p.stock} ${p.uom || 'units'} In Stock` : 'Quotation Required'}
+                </div>
               </div>
             </div>
 
-            {/* Purchase / RFQ Action */}
-            <div className="pt-1">
+            {/* Compact 4-Column Supply Chain Row */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 p-2.5 rounded-xl bg-slate-50/80 border border-slate-200 text-xs">
+              <div>
+                <span className="text-[9.5px] text-slate-400 font-bold uppercase block">Unit</span>
+                <span className="font-bold text-slate-800">{p.uom || 'Pc'}</span>
+              </div>
+              <div>
+                <span className="text-[9.5px] text-slate-400 font-bold uppercase block">MOQ</span>
+                <span className="font-mono font-bold text-slate-800">{p.moq || 1} {p.uom || ''}</span>
+              </div>
+              <div>
+                <span className="text-[9.5px] text-slate-400 font-bold uppercase block">Warehouse</span>
+                <span className="font-bold text-slate-800 truncate block">{p.warehouse || 'Central'}</span>
+              </div>
+              <div>
+                <span className="text-[9.5px] text-slate-400 font-bold uppercase block">Lead Time</span>
+                <span className="font-bold text-slate-800 truncate block">{p.leadTime || 'Ex-stock'}</span>
+              </div>
+            </div>
+
+            {/* Purchase Action Box */}
+            <div>
               {buyBox}
             </div>
 
             {/* Catalog Guarantees */}
-            <div className="pt-2 border-t border-slate-100 space-y-1 text-[11px] text-slate-500">
-              <div className="flex items-center gap-1.5 text-slate-600">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                <span>Verified live inventory from ERP database</span>
-              </div>
-              <div className="flex items-center gap-1.5 text-slate-600">
-                <FileText className="w-3.5 h-3.5 text-blue-600" />
-                <span>Official GST tax invoice issued with shipment</span>
-              </div>
+            <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10.5px] text-slate-500 flex-wrap gap-2">
+              <span className="flex items-center gap-1 text-slate-600">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" /> Live ERP stock
+              </span>
+              <span className="flex items-center gap-1 text-slate-600">
+                <FileText className="w-3.5 h-3.5 text-blue-600" /> GST invoice included
+              </span>
+              <span className="text-slate-400 hidden sm:inline">• Direct dispatch</span>
             </div>
           </div>
         </div>

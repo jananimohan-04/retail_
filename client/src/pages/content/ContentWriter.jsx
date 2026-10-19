@@ -996,133 +996,251 @@ function ListingPreview({ p, images, docs, videos, yts, staged, mediaEdits = {},
   ];
 
   const [activeImgIdx, setActiveImgIdx] = useState(0);
+  const [previewTab, setPreviewTab] = useState('specs');
   const activeImg = allImgs[activeImgIdx] || null;
-  const specs = Object.entries(p.specs || {}).filter(([k]) => k.trim());
+  const specs = Object.entries(p.specs || {}).filter(([k]) => String(k).trim());
 
   return (
-    <Modal wide title="👁 Industrial Catalog Preview — Sales & Customer View" onClose={onClose}>
-      <div className="grid md:grid-cols-12 gap-6 max-h-[75vh] overflow-y-auto pr-1">
-        {/* Left: Gallery & Visual Asset Display */}
-        <div className="md:col-span-6 space-y-3">
-          <div className="aspect-[4/3] rounded-xl border border-slate-200 bg-slate-100 overflow-hidden relative flex items-center justify-center">
-            {activeImg ? (
-              <img src={activeImg.url} alt={activeImg.title || p.name} className="w-full h-full object-cover" />
-            ) : (
-              <div className="text-slate-400 text-xs">No primary image attached</div>
-            )}
-          </div>
+    <Modal wide title="👁 Industrial Catalog Live Preview — Customer & Sales View" onClose={onClose}>
+      <div className="space-y-4 max-h-[78vh] overflow-y-auto pr-1">
+        {/* Main Hero Card in Preview */}
+        <div className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-2xs">
+          <div className="grid md:grid-cols-12 gap-5 items-start">
+            {/* Left: Compact Gallery */}
+            <div className="md:col-span-6 flex flex-col space-y-2.5">
+              <div className="w-full h-[260px] sm:h-[280px] rounded-xl border border-slate-200 bg-gradient-to-b from-slate-50/80 to-white overflow-hidden relative flex items-center justify-center p-2 shadow-inner">
+                {activeImg ? (
+                  <img src={activeImg.url} alt={activeImg.title || p.name} className="w-full h-full object-contain" />
+                ) : (
+                  <div className="flex flex-col items-center justify-center text-slate-400 p-6 text-center">
+                    <div className="w-14 h-14 rounded-2xl bg-slate-100 border border-dashed border-slate-300 flex items-center justify-center text-slate-400 mb-2">
+                      <Package className="w-7 h-7 text-slate-400 stroke-1" />
+                    </div>
+                    <div className="text-xs font-bold text-slate-600">Industrial Engineering Asset</div>
+                    <div className="text-[10.5px] text-slate-400 mt-0.5">Primary photo or CAD drawing pending upload</div>
+                  </div>
+                )}
+                {allImgs.length > 1 && (
+                  <span className="absolute top-2 right-2 bg-slate-900/80 text-white text-[9.5px] font-mono px-2 py-0.5 rounded-full">
+                    {activeImgIdx + 1} / {allImgs.length}
+                  </span>
+                )}
+              </div>
 
-          {/* Active Photo Caption Box */}
-          {activeImg && (activeImg.title || activeImg.description) && (
-            <div className="p-2.5 rounded-lg bg-slate-900 text-white text-xs">
-              {activeImg.title && <div className="font-bold flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-orange-500" />{activeImg.title}</div>}
-              {activeImg.description && <div className="text-[11px] text-slate-300 mt-0.5">{activeImg.description}</div>}
+              {/* Photo Caption */}
+              {activeImg && (activeImg.title || activeImg.description) && (
+                <div className="p-2.5 rounded-xl bg-slate-900 text-white shadow-xs border border-slate-800 text-xs">
+                  {activeImg.title && (
+                    <div className="font-bold flex items-center gap-1.5 text-xs">
+                      <span className="w-1.5 h-1.5 rounded-full bg-orange-500 flex-shrink-0" />
+                      <span>{activeImg.title}</span>
+                    </div>
+                  )}
+                  {activeImg.description && (
+                    <div className="text-[11px] text-slate-300 mt-0.5 leading-relaxed">
+                      {activeImg.description}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Thumbnails */}
+              {allImgs.length > 1 && (
+                <div className="flex gap-2 overflow-x-auto pb-1 pt-0.5">
+                  {allImgs.map((img, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => setActiveImgIdx(i)}
+                      className={`w-14 h-14 rounded-lg border-2 overflow-hidden flex-shrink-0 cursor-pointer transition-all ${
+                        activeImgIdx === i ? 'border-orange-500 ring-2 ring-orange-200 scale-102' : 'border-slate-200 opacity-70 hover:opacity-100'
+                      }`}
+                    >
+                      <img src={img.url} alt="" className="w-full h-full object-cover" />
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
-          )}
 
-          {/* Thumbnails */}
-          {allImgs.length > 1 && (
-            <div className="flex gap-2 overflow-x-auto pb-1">
-              {allImgs.map((img, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={() => setActiveImgIdx(i)}
-                  className={`w-14 h-14 rounded-lg border-2 overflow-hidden flex-shrink-0 cursor-pointer ${
-                    activeImgIdx === i ? 'border-orange-500 ring-2 ring-orange-200' : 'border-slate-200 opacity-70 hover:opacity-100'
-                  }`}
-                >
-                  <img src={img.url} alt="" className="w-full h-full object-cover" />
+            {/* Right: Commercial & Technical Details */}
+            <div className="md:col-span-6 flex flex-col space-y-2.5">
+              <div>
+                <div className="flex items-center gap-2 flex-wrap mb-1">
+                  <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 bg-slate-100 text-slate-700 rounded-md border border-slate-200">
+                    {p.categoryName || p.category || 'Industrial Catalog'}
+                  </span>
+                  <span className="inline-flex items-center gap-1 text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
+                    ● Workflow Draft
+                  </span>
+                </div>
+                <h2 className="text-lg font-black text-slate-900 tracking-tight leading-snug">{p.name}</h2>
+                <div className="flex items-center gap-2 text-xs text-slate-500 mt-1 flex-wrap">
+                  <span className="font-mono font-bold text-slate-800 bg-slate-100 px-2 py-0.5 rounded">
+                    SKU: {p.sku || p.id}
+                  </span>
+                  {p.brand && (
+                    <span className="bg-slate-50 border border-slate-200/80 px-2 py-0.5 rounded">
+                      Brand: <b className="text-slate-800">{p.brand}</b>
+                    </span>
+                  )}
+                  {p.mpn && (
+                    <span className="font-mono bg-slate-50 border border-slate-200/80 px-2 py-0.5 rounded">
+                      MPN: <b>{p.mpn}</b>
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {p.short && p.short.trim().toLowerCase() !== p.name.trim().toLowerCase() && (
+                <div className="border-l-3 border-orange-500 bg-orange-50/50 rounded-r-lg px-3 py-1 text-xs text-slate-700 leading-relaxed font-medium">
+                  {p.short}
+                </div>
+              )}
+
+              {/* Price Banner */}
+              <div className="flex items-baseline justify-between p-2.5 rounded-xl bg-gradient-to-r from-slate-50 to-orange-50/20 border border-slate-200">
+                <div>
+                  <span className="text-[9.5px] font-extrabold uppercase text-slate-400 tracking-wider">Catalog Price</span>
+                  <div className="text-lg font-black text-slate-900">On request</div>
+                </div>
+                <div className="text-right">
+                  <span className="text-[9.5px] font-extrabold uppercase text-slate-400 tracking-wider">Pricing Status</span>
+                  <div className="text-xs font-bold text-indigo-700">Set by Finance</div>
+                </div>
+              </div>
+
+              {/* 4-Col Logistics */}
+              <div className="grid grid-cols-4 gap-1.5 p-2 rounded-xl bg-slate-50/80 border border-slate-200 text-xs">
+                <div><span className="text-[9px] text-slate-400 font-bold uppercase block">Unit</span><span className="font-bold text-slate-800">{p.uom || 'Pc'}</span></div>
+                <div><span className="text-[9px] text-slate-400 font-bold uppercase block">MOQ</span><span className="font-mono font-bold text-slate-800">{p.moq || 1}</span></div>
+                <div><span className="text-[9px] text-slate-400 font-bold uppercase block">Warehouse</span><span className="font-bold text-slate-800 truncate block">{p.warehouse || 'Central'}</span></div>
+                <div><span className="text-[9px] text-slate-400 font-bold uppercase block">Lead Time</span><span className="font-bold text-slate-800 truncate block">{p.leadTime || 'Ex-stock'}</span></div>
+              </div>
+
+              {/* Mock Buy Buttons */}
+              <div className="flex gap-2 pt-1 opacity-75">
+                <button type="button" disabled className="btn btn-primary flex-1 py-1.5 text-xs font-bold h-8">
+                  Add to Cart
                 </button>
-              ))}
+                <button type="button" disabled className="btn btn-coral flex-1 py-1.5 text-xs font-bold h-8">
+                  Buy Now →
+                </button>
+              </div>
             </div>
-          )}
-
-          {/* YouTube Embed Showcase */}
-          {allYts.filter((y) => ytId(y.url)).map((y, idx) => (
-            <div key={idx} className="rounded-xl border border-slate-200 overflow-hidden bg-slate-50 p-2.5">
-              <iframe className="w-full aspect-video rounded-lg" src={`https://www.youtube.com/embed/${ytId(y.url)}`} title={y.title || 'Product Video'} allowFullScreen />
-              {y.title && <div className="font-bold text-xs text-slate-900 mt-2">{y.title}</div>}
-              {y.description && <div className="text-[11px] text-slate-600 mt-0.5">{y.description}</div>}
-            </div>
-          ))}
+          </div>
         </div>
 
-        {/* Right: Technical Specs, Overview, Documents */}
-        <div className="md:col-span-6 space-y-4">
-          <div>
-            <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 bg-slate-100 text-slate-700 rounded-md">
-              {p.categoryName || p.category || 'Industrial Catalog'}
-            </span>
-            <h2 className="text-lg font-black text-slate-900 tracking-tight mt-1">{p.name}</h2>
-            <div className="text-xs text-slate-500 font-mono mt-0.5">SKU: {p.sku || p.id}{p.brand ? ` · Brand: ${p.brand}` : ''}</div>
+        {/* In-Modal Catalog Tabs */}
+        <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-2xs">
+          <div className="flex items-center gap-1 p-1.5 bg-slate-50 border-b border-slate-200 overflow-x-auto">
+            {[
+              { id: 'specs', label: 'Technical Specs', count: specs.length },
+              { id: 'docs', label: 'Documents & Datasheets', count: allDocs.length },
+              { id: 'videos', label: 'Videos & YT', count: allYts.length },
+              { id: 'overview', label: 'Overview' }
+            ].map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setPreviewTab(t.id)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
+                  previewTab === t.id
+                    ? 'bg-white text-slate-900 shadow-xs border border-slate-200'
+                    : 'text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                <span>{t.label}</span>
+                {t.count !== undefined && (
+                  <span className={`text-[10px] px-1.5 rounded-full font-mono ${
+                    previewTab === t.id ? 'bg-orange-100 text-orange-800 font-extrabold' : 'bg-slate-200 text-slate-600'
+                  }`}>
+                    {t.count}
+                  </span>
+                )}
+              </button>
+            ))}
           </div>
 
-          {p.short && (
-            <div className="p-2.5 rounded-lg bg-orange-50/60 border border-orange-200/80 text-xs text-slate-800 font-medium">
-              {p.short}
-            </div>
-          )}
-
-          <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
-            <div className="text-xl font-black text-slate-900">On request</div>
-            <div className="text-[11px] text-slate-500">Commercial pricing will be finalized by Finance prior to publication.</div>
-          </div>
-
-          {specs.length > 0 && (
-            <div>
-              <div className="text-[11px] font-extrabold uppercase tracking-wide text-slate-500 mb-1.5">
-                Technical Specifications
+          <div className="p-4">
+            {previewTab === 'specs' && (
+              <div>
+                {specs.length > 0 ? (
+                  <table className="w-full text-xs border border-slate-200 rounded-lg overflow-hidden">
+                    <tbody className="divide-y divide-slate-100">
+                      {specs.map(([k, v], idx) => (
+                        <tr key={k} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}>
+                          <td className="px-3 py-1.5 bg-slate-50 font-bold text-slate-700 w-1/3">{k}</td>
+                          <td className="px-3 py-1.5 text-slate-900 font-mono font-semibold">{v}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <p className="text-xs text-slate-400 py-4 text-center">No technical specifications entered yet.</p>
+                )}
               </div>
-              <table className="w-full text-xs border border-slate-200 rounded-lg overflow-hidden">
-                <tbody className="divide-y divide-slate-100">
-                  {specs.map(([k, v]) => (
-                    <tr key={k} className="hover:bg-slate-50/50">
-                      <td className="px-2.5 py-1.5 bg-slate-50 font-bold text-slate-700 w-1/2">{k}</td>
-                      <td className="px-2.5 py-1.5 text-slate-800 font-mono">{v}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+            )}
 
-          <div>
-            <div className="text-[11px] font-extrabold uppercase tracking-wide text-slate-500 mb-1">
-              Sales Description
-            </div>
-            <div className="text-xs text-slate-700 whitespace-pre-wrap leading-relaxed">
-              {p.desc || 'No description written yet.'}
-            </div>
-          </div>
-
-          {allDocs.length > 0 && (
-            <div>
-              <div className="text-[11px] font-extrabold uppercase tracking-wide text-slate-500 mb-1.5">
-                Technical Documents &amp; Datasheets ({allDocs.length})
-              </div>
-              <div className="space-y-1.5">
-                {allDocs.map((d, idx) => (
-                  <div key={idx} className="p-2 rounded-lg border border-slate-200 bg-white flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <FileText className="w-4 h-4 text-red-500 flex-shrink-0" />
-                      <div className="min-w-0">
-                        <div className="text-xs font-bold text-slate-900 truncate">{d.title || 'Datasheet'}</div>
-                        {d.description && <div className="text-[10px] text-slate-500 truncate">{d.description}</div>}
+            {previewTab === 'docs' && (
+              <div>
+                {allDocs.length > 0 ? (
+                  <div className="grid md:grid-cols-2 gap-2.5">
+                    {allDocs.map((d, idx) => (
+                      <div key={idx} className="p-3 rounded-xl border border-slate-200 bg-slate-50/50 flex items-start justify-between gap-2.5">
+                        <div className="flex items-start gap-2.5 min-w-0">
+                          <div className="w-8 h-8 rounded-lg bg-rose-50 border border-rose-200 flex items-center justify-center flex-shrink-0 text-rose-600 font-black text-[10px]">
+                            PDF
+                          </div>
+                          <div className="min-w-0">
+                            <div className="text-xs font-bold text-slate-900 truncate">{d.title || 'Datasheet'}</div>
+                            {d.description && <div className="text-[10.5px] text-slate-500 mt-0.5 line-clamp-1">{d.description}</div>}
+                          </div>
+                        </div>
+                        {d.staged ? (
+                          <span className="text-[9.5px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 flex-shrink-0">
+                            Staged
+                          </span>
+                        ) : (
+                          <span className="text-xs font-bold text-blue-600 flex-shrink-0">
+                            Download PDF ↓
+                          </span>
+                        )}
                       </div>
-                    </div>
-                    {d.staged ? (
-                      <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">Staged</span>
-                    ) : (
-                      <a href={d.url} target="_blank" rel="noreferrer" className="text-xs font-bold text-blue-600 hover:underline flex-shrink-0">
-                        Download PDF ↓
-                      </a>
-                    )}
+                    ))}
                   </div>
-                ))}
+                ) : (
+                  <p className="text-xs text-slate-400 py-4 text-center">No downloadable documents attached.</p>
+                )}
               </div>
-            </div>
-          )}
+            )}
+
+            {previewTab === 'videos' && (
+              <div>
+                {allYts.length > 0 ? (
+                  <div className="grid md:grid-cols-2 gap-4">
+                    {allYts.filter((y) => ytId(y.url)).map((y, idx) => (
+                      <div key={idx} className="rounded-xl border border-slate-200 overflow-hidden bg-white shadow-2xs">
+                        <iframe className="w-full aspect-video" src={`https://www.youtube.com/embed/${ytId(y.url)}`} title={y.title || 'Product Video'} allowFullScreen />
+                        <div className="p-2.5">
+                          <div className="font-bold text-xs text-slate-900">{y.title || 'YouTube Demonstration'}</div>
+                          {y.description && <div className="text-[11px] text-slate-600 mt-0.5">{y.description}</div>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-400 py-4 text-center">No videos or YouTube attached.</p>
+                )}
+              </div>
+            )}
+
+            {previewTab === 'overview' && (
+              <div className="text-xs text-slate-700 whitespace-pre-wrap leading-relaxed max-w-3xl">
+                {p.desc || 'No description written yet.'}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </Modal>
