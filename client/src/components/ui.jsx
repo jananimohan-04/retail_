@@ -92,7 +92,7 @@ export function statusBadge(status) {
   return <StatusBadge status={status} />;
 }
 
-/* ---------- Themed Page Hero / Header Banner ---------- */
+/* ---------- Themed Page Hero / Header Banner (Compact Single-Line) ---------- */
 export function PageHero({
   icon: IconComponent,
   title,
@@ -117,40 +117,31 @@ export function PageHero({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: -6 }}
+      initial={{ opacity: 0, y: -4 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.25, ease: 'easeOut' }}
-      className="relative overflow-hidden bg-gradient-to-br from-white via-slate-50/90 to-orange-50/25 rounded-2xl border border-slate-200/90 p-5 sm:p-6 shadow-xs mb-5"
+      transition={{ duration: 0.2, ease: 'easeOut' }}
+      className="relative overflow-hidden bg-gradient-to-r from-white via-slate-50/90 to-orange-50/20 rounded-xl border border-slate-200/90 px-4 py-2.5 sm:px-5 sm:py-3 shadow-xs mb-3.5"
     >
-      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-500 via-amber-500 to-transparent" />
-      {/* Ambient background glow decoration */}
-      <div className={`absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 rounded-full bg-gradient-to-br ${gradient} opacity-10 blur-3xl pointer-events-none`} />
-      <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-start sm:items-center gap-3.5">
+      <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-orange-500 via-amber-500 to-transparent" />
+      <div className="relative flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
           {IconComponent && (
-            <div className={`p-3 rounded-2xl bg-gradient-to-br ${gradient} text-white shadow-md shadow-blue-900/10 flex-shrink-0`}>
-              <IconComponent className="w-5 h-5 sm:w-6 sm:h-6" />
+            <div className={`p-2 rounded-xl bg-gradient-to-br ${gradient} text-white shadow-xs flex-shrink-0`}>
+              <IconComponent className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
           )}
-          <div>
-            <div className="flex items-center gap-2.5 flex-wrap">
-              <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">{title}</h1>
-              {badgeText && (
-                <span className={`px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wide border ${BADGE_COLORS[badgeColor] || BADGE_COLORS.blue}`}>
-                  {badgeText}
-                </span>
-              )}
-            </div>
-            {subtitle && (
-              <p className="text-xs sm:text-sm text-slate-500 mt-1 leading-relaxed max-w-3xl">
-                {subtitle}
-              </p>
+          <div className="flex items-center gap-2.5 min-w-0 flex-wrap">
+            <h1 className="text-base sm:text-lg font-black text-slate-900 tracking-tight truncate">{title}</h1>
+            {badgeText && (
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide border flex-shrink-0 ${BADGE_COLORS[badgeColor] || BADGE_COLORS.blue}`}>
+                {badgeText}
+              </span>
             )}
           </div>
         </div>
 
         {actions && (
-          <div className="flex items-center gap-2 flex-wrap self-start md:self-auto">
+          <div className="flex items-center gap-2 flex-shrink-0">
             {actions}
           </div>
         )}
@@ -488,16 +479,15 @@ export function Confirm({ title, body, okLabel = 'Confirm', danger = false, busy
   );
 }
 
-/* ---------- Page Header ---------- */
+/* ---------- Page Header (Compact Single-Line) ---------- */
 export function PageHead({ title, eyebrow, desc, actions }) {
   return (
-    <div className={`flex ${desc || eyebrow ? 'items-start' : 'items-center'} justify-between gap-4 flex-wrap pb-2 border-b border-slate-200/80 mb-3.5`}>
-      <div>
-        {eyebrow && <div className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 mb-1">{eyebrow}</div>}
-        <h1 className="text-2xl font-black text-slate-900 tracking-tight">{title}</h1>
-        {desc && <p className="text-xs text-slate-500 mt-1 max-w-2xl">{desc}</p>}
+    <div className="flex items-center justify-between gap-3 flex-wrap pb-2 border-b border-slate-200/80 mb-3">
+      <div className="flex items-center gap-2 flex-wrap">
+        {eyebrow && <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">{eyebrow}</span>}
+        <h1 className="text-lg font-black text-slate-900 tracking-tight">{title}</h1>
       </div>
-      {actions && <div className="flex items-center gap-2.5 flex-wrap">{actions}</div>}
+      {actions && <div className="flex items-center gap-2 flex-wrap">{actions}</div>}
     </div>
   );
 }
