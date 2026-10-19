@@ -120,10 +120,11 @@ export function PageHero({
       initial={{ opacity: 0, y: -6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25, ease: 'easeOut' }}
-      className="relative overflow-hidden bg-white rounded-2xl border border-slate-200/90 p-5 sm:p-6 shadow-xs mb-6"
+      className="relative overflow-hidden bg-gradient-to-br from-white via-slate-50/90 to-orange-50/25 rounded-2xl border border-slate-200/90 p-5 sm:p-6 shadow-xs mb-5"
     >
+      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-500 via-amber-500 to-transparent" />
       {/* Ambient background glow decoration */}
-      <div className={`absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 rounded-full bg-gradient-to-br ${gradient} opacity-5 blur-3xl pointer-events-none`} />
+      <div className={`absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 rounded-full bg-gradient-to-br ${gradient} opacity-10 blur-3xl pointer-events-none`} />
       <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-start sm:items-center gap-3.5">
           {IconComponent && (
