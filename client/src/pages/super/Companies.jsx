@@ -11,7 +11,12 @@ import {
 import { CompanyFormFields, emptyCompany, companyFromDetail, validateCompany, companyPayload } from './CompanyForm';
 import { asRows, csvDownload, fetchCompanyOptions, UserModal, UserView, RoleButton, SuspendConfirm, toggleUserActive } from './_shared';
 
-const MG_TABS = [['companies', '🏢 Companies'], ['admins', '👔 Company Admins'], ['users', '👥 Company Users']];
+const MG_TABS = [
+  ['companies', '🏢 Companies'],
+  ['admins', '👔 Company Admins'],
+  ['users', '👥 Company Users'],
+  ['roles', '🛡️ Existing Roles']
+];
 const LIMIT = 8;
 
 function useDebounced(value, ms = 280) {
@@ -23,7 +28,7 @@ function useDebounced(value, ms = 280) {
 export default function Companies({ tab: tabProp }) {
   const [sp, setSp] = useSearchParams();
   const nav = useNavigate();
-  const tab = tabProp || (['admins', 'users'].includes(sp.get('tab')) ? sp.get('tab') : 'companies');
+  const tab = tabProp || (['admins', 'users', 'roles'].includes(sp.get('tab')) ? sp.get('tab') : 'companies');
 
   const [stats, setStats] = useState(null);
   const [statsErr, setStatsErr] = useState('');
@@ -34,6 +39,7 @@ export default function Companies({ tab: tabProp }) {
   const [rolesModal, setRolesModal] = useState(false);
   const [addRoleModal, setAddRoleModal] = useState(false);
   const [editRole, setEditRole] = useState(null);
+  const [editTcRole, setEditTcRole] = useState(null);
 
   // per-tab filters (mirror legacy ui.coFQ/coFStatus/…/admFQ…/usrFQ…)
   const [coQ, setCoQ] = useState('');
@@ -85,6 +91,10 @@ export default function Companies({ tab: tabProp }) {
   }, []);
 
   const load = useCallback(async () => {
+    if (tab === 'roles') {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       let url;
@@ -172,8 +182,8 @@ export default function Companies({ tab: tabProp }) {
           <button className="btn btn-ghost btn-sm" onClick={refresh}>↻ Refresh</button>
           {tab === 'users' ? (
             <>
-              <button className="btn btn-ghost btn-sm" onClick={() => setRolesModal(true)} title="Configure partner tiers and markup percentages">
-                🛡️ Manage Roles & Tiers
+              <button className="btn btn-ghost btn-sm" onClick={() => setRolesModal(true)} title="View existing roles, edit % markup, and Terms & Conditions">
+                👁️ View Existing Roles
               </button>
               <button className="btn btn-ghost btn-sm" onClick={() => setAddRoleModal(true)} title="Create new role">
                 + Add Role
@@ -183,6 +193,12 @@ export default function Companies({ tab: tabProp }) {
               </button>
               <button className="btn btn-primary btn-sm" onClick={() => setUserModal({ preset: { role: 'sales_regional_partner' } })}>
                 + Add User
+              </button>
+            </>
+          ) : tab === 'roles' ? (
+            <>
+              <button className="btn btn-primary btn-sm" onClick={() => setAddRoleModal(true)} title="Create new role">
+                + Add Role
               </button>
             </>
           ) : (
@@ -229,6 +245,14 @@ export default function Companies({ tab: tabProp }) {
               onEdit={(id) => setUserModal({ editId: id })} onToggle={(u) => toggleUserActive(u, load)} onRoleChanged={load}
             />
           )}
+          {tab === 'roles' && (
+            <RolesTab
+              onAddRole={() => setAddRoleModal(true)}
+              onEditRole={(r) => setEditRole(r)}
+              onEditTc={(r) => setEditTcRole(r)}
+              onRoleChanged={load}
+            />
+          )}
         </div>
       </div>
 
@@ -237,19 +261,28 @@ export default function Companies({ tab: tabProp }) {
           onClose={() => setRolesModal(false)} 
           onAddRole={() => { setRolesModal(false); setAddRoleModal(true); }}
           onEditRole={(r) => { setRolesModal(false); setEditRole(r); }}
+          onEditTc={(r) => { setRolesModal(false); setEditTcRole(r); }}
+          onRoleChanged={load}
         />
       )}
       {addRoleModal && (
         <RoleEditModal 
           onClose={() => setAddRoleModal(false)} 
-          onSaved={() => { setAddRoleModal(false); setRolesModal(true); load(); }} 
+          onSaved={() => { setAddRoleModal(false); load(); }} 
         />
       )}
       {editRole && (
         <RoleEditModal 
           role={editRole} 
           onClose={() => setEditRole(null)} 
-          onSaved={() => { setEditRole(null); setRolesModal(true); load(); }} 
+          onSaved={() => { setEditRole(null); load(); }} 
+        />
+      )}
+      {editTcRole && (
+        <RoleTcModal
+          role={editTcRole}
+          onClose={() => setEditTcRole(null)}
+          onSaved={() => { setEditTcRole(null); load(); }}
         />
       )}
 
@@ -492,20 +525,63 @@ function CompanyDetails({ id, onClose, onEdit, onManage }) {
   );
 }
 
-/* ---------------- roles list modal ---------------- */
-function RolesModal({ onClose, onAddRole, onEditRole }) {
+/* ---------------- Roles Management View (Used in Tab and Modal) ---------------- */
+function RolesTab({ onAddRole, onEditRole, onEditTc, onRoleChanged, isModal }) {
   const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState('');
+  const [q, setQ] = useState('');
+  const [savingId, setSavingId] = useState(null);
+  const [draftPcts, setDraftPcts] = useState({});
 
-  const loadRoles = () => {
+  const loadRoles = useCallback(() => {
     setLoading(true);
     api.get('/api/roles')
-      .then((d) => { setRoles(Array.isArray(d) ? d : []); setLoading(false); })
+      .then((d) => {
+        const list = Array.isArray(d) ? d : [];
+        setRoles(list);
+        const pcts = {};
+        list.forEach((r) => { pcts[r.id] = r.markupPct != null ? String(r.markupPct) : '0'; });
+        setDraftPcts(pcts);
+        setLoading(false);
+      })
       .catch((e) => { setErr(e.message || 'Failed to load roles'); setLoading(false); });
-  };
+  }, []);
 
-  useEffect(() => { loadRoles(); }, []);
+  useEffect(() => { loadRoles(); }, [loadRoles]);
+
+  // Quick save markup % directly
+  async function saveMarkup(r) {
+    const val = Number(draftPcts[r.id]);
+    if (isNaN(val) || val < 0) {
+      toast('Please enter a valid markup percentage >= 0', '⚠️');
+      return;
+    }
+    setSavingId(r.id);
+    try {
+      await api.patch('/api/roles/' + r.id, { markupPct: val });
+      toast(`${r.name} markup set to +${val}%`, '✅');
+      loadRoles();
+      if (onRoleChanged) onRoleChanged();
+    } catch (e) {
+      toast(e.message || 'Failed to update markup', '⚠️');
+    } finally {
+      setSavingId(null);
+    }
+  }
+
+  // Quick toggle T&C mandatory
+  async function toggleRequireTerms(r) {
+    const nextVal = !r.requireTerms;
+    try {
+      await api.patch('/api/roles/' + r.id, { requireTerms: nextVal });
+      toast(`${r.name}: T&C is now ${nextVal ? 'Mandatory' : 'Optional'}`, '📜');
+      loadRoles();
+      if (onRoleChanged) onRoleChanged();
+    } catch (e) {
+      toast(e.message || 'Failed to update T&C requirement', '⚠️');
+    }
+  }
 
   async function handleDelete(r) {
     if (r.isSystem) return;
@@ -514,98 +590,210 @@ function RolesModal({ onClose, onAddRole, onEditRole }) {
       await api.del('/api/roles/' + r.id);
       toast(`Role ${r.name} deleted`, '🗑️');
       loadRoles();
+      if (onRoleChanged) onRoleChanged();
     } catch (e) {
       toast(e.message || 'Delete failed', '⚠️');
     }
   }
 
+  const filtered = roles.filter((r) => {
+    if (!q) return true;
+    const term = q.toLowerCase();
+    return (r.name || '').toLowerCase().includes(term) ||
+           (r.id || '').toLowerCase().includes(term) ||
+           (r.category || '').toLowerCase().includes(term) ||
+           (r.description || '').toLowerCase().includes(term);
+  });
+
+  const partnerCount = roles.filter((r) => r.category === 'sales_partner').length;
+  const internalCount = roles.filter((r) => r.category !== 'sales_partner').length;
+
   return (
-    <Modal title="🛡️ Manage Roles & Partner Pricing Tiers" onClose={onClose} wide>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
-        <p className="hint" style={{ margin: 0 }}>
-          Configure partner markup tiers and required Terms & Conditions. Percentages adjust retail catalog pricing automatically.
-        </p>
-        <button className="btn btn-primary btn-sm" onClick={onAddRole}>
-          + Add Role
-        </button>
+    <div className="space-y-3">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10, paddingBottom: 8, borderBottom: '1px solid #E2E8F0' }}>
+        <div>
+          <div style={{ fontWeight: 800, fontSize: 15, color: '#0F172A', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span>🛡️ Configured Roles & Partner Pricing Tiers</span>
+            <span style={{ fontSize: 11, background: '#EFF6FF', color: '#1D4ED8', padding: '2px 8px', borderRadius: 12, fontWeight: 700 }}>
+              {roles.length} Roles ({partnerCount} Sales Partners · {internalCount} Internal)
+            </span>
+          </div>
+          <p className="hint" style={{ margin: '2px 0 0 0', fontSize: 11.5 }}>
+            Directly configure price markup %, enforce mandatory Terms & Conditions, and adjust role definitions. Pricing updates immediately apply across retail catalog & checkout.
+          </p>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <input
+            type="search"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Search roles…"
+            className="input-sm"
+            style={{ width: 170, fontSize: 12, padding: '4px 8px', borderRadius: 6, border: '1px solid #CBD5E1' }}
+          />
+          <button className="btn btn-primary btn-sm" onClick={onAddRole} title="Create a new role or pricing tier">
+            + Add Role
+          </button>
+        </div>
       </div>
 
-      {loading && <Skeleton h={180} />}
+      {loading && <Skeleton h={220} />}
       {err && <div className="hint" style={{ color: '#DC2626' }}>{err}</div>}
 
       {!loading && !err && (
         <div style={{ overflowX: 'auto', border: '1px solid #E2E8F0', borderRadius: 8 }}>
-          <table className="data-table" style={{ width: '100%', minWidth: 780, fontSize: 12 }}>
+          <table className="data-table" style={{ width: '100%', minWidth: 840, fontSize: 12 }}>
             <thead>
               <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', textAlign: 'left' }}>
-                <th style={{ padding: '8px 10px', minWidth: 150 }}>Role / Tier Name</th>
+                <th style={{ padding: '8px 10px', minWidth: 160 }}>Role / Tier Name</th>
                 <th style={{ padding: '8px 10px', minWidth: 120 }}>Category</th>
-                <th style={{ padding: '8px 10px', minWidth: 120 }}>Price Markup %</th>
-                <th style={{ padding: '8px 10px', minWidth: 120 }}>T&C Required</th>
-                <th style={{ padding: '8px 10px', minWidth: 160 }}>Description</th>
+                <th style={{ padding: '8px 10px', minWidth: 160 }}>Price Markup % (Direct Edit)</th>
+                <th style={{ padding: '8px 10px', minWidth: 180 }}>Terms & Conditions (T&C)</th>
+                <th style={{ padding: '8px 10px', minWidth: 150 }}>Description</th>
                 <th style={{ padding: '8px 10px', minWidth: 110, textAlign: 'right' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {roles.map((r) => (
-                <tr key={r.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                  <td style={{ padding: '10px' }}>
-                    <b>{r.name}</b>
-                    <div className="hint" style={{ fontSize: 10 }}>{r.id}</div>
-                  </td>
-                  <td style={{ padding: '10px' }}>
-                    <span style={{ 
-                      fontSize: 10.5, 
-                      fontWeight: 700, 
-                      padding: '2px 8px', 
-                      borderRadius: 12, 
-                      background: r.category === 'sales_partner' ? '#EFF6FF' : '#F1F5F9',
-                      color: r.category === 'sales_partner' ? '#1D4ED8' : '#475569'
-                    }}>
-                      {r.category === 'sales_partner' ? '🤝 Sales Partner' : '🏢 Internal'}
-                    </span>
-                  </td>
-                  <td style={{ padding: '10px' }}>
-                    {r.markupPct != null ? (
-                      <span style={{
-                        fontWeight: 800,
-                        fontFamily: 'monospace',
-                        color: r.markupPct > 0 ? '#15803D' : '#64748B',
-                        background: r.markupPct > 0 ? '#DCFCE7' : '#F1F5F9',
-                        padding: '3px 8px',
-                        borderRadius: 6
+              {filtered.map((r) => {
+                const draft = draftPcts[r.id] ?? (r.markupPct != null ? String(r.markupPct) : '0');
+                const isModified = String(draft) !== String(r.markupPct != null ? r.markupPct : '0');
+                const numDraft = Number(draft) || 0;
+                const samplePrice = Math.round(1000 * (1 + numDraft / 100));
+
+                return (
+                  <tr key={r.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                    <td style={{ padding: '10px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <b style={{ color: '#0F172A' }}>{r.name}</b>
+                        {r.isSystem ? (
+                          <span style={{ fontSize: 9.5, background: '#F1F5F9', color: '#64748B', padding: '1px 5px', borderRadius: 4, fontWeight: 600 }}>Core System</span>
+                        ) : (
+                          <span style={{ fontSize: 9.5, background: '#EEF2FF', color: '#4F46E5', padding: '1px 5px', borderRadius: 4, fontWeight: 600 }}>Custom Tier</span>
+                        )}
+                      </div>
+                      <div className="hint" style={{ fontSize: 10, fontFamily: 'monospace' }}>{r.id}</div>
+                    </td>
+                    <td style={{ padding: '10px' }}>
+                      <span style={{ 
+                        fontSize: 10.5, 
+                        fontWeight: 700, 
+                        padding: '2px 8px', 
+                        borderRadius: 12, 
+                        background: r.category === 'sales_partner' ? '#EFF6FF' : '#F1F5F9',
+                        color: r.category === 'sales_partner' ? '#1D4ED8' : '#475569'
                       }}>
-                        {r.markupPct > 0 ? `+${r.markupPct}%` : '0% (Base)'}
+                        {r.category === 'sales_partner' ? '🤝 Sales Partner' : '🏢 Internal'}
                       </span>
-                    ) : '—'}
-                  </td>
-                  <td style={{ padding: '10px' }}>
-                    {r.requireTerms ? (
-                      <span style={{ color: '#16A34A', fontWeight: 600 }}>✅ Mandatory</span>
-                    ) : (
-                      <span style={{ color: '#94A3B8' }}>Optional</span>
-                    )}
-                  </td>
-                  <td style={{ padding: '10px', maxWidth: 220, fontSize: 11, color: '#64748B' }}>
-                    {r.description || '—'}
-                  </td>
-                  <td style={{ padding: '10px', textAlign: 'right', whiteSpace: 'nowrap' }}>
-                    <button className="btn btn-ghost btn-sm" onClick={() => onEditRole(r)}>
-                      ✏️ Edit
-                    </button>
-                    {!r.isSystem && (
-                      <button className="btn btn-ghost btn-sm" style={{ color: '#DC2626' }} onClick={() => handleDelete(r)}>
-                        🗑️
+                    </td>
+                    <td style={{ padding: '10px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.5"
+                          value={draft}
+                          onChange={(e) => setDraftPcts({ ...draftPcts, [r.id]: e.target.value })}
+                          style={{
+                            width: 65,
+                            padding: '3px 6px',
+                            fontSize: 12,
+                            fontWeight: 800,
+                            fontFamily: 'monospace',
+                            borderRadius: 6,
+                            border: isModified ? '2px solid #2563EB' : '1px solid #CBD5E1',
+                            background: isModified ? '#EFF6FF' : '#FFFFFF',
+                            textAlign: 'center'
+                          }}
+                          title="Type a new percentage and click Save"
+                        />
+                        <span style={{ fontWeight: 800, fontSize: 12, color: '#334155' }}>%</span>
+                        {isModified && (
+                          <button
+                            className="btn btn-primary btn-xs"
+                            disabled={savingId === r.id}
+                            onClick={() => saveMarkup(r)}
+                            title="Save markup percentage changes"
+                          >
+                            {savingId === r.id ? '…' : 'Save'}
+                          </button>
+                        )}
+                      </div>
+                      <div className="hint" style={{ fontSize: 10, marginTop: 3 }}>
+                        Base ₹1,000 → <b style={{ color: numDraft > 0 ? '#15803D' : '#334155' }}>₹{samplePrice.toLocaleString('en-IN')}</b>
+                      </div>
+                    </td>
+                    <td style={{ padding: '10px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                        <button
+                          type="button"
+                          className="btn btn-ghost btn-xs"
+                          style={{
+                            padding: '2px 6px',
+                            fontSize: 10.5,
+                            fontWeight: 700,
+                            borderRadius: 4,
+                            background: r.requireTerms ? '#DCFCE7' : '#F1F5F9',
+                            color: r.requireTerms ? '#15803D' : '#64748B',
+                            border: '1px solid ' + (r.requireTerms ? '#86EFAC' : '#E2E8F0')
+                          }}
+                          onClick={() => toggleRequireTerms(r)}
+                          title="Click to toggle mandatory vs optional acceptance"
+                        >
+                          {r.requireTerms ? '✅ Mandatory' : '⚪ Optional'}
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-ghost btn-xs"
+                          style={{ color: '#2563EB', fontWeight: 600, padding: '2px 6px', background: '#EFF6FF', borderRadius: 4 }}
+                          onClick={() => onEditTc(r)}
+                          title="View and modify full Terms & Conditions text"
+                        >
+                          📜 Edit T&C Text
+                        </button>
+                      </div>
+                      {r.terms ? (
+                        <div style={{ fontSize: 10.5, color: '#64748B', marginTop: 4, maxWidth: 240, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={r.terms}>
+                          "{r.terms}"
+                        </div>
+                      ) : (
+                        <div className="hint" style={{ fontSize: 10, marginTop: 2 }}>No agreement text set</div>
+                      )}
+                    </td>
+                    <td style={{ padding: '10px', maxWidth: 180, fontSize: 11, color: '#64748B' }}>
+                      {r.description || '—'}
+                    </td>
+                    <td style={{ padding: '10px', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                      <button className="btn btn-ghost btn-sm" onClick={() => onEditRole(r)} title="Edit all role properties">
+                        ✏️ Edit Role
                       </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
+                      {!r.isSystem && (
+                        <button className="btn btn-ghost btn-sm" style={{ color: '#DC2626' }} onClick={() => handleDelete(r)} title="Delete custom role">
+                          🗑️
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
       )}
+    </div>
+  );
+}
 
+/* ---------------- Roles Modal Wrapper ---------------- */
+function RolesModal({ onClose, onAddRole, onEditRole, onEditTc, onRoleChanged }) {
+  return (
+    <Modal title="🛡️ Existing Roles & Pricing Tiers" onClose={onClose} wide>
+      <RolesTab 
+        onAddRole={onAddRole} 
+        onEditRole={onEditRole} 
+        onEditTc={onEditTc} 
+        onRoleChanged={onRoleChanged} 
+        isModal 
+      />
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 14 }}>
         <button className="btn btn-ghost btn-sm" onClick={onClose}>Close</button>
       </div>
@@ -613,7 +801,111 @@ function RolesModal({ onClose, onAddRole, onEditRole }) {
   );
 }
 
-/* ---------------- role create/edit modal ---------------- */
+/* ---------------- Terms & Conditions Editor Modal ---------------- */
+function RoleTcModal({ role, onClose, onSaved }) {
+  const [requireTerms, setRequireTerms] = useState(!!role.requireTerms);
+  const [terms, setTerms] = useState(role.terms || '');
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState('');
+
+  const PRESETS = [
+    {
+      label: '🌐 Regional Distribution Agreement',
+      text: 'By registering as an authorized Regional Distribution Partner, you agree to uphold brand pricing guidelines, maintain active territory coverage, and adhere to confidentiality and warranty standards. All orders are subject to regional quota allocations and payment terms.'
+    },
+    {
+      label: '🤝 Commercial Channel Partner Terms',
+      text: 'By registering as an authorized Channel Sales Partner, you agree to commercial resale terms, minimum advertised price (MAP) policies, and prompt payment settlements. Commercial warranty and return terms apply.'
+    },
+    {
+      label: '📣 Referral Agent Commission Agreement',
+      text: 'By registering as an authorized Commercial Referral Partner, you agree that referrals must be bona fide commercial inquiries. Commission entitlements are calculated on the agreed markup tier basis upon confirmed order delivery.'
+    },
+    {
+      label: '💼 Direct Sales Representative Agreement',
+      text: 'Standard direct sales representative agreement: confidential catalog pricing, customer order processing, and quotation terms apply.'
+    }
+  ];
+
+  async function save() {
+    setSaving(true);
+    setErr('');
+    try {
+      await api.patch('/api/roles/' + role.id, {
+        requireTerms: !!requireTerms,
+        terms: terms.trim()
+      });
+      toast(`Terms & Conditions updated for "${role.name}"`, '📜');
+      onSaved();
+    } catch (e) {
+      setErr(e.message || 'Failed to update Terms & Conditions');
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Modal title={`📜 Terms & Conditions: ${role.name}`} onClose={onClose} wide>
+      <div style={{ marginBottom: 12 }}>
+        <p className="hint" style={{ margin: 0 }}>
+          Define the legal agreement text and acceptance requirements for <b>{role.name}</b> ({role.markupPct ? `+${role.markupPct}% markup` : 'Base price'}).
+          When mandatory, users assigned to this role must accept these terms before their account can be created.
+        </p>
+      </div>
+
+      <div style={{ background: '#F8FAFC', padding: '10px 14px', borderRadius: 8, border: '1px solid #E2E8F0', marginBottom: 14 }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+          <input 
+            type="checkbox" 
+            checked={requireTerms} 
+            onChange={(e) => setRequireTerms(e.target.checked)} 
+            style={{ width: 16, height: 16, accentColor: '#2563EB' }}
+          />
+          <span>Mandatory: Require Terms & Conditions acceptance when creating users with this role</span>
+        </label>
+      </div>
+
+      <Field label="Agreement Terms & Conditions Text" req={requireTerms} hint="This exact text will be displayed in the T&C review card during user registration.">
+        <textarea 
+          rows={6} 
+          value={terms} 
+          onChange={(e) => setTerms(e.target.value)} 
+          placeholder="Enter legal terms and conditions agreement..." 
+          style={{ width: '100%', fontFamily: 'inherit', fontSize: 13, lineHeight: 1.5 }}
+        />
+      </Field>
+
+      <div style={{ marginTop: 8, marginBottom: 14 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: '#64748B', marginBottom: 6 }}>
+          Quick Template Presets (Click to insert):
+        </div>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+          {PRESETS.map((p, idx) => (
+            <button 
+              key={idx} 
+              type="button" 
+              className="btn btn-ghost btn-xs" 
+              style={{ background: '#EFF6FF', color: '#1D4ED8', fontSize: 11 }}
+              onClick={() => setTerms(p.text)}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {err && <div className="hint" style={{ color: '#DC2626', marginBottom: 10 }}>{err}</div>}
+
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 14 }}>
+        <button className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
+        <button className="btn btn-primary btn-sm" disabled={saving} onClick={save}>
+          💾 {saving ? 'Saving…' : 'Save Terms & Conditions'}
+        </button>
+      </div>
+    </Modal>
+  );
+}
+
+/* ---------------- Full Role Create/Edit Modal ---------------- */
 function RoleEditModal({ role, onClose, onSaved }) {
   const isEdit = !!role;
   const [name, setName] = useState(role ? role.name : '');
@@ -655,6 +947,9 @@ function RoleEditModal({ role, onClose, onSaved }) {
     }
   }
 
+  const numPct = Number(markupPct) || 0;
+  const previewPrice = Math.round(1000 * (1 + numPct / 100));
+
   return (
     <Modal title={isEdit ? `✏️ Edit Role: ${role.name}` : '🛡️ Add New Role & Partner Tier'} onClose={onClose}>
       <Field label="Role / Tier Name" req>
@@ -677,7 +972,10 @@ function RoleEditModal({ role, onClose, onSaved }) {
             placeholder="e.g. 10" 
             style={{ width: 140 }}
           />
-          <span style={{ fontWeight: 700, fontSize: 13, color: '#334155' }}>% Markup over Accounts Base Price</span>
+          <span style={{ fontWeight: 700, fontSize: 13, color: '#334155' }}>% Markup over Base Price</span>
+        </div>
+        <div className="hint" style={{ marginTop: 4, fontSize: 11 }}>
+          Live impact preview: Base ₹1,000 product ➔ Partner displays <b style={{ color: '#15803D' }}>₹{previewPrice.toLocaleString('en-IN')}</b>
         </div>
       </Field>
       <div style={{ marginTop: 10, marginBottom: 12 }}>

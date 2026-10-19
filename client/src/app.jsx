@@ -131,6 +131,7 @@ export default function App() {
           <Route path="/super/companies/:id" element={<Gate roles={R.super}><CompanyDetail /></Gate>} />
           <Route path="/super/admins" element={<Gate roles={R.super}><Companies tab="admins" /></Gate>} />
           <Route path="/super/users" element={<Gate roles={R.super}><Companies tab="users" /></Gate>} />
+          <Route path="/super/roles" element={<Gate roles={R.super}><Companies tab="roles" /></Gate>} />
           <Route path="/super/catalog" element={<Gate roles={R.super}><SuperCatalog /></Gate>} />
           <Route path="/super/categories" element={<Gate roles={R.super}><SuperCategories /></Gate>} />
           <Route path="/super/media" element={<Gate roles={R.super}><SuperMedia /></Gate>} />

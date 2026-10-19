@@ -531,6 +531,17 @@
   },
   "audit_logs": [
     {
+      "id": "A-179239954218243",
+      "ts": "2026-10-19T08:45:42.183Z",
+      "actor": "Argus User",
+      "role": "super_admin",
+      "action": "role.update",
+      "entity": "role",
+      "entityId": "sales_regional_partner",
+      "companyId": "C-ARGUS",
+      "summary": "Updated role Regional Partner: markup 10%"
+    },
+    {
       "id": "A-179239155370066",
       "ts": "2026-10-19T06:32:33.700Z",
       "actor": "Argus User",
