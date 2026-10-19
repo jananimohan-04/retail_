@@ -28,7 +28,7 @@ function sideLink(to, label, IconComponent, badge = null, onClick = null, mini =
       onClick={onClick}
       title={label}
       className={({ isActive }) => `
-        group relative flex items-center ${mini ? 'justify-center p-2.5 w-10 h-10 mx-auto' : 'gap-3 px-3 py-2.5'} rounded-xl text-xs font-semibold transition-all duration-200
+        group relative flex items-center ${mini ? 'justify-center p-2 w-9 h-9 mx-auto' : 'gap-2.5 px-2.5 py-1.5'} rounded-lg text-xs font-semibold transition-all duration-150
         ${isActive 
           ? `${activeClass} font-bold border` 
           : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/90'}
@@ -39,11 +39,11 @@ function sideLink(to, label, IconComponent, badge = null, onClick = null, mini =
           {isActive && (
             <motion.span
               layoutId="activeIndicator"
-              className={`absolute left-0 top-2 bottom-2 w-1.5 rounded-r-full shadow-xs ${indicatorColor}`}
+              className={`absolute left-0 top-1.5 bottom-1.5 w-1 rounded-r-full shadow-xs ${indicatorColor}`}
               transition={{ type: 'spring', stiffness: 380, damping: 30 }}
             />
           )}
-          <span className={`p-1 rounded-lg transition-colors ${
+          <span className={`p-0.5 rounded-md transition-colors ${
             isActive 
               ? `${activeIconColor} bg-white/80 shadow-2xs` 
               : 'text-slate-400 group-hover:text-slate-700 group-hover:bg-slate-200/60'
@@ -89,20 +89,20 @@ export function Sidebar({ counts, onItemClick, mini = false }) {
   const showCategories = hasPermission('store_listing') && (counts?.cats || []).length > 0;
 
   return (
-    <div className={`w-full flex flex-col ${mini ? 'gap-1.5 py-1 items-center' : 'gap-5 py-2'}`}>
+    <div className={`w-full flex flex-col ${mini ? 'gap-1 py-0.5 items-center' : 'gap-2 py-0.5'}`}>
       {activeCategories.map((cat, idx) => (
         <div key={cat.id} className="w-full">
           {idx > 0 && mini && <div className="w-8 border-t border-slate-100 my-1 mx-auto" />}
           <div>
             {!mini && (
-              <div className="flex items-center gap-1.5 px-3.5 mb-1.5">
+              <div className="flex items-center gap-1.5 px-3 mb-1 mt-1.5 first:mt-0">
                 <span className={`w-1.5 h-1.5 rounded-full ${cat.dotClass || 'bg-slate-400'}`} />
-                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 truncate">
+                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 truncate">
                   {role === 'company_admin' && cat.id === 'operations' ? `${companyTitle} • ${cat.label}` : cat.label}
                 </span>
               </div>
             )}
-            <div className={mini ? 'flex flex-col gap-1 items-center' : 'space-y-0.5'}>
+            <div className={mini ? 'flex flex-col gap-0.5 items-center' : 'space-y-0.5'}>
               {cat.items.map(item => {
                 const IconComp = ICON_MAP[item.icon] || Boxes;
                 const badge = item.badgeKey ? (counts?.[item.badgeKey] || '') : null;
@@ -461,7 +461,7 @@ export function Shell({ counts, noSide, children }) {
           <aside 
             style={{ top: `${headerH}px`, height: `calc(100vh - ${headerH}px)` }}
             className={`hidden lg:flex flex-col flex-shrink-0 bg-white border-r border-slate-200/80 sticky self-start overflow-y-auto transition-all duration-200 z-30 ${
-              sidebarOpen ? 'w-64 p-3' : 'w-14 p-1.5 items-center'
+              sidebarOpen ? 'w-64 px-2 py-2.5' : 'w-14 p-1.5 items-center'
             }`}
           >
             <Sidebar counts={counts} mini={!sidebarOpen} />
