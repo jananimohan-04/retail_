@@ -164,10 +164,10 @@ export default function Companies({ tab: tabProp }) {
   return (
     <>
       <PageHead
-        eyebrow="CNCFORGE ERP • SUPER ADMIN"
         title="Company Management"
-        desc="Manage companies, administrators, users, and access permissions from one centralized workspace."
         actions={<>
+          <Tabs compact className="mb-0" tabs={MG_TABS} active={tab} onTab={(k) => goTab(k)} />
+          <div className="h-6 w-px bg-slate-200 hidden sm:block" />
           <button className="btn btn-ghost btn-sm" onClick={mgExport}>⤓ Export</button>
           <button className="btn btn-ghost btn-sm" onClick={refresh}>↻ Refresh</button>
           <button className="btn btn-primary btn-sm" onClick={() => setUserModal({ preset: { role: 'company_admin' } })}>+ Invite Admin</button>
@@ -184,8 +184,7 @@ export default function Companies({ tab: tabProp }) {
         <Kpi compact onClick={() => mgCard('products')} value={s.products ?? '—'} label="Products" sub="across companies" grad="linear-gradient(135deg,#0F766E,#0EA5E9)" />
         <Kpi compact onClick={() => mgCard('orders')} value={s.orders ?? '—'} label="Orders" sub="across companies" grad="linear-gradient(135deg,#14532D,#10B981)" />
       </div>
-      <Tabs tabs={MG_TABS} active={tab} onTab={(k) => goTab(k)} />
-      <div className="card" style={{ marginTop: 0, borderTopLeftRadius: 0 }}>
+      <div className="card">
         <div className="card-pad">
           {tab === 'companies' && (
             <CompaniesTab

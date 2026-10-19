@@ -119,10 +119,10 @@ export function Modal({ title, onClose, wide, children }) {
 }
 
 /* ---------- Tab Switcher ---------- */
-export function Tabs({ tabs = [], active, onTab, onChange }) {
+export function Tabs({ tabs = [], active, onTab, onChange, className = '', compact = false }) {
   const handler = onTab || onChange || (() => {});
   return (
-    <div className="flex items-center gap-1.5 p-1 bg-slate-100/90 rounded-2xl w-fit border border-slate-200/80 mb-5 overflow-x-auto max-w-full">
+    <div className={`flex items-center gap-1.5 p-1 bg-slate-100/90 rounded-2xl w-fit border border-slate-200/80 overflow-x-auto max-w-full ${className !== undefined && className !== '' ? className : 'mb-5'}`}>
       {tabs.map((t) => {
         const id = Array.isArray(t) ? t[0] : (typeof t === 'string' ? t : t.id);
         const label = Array.isArray(t) ? t[1] : (typeof t === 'string' ? t : (t.label || t.name));
@@ -132,7 +132,7 @@ export function Tabs({ tabs = [], active, onTab, onChange }) {
             key={id}
             type="button"
             onClick={() => handler(id)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+            className={`flex items-center gap-2 ${compact ? 'px-3 py-1.5 rounded-xl' : 'px-4 py-2 rounded-xl'} text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
               isActive
                 ? 'bg-white text-slate-900 shadow-xs border border-slate-200/60'
                 : 'text-slate-500 hover:text-slate-900 hover:bg-slate-200/60'
@@ -185,7 +185,7 @@ export function Confirm({ title, body, okLabel = 'Confirm', danger = false, busy
 /* ---------- Page Header ---------- */
 export function PageHead({ title, eyebrow, desc, actions }) {
   return (
-    <div className="flex items-start justify-between gap-4 flex-wrap pb-2 border-b border-slate-200/80 mb-3.5">
+    <div className={`flex ${desc || eyebrow ? 'items-start' : 'items-center'} justify-between gap-4 flex-wrap pb-2 border-b border-slate-200/80 mb-3.5`}>
       <div>
         {eyebrow && <div className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 mb-1">{eyebrow}</div>}
         <h1 className="text-2xl font-black text-slate-900 tracking-tight">{title}</h1>
