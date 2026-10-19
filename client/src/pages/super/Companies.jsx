@@ -174,14 +174,14 @@ export default function Companies({ tab: tabProp }) {
         </>}
       />
       {statsErr && <Empty icon="⚠️" title={'⚠️ ' + statsErr} />}
-      <div className="mgmt-cards">
-        <Kpi onClick={() => mgCard('all')} value={s.companies ?? '—'} label="Total companies" sub={`${s.activeCompanies ?? 0} active • ${s.suspendedCompanies ?? 0} suspended`} grad="linear-gradient(135deg,#172554,#2563EB)" />
-        <Kpi onClick={() => mgCard('active')} value={s.activeCompanies ?? '—'} label="Active companies" sub="store open" grad="linear-gradient(135deg,#14532D,#10B981)" />
-        <Kpi onClick={() => mgCard('suspended')} value={s.suspendedCompanies ?? '—'} label="Suspended companies" sub="store closed" grad="linear-gradient(135deg,#92400E,#D97706)" />
-        <Kpi onClick={() => mgCard('admins')} value={s.admins ?? '—'} label="Company admins" sub="all companies" grad="linear-gradient(135deg,#1E3A8A,#0EA5E9)" />
-        <Kpi onClick={() => mgCard('users')} value={stats ? totalUsers : '—'} label="Company users" sub="admins + sales users" grad="linear-gradient(135deg,#9A3412,#FF6500)" />
-        <Kpi onClick={() => mgCard('products')} value={s.products ?? '—'} label="Products" sub="across companies" grad="linear-gradient(135deg,#0F766E,#0EA5E9)" />
-        <Kpi onClick={() => mgCard('orders')} value={s.orders ?? '—'} label="Orders" sub="across companies" grad="linear-gradient(135deg,#14532D,#10B981)" />
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2 my-2.5">
+        <Kpi compact onClick={() => mgCard('all')} value={s.companies ?? '—'} label="Total companies" sub={`${s.activeCompanies ?? 0} act · ${s.suspendedCompanies ?? 0} susp`} grad="linear-gradient(135deg,#172554,#2563EB)" />
+        <Kpi compact onClick={() => mgCard('active')} value={s.activeCompanies ?? '—'} label="Active companies" sub="store open" grad="linear-gradient(135deg,#14532D,#10B981)" />
+        <Kpi compact onClick={() => mgCard('suspended')} value={s.suspendedCompanies ?? '—'} label="Suspended" sub="store closed" grad="linear-gradient(135deg,#92400E,#D97706)" />
+        <Kpi compact onClick={() => mgCard('admins')} value={s.admins ?? '—'} label="Company admins" sub="all companies" grad="linear-gradient(135deg,#1E3A8A,#0EA5E9)" />
+        <Kpi compact onClick={() => mgCard('users')} value={stats ? totalUsers : '—'} label="Company users" sub="admins + sales" grad="linear-gradient(135deg,#9A3412,#FF6500)" />
+        <Kpi compact onClick={() => mgCard('products')} value={s.products ?? '—'} label="Products" sub="across companies" grad="linear-gradient(135deg,#0F766E,#0EA5E9)" />
+        <Kpi compact onClick={() => mgCard('orders')} value={s.orders ?? '—'} label="Orders" sub="across companies" grad="linear-gradient(135deg,#14532D,#10B981)" />
       </div>
       <Tabs tabs={MG_TABS} active={tab} onTab={(k) => goTab(k)} />
       <div className="card" style={{ marginTop: 0, borderTopLeftRadius: 0 }}>
