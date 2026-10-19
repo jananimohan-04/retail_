@@ -192,23 +192,25 @@
       "leadTime": "Ex-stock",
       "warehouse": "Retail Store Warehouse",
       "category": "raw-materials",
-      "visible": false,
+      "visible": true,
       "active": true,
       "archived": false,
       "featured": false,
       "specs": {
         "Specification": "test"
       },
-      "images": [],
+      "images": [
+        "https://eafntyjigdklcwzhyoyu.supabase.co/storage/v1/object/public/retail-media/platform/1792349987946-sgo5sh-Screenshot_2026_10_18_230926.png"
+      ],
       "video": "",
       "companyId": "C-ARGUS",
       "erp_synced": true,
       "erp_item_id": "b5f2cce1-4dc6-4815-b49b-961af6df4907",
       "erp_last_synced_at": "2026-10-18T17:15:47.667Z",
-      "workflow_stage": "content_in_progress",
+      "workflow_stage": "published",
       "created": "2026-10-18",
       "sold": 0,
-      "workflow_updated_at": "2026-10-18T18:40:53.492Z",
+      "workflow_updated_at": "2026-10-18T19:00:53.145Z",
       "workflow_history": [
         {
           "id": "W1MVE57LJK",
@@ -245,10 +247,52 @@
           "companyId": "C-ARGUS",
           "ts": "2026-10-18T18:40:53.493Z",
           "note": ""
+        },
+        {
+          "id": "W4MVE6WJQR",
+          "action": "content.save",
+          "from": "content_in_progress",
+          "to": "content_in_progress",
+          "stage": "In Progress",
+          "by": "Janani Mohan",
+          "byRole": "super_admin",
+          "companyId": "C-ARGUS",
+          "ts": "2026-10-18T18:59:45.267Z",
+          "note": ""
+        },
+        {
+          "id": "W5MVE6WQ7A",
+          "action": "content.submit",
+          "from": "content_in_progress",
+          "to": "submitted_to_finance",
+          "stage": "Waiting for Finance",
+          "by": "Janani Mohan",
+          "byRole": "super_admin",
+          "companyId": "C-ARGUS",
+          "ts": "2026-10-18T18:59:53.638Z",
+          "note": ""
+        },
+        {
+          "id": "W6MVE6Y049",
+          "action": "finance.approve",
+          "from": "submitted_to_finance",
+          "to": "published",
+          "stage": "Published",
+          "by": "Janani Mohan",
+          "byRole": "super_admin",
+          "companyId": "C-ARGUS",
+          "ts": "2026-10-18T19:00:53.145Z",
+          "note": ""
         }
       ],
       "content_by": "Janani Mohan",
-      "content_updated_at": "2026-10-18T18:40:53.492Z"
+      "content_updated_at": "2026-10-18T18:59:45.266Z",
+      "youtube": "https://youtu.be/hAVxGRm48Sc?si=3AwMf1vSi_2IUVWy",
+      "submitted_by": "Janani Mohan",
+      "submitted_at": "2026-10-18T18:59:53.638Z",
+      "approved_by": "Janani Mohan",
+      "approved_at": "2026-10-18T19:00:53.145Z",
+      "published_at": "2026-10-18T19:00:53.145Z"
     },
     {
       "id": "P-MVE3666OTZ",
@@ -474,8 +518,30 @@
   },
   "audit_logs": [
     {
-      "id": "A-179234885350242",
-      "ts": "2026-10-18T18:40:53.502Z",
+      "id": "A-179235005314872",
+      "ts": "2026-10-18T19:00:53.148Z",
+      "actor": "Janani Mohan",
+      "role": "super_admin",
+      "action": "workflow.publish",
+      "entity": "product",
+      "entityId": "P-MVE36US3V8",
+      "companyId": "C-ARGUS",
+      "summary": "Approved and published test to Sales (price: 10)"
+    },
+    {
+      "id": "A-179234999364237",
+      "ts": "2026-10-18T18:59:53.642Z",
+      "actor": "Janani Mohan",
+      "role": "super_admin",
+      "action": "workflow.submit_finance",
+      "entity": "product",
+      "entityId": "P-MVE36US3V8",
+      "companyId": "C-ARGUS",
+      "summary": "Submitted test to Finance"
+    },
+    {
+      "id": "A-179234998527025",
+      "ts": "2026-10-18T18:59:45.270Z",
       "actor": "Janani Mohan",
       "role": "super_admin",
       "action": "workflow.content_save",
@@ -483,6 +549,17 @@
       "entityId": "P-MVE36US3V8",
       "companyId": "C-ARGUS",
       "summary": "Saved content for test"
+    },
+    {
+      "id": "A-179234997582088",
+      "ts": "2026-10-18T18:59:35.821Z",
+      "actor": "Janani Mohan",
+      "role": "super_admin",
+      "action": "media.upload",
+      "entity": "media",
+      "entityId": "M-MVE6WCG7NI",
+      "companyId": "C-ARGUS",
+      "summary": "Uploaded youtube for test"
     },
     {
       "id": "A-179234529109014",
@@ -881,7 +958,50 @@
     }
   ],
   "category_assignments": [],
-  "product_media": [],
+  "product_media": [
+    {
+      "id": "M-MVE6WCG7NI",
+      "companyId": "C-ARGUS",
+      "productId": "P-MVE36US3V8",
+      "sku": "test",
+      "type": "youtube",
+      "url": "https://youtu.be/hAVxGRm48Sc?si=3AwMf1vSi_2IUVWy",
+      "title": "test",
+      "alt": "",
+      "primary": false,
+      "visible": true,
+      "sortOrder": 0,
+      "createdAt": "2026-10-18"
+    },
+    {
+      "id": "M-MVE6WNA0J7",
+      "companyId": "C-ARGUS",
+      "productId": "P-MVE36US3V8",
+      "sku": "test",
+      "type": "image",
+      "url": "https://eafntyjigdklcwzhyoyu.supabase.co/storage/v1/object/public/retail-media/platform/1792349987946-sgo5sh-Screenshot_2026_10_18_230926.png",
+      "title": "",
+      "alt": "",
+      "primary": true,
+      "visible": true,
+      "sortOrder": 1,
+      "createdAt": "2026-10-18"
+    },
+    {
+      "id": "M-MVE6WORAMJ",
+      "companyId": "C-ARGUS",
+      "productId": "P-MVE36US3V8",
+      "sku": "test",
+      "type": "document",
+      "url": "https://eafntyjigdklcwzhyoyu.supabase.co/storage/v1/object/public/retail-media/platform/1792349988927-hqbhkm-QT_20261015_001.pdf",
+      "title": "QT-20261015-001",
+      "alt": "",
+      "primary": false,
+      "visible": true,
+      "sortOrder": 2,
+      "createdAt": "2026-10-18"
+    }
+  ],
   "global_settings": {
     "currency": "INR",
     "taxPct": 18,
