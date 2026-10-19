@@ -24,6 +24,16 @@ export default function Dashboard() {
   if (err) return <Empty icon="⚠️" title={'⚠️ ' + err} />;
   if (!s) return <Skeleton h={320} />;
 
+  const co = activeCompany !== 'all' ? (activeCompanyObj || (s.byCompany || []).find((c) => c.id === activeCompany)) : null;
+  const companyStats = co ? ((s.byCompany || []).find((c) => c.id === activeCompany) || {}) : {};
+  const companiesCount = co ? 1 : s.companies;
+  const companiesSub = co ? `${co.city || ''} • ${co.plan || 'Active'}` : `${s.activeCompanies} active • ${s.suspendedCompanies} suspended`;
+  const usersCount = co ? (companyStats.users ?? co.users ?? 0) : s.salesUsers;
+  const productsCount = co ? (companyStats.products ?? co.products ?? 0) : s.products;
+  const ordersCount = co ? (companyStats.orders ?? 0) : s.orders;
+  const pendingCount = co ? (companyStats.pending ?? 0) : s.pendingOrders;
+  const gmvValue = co ? (companyStats.revenue ?? 0) : s.gmv;
+
   return (
     <>
       <PageHero
