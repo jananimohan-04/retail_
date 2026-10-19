@@ -532,177 +532,114 @@ export default function MenuAccess() {
             </div>
           )}
 
-          {/* Two-Column Editor: Left = Tree / Hierarchy, Right = Live Menu Preview */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            {/* Left: Category Hierarchy (7 cols) */}
-            <div className="lg:col-span-7 space-y-4">
-              {MENU_CATALOG.map(cat => {
-                const catPageIds = cat.items.map(i => i.id);
-                const enabledCount = catPageIds.filter(id => isRolePageChecked(id)).length;
-                const totalCount = catPageIds.length;
-                const allChecked = enabledCount === totalCount;
-                const noneChecked = enabledCount === 0;
-                const isCollapsed = !!collapsedCats[cat.id];
+          {/* Category Hierarchy Checklist */}
+          <div className="space-y-4">
+            {MENU_CATALOG.map(cat => {
+              const catPageIds = cat.items.map(i => i.id);
+              const enabledCount = catPageIds.filter(id => isRolePageChecked(id)).length;
+              const totalCount = catPageIds.length;
+              const allChecked = enabledCount === totalCount;
+              const noneChecked = enabledCount === 0;
+              const isCollapsed = !!collapsedCats[cat.id];
 
-                return (
-                  <div key={cat.id} className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
-                    {/* Category Header */}
-                    <div className="flex items-center justify-between px-5 py-3.5 bg-slate-50/70 border-b border-slate-200/60">
-                      <button
-                        onClick={() => toggleCatCollapse(cat.id)}
-                        className="flex items-center gap-2.5 text-left flex-1 cursor-pointer"
-                      >
-                        {isCollapsed ? <ChevronRight className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-black uppercase tracking-wider text-slate-800">{cat.label}</span>
-                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
-                              allChecked
-                                ? 'bg-emerald-100 text-emerald-800'
-                                : noneChecked
-                                ? 'bg-slate-200 text-slate-600'
-                                : 'bg-blue-100 text-blue-800'
+              return (
+                <div key={cat.id} className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+                  {/* Category Header */}
+                  <div className="flex items-center justify-between px-5 py-3.5 bg-slate-50/70 border-b border-slate-200/60">
+                    <button
+                      onClick={() => toggleCatCollapse(cat.id)}
+                      className="flex items-center gap-2.5 text-left flex-1 cursor-pointer"
+                    >
+                      {isCollapsed ? <ChevronRight className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-black uppercase tracking-wider text-slate-800">{cat.label}</span>
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
+                            allChecked
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : noneChecked
+                              ? 'bg-slate-200 text-slate-600'
+                              : 'bg-blue-100 text-blue-800'
+                          }`}>
+                            {enabledCount} / {totalCount} active
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-slate-400">{cat.description}</p>
+                      </div>
+                    </button>
+
+                    {/* Category Bulk Toggle */}
+                    <button
+                      onClick={() => handleToggleCategoryForRole(cat)}
+                      className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border transition-all cursor-pointer ${
+                        allChecked
+                          ? 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100'
+                          : 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100'
+                      }`}
+                    >
+                      {allChecked ? 'Disable Category' : 'Enable Category'}
+                    </button>
+                  </div>
+
+                  {/* Page Items Accordion Content */}
+                  {!isCollapsed && (
+                    <div className="divide-y divide-slate-100">
+                      {cat.items.map(item => {
+                        const IconComp = ICON_MAP[item.icon] || KeyRound;
+                        const checked = isRolePageChecked(item.id);
+                        const isProtected = selectedRoleId === 'super_admin' && item.id === 'super_access';
+
+                        return (
+                          <div
+                            key={item.id}
+                            onClick={() => !isProtected && handleToggleRolePage(item.id)}
+                            className={`flex items-center justify-between px-5 py-3.5 transition-colors ${
+                              isProtected
+                                ? 'bg-amber-50/40 cursor-not-allowed'
+                                : checked
+                                ? 'bg-blue-50/30 hover:bg-blue-50/50 cursor-pointer'
+                                : 'hover:bg-slate-50 cursor-pointer'
+                            }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className={`w-5 h-5 rounded-md flex items-center justify-center border transition-all ${
+                                checked
+                                  ? 'bg-blue-600 border-blue-600 text-white shadow-xs'
+                                  : 'border-slate-300 bg-white'
+                              }`}>
+                                {checked && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                              </div>
+                              <div className={`p-1.5 rounded-lg ${checked ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-400'}`}>
+                                <IconComp className="w-4 h-4" />
+                              </div>
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <span className={`text-xs font-bold ${checked ? 'text-slate-900' : 'text-slate-500'}`}>
+                                    {item.label}
+                                  </span>
+                                  {isProtected && (
+                                    <span className="flex items-center gap-1 text-[10px] font-extrabold text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded">
+                                      <Lock className="w-2.5 h-2.5" /> Protected
+                                    </span>
+                                  )}
+                                </div>
+                                <span className="text-[10px] font-mono text-slate-400">{item.path}</span>
+                              </div>
+                            </div>
+
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                              checked ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-400'
                             }`}>
-                              {enabledCount} / {totalCount} active
+                              {checked ? 'Visible' : 'Hidden'}
                             </span>
                           </div>
-                          <p className="text-[10px] text-slate-400">{cat.description}</p>
-                        </div>
-                      </button>
-
-                      {/* Category Bulk Toggle */}
-                      <button
-                        onClick={() => handleToggleCategoryForRole(cat)}
-                        className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border transition-all cursor-pointer ${
-                          allChecked
-                            ? 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100'
-                            : 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100'
-                        }`}
-                      >
-                        {allChecked ? 'Disable Category' : 'Enable Category'}
-                      </button>
-                    </div>
-
-                    {/* Page Items Accordion Content */}
-                    {!isCollapsed && (
-                      <div className="divide-y divide-slate-100">
-                        {cat.items.map(item => {
-                          const IconComp = ICON_MAP[item.icon] || KeyRound;
-                          const checked = isRolePageChecked(item.id);
-                          const isProtected = selectedRoleId === 'super_admin' && item.id === 'super_access';
-
-                          return (
-                            <div
-                              key={item.id}
-                              onClick={() => !isProtected && handleToggleRolePage(item.id)}
-                              className={`flex items-center justify-between px-5 py-3.5 transition-colors ${
-                                isProtected
-                                  ? 'bg-amber-50/40 cursor-not-allowed'
-                                  : checked
-                                  ? 'bg-blue-50/30 hover:bg-blue-50/50 cursor-pointer'
-                                  : 'hover:bg-slate-50 cursor-pointer'
-                              }`}
-                            >
-                              <div className="flex items-center gap-3">
-                                <div className={`w-5 h-5 rounded-md flex items-center justify-center border transition-all ${
-                                  checked
-                                    ? 'bg-blue-600 border-blue-600 text-white shadow-xs'
-                                    : 'border-slate-300 bg-white'
-                                }`}>
-                                  {checked && <Check className="w-3.5 h-3.5 stroke-[3]" />}
-                                </div>
-                                <div className={`p-1.5 rounded-lg ${checked ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-400'}`}>
-                                  <IconComp className="w-4 h-4" />
-                                </div>
-                                <div>
-                                  <div className="flex items-center gap-2">
-                                    <span className={`text-xs font-bold ${checked ? 'text-slate-900' : 'text-slate-500'}`}>
-                                      {item.label}
-                                    </span>
-                                    {isProtected && (
-                                      <span className="flex items-center gap-1 text-[10px] font-extrabold text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded">
-                                        <Lock className="w-2.5 h-2.5" /> Protected
-                                      </span>
-                                    )}
-                                  </div>
-                                  <span className="text-[10px] font-mono text-slate-400">{item.path}</span>
-                                </div>
-                              </div>
-
-                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                                checked ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-400'
-                              }`}>
-                                {checked ? 'Visible' : 'Hidden'}
-                              </span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Right: Interactive Live Sidebar Preview (5 cols) */}
-            <div className="lg:col-span-5">
-              <div className="sticky top-6 bg-slate-900 text-slate-200 p-5 rounded-2xl border border-slate-800 shadow-xl space-y-4">
-                <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-                  <div className="flex items-center gap-2">
-                    <Eye className="w-4 h-4 text-blue-400" />
-                    <span className="text-xs font-black uppercase tracking-wider text-white">Live Sidebar Preview</span>
-                  </div>
-                  <span className="text-[10px] font-mono text-slate-400">
-                    Role: {activeRole?.name}
-                  </span>
-                </div>
-
-                <p className="text-[11px] text-slate-400 leading-snug">
-                  This preview renders the left navigation exactly as an assigned user will see it. Categories with zero enabled pages are suppressed automatically.
-                </p>
-
-                {/* Simulated Left Nav Rail */}
-                <div className="bg-slate-950/80 rounded-xl p-4 border border-slate-800/80 max-h-[580px] overflow-y-auto space-y-4 text-xs font-semibold">
-                  {MENU_CATALOG.map(cat => {
-                    const visibleItems = cat.items.filter(i => isRolePageChecked(i.id));
-                    if (visibleItems.length === 0) return null; // suppressed!
-
-                    return (
-                      <div key={cat.id} className="space-y-1">
-                        <div className="text-[9px] font-black uppercase tracking-widest text-slate-400 px-2">
-                          {cat.label}
-                        </div>
-                        <div className="space-y-0.5">
-                          {visibleItems.map(item => {
-                            const IconComp = ICON_MAP[item.icon] || KeyRound;
-                            return (
-                              <div
-                                key={item.id}
-                                className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/60 transition-colors"
-                              >
-                                <IconComp className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" />
-                                <span className="truncate flex-1">{item.label}</span>
-                                {item.badgeKey && (
-                                  <span className="px-1.5 py-0.2 rounded-full text-[9px] font-extrabold bg-blue-500/20 text-blue-300">
-                                    •
-                                  </span>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    );
-                  })}
-
-                  {curRolePerms.length === 0 && (
-                    <div className="text-center py-8 text-slate-400 text-xs">
-                      No pages enabled for this role. The sidebar will be completely empty.
+                        );
+                      })}
                     </div>
                   )}
                 </div>
-              </div>
-            </div>
+              );
+            })}
           </div>
         </div>
       )}
@@ -832,179 +769,121 @@ export default function MenuAccess() {
             </div>
           )}
 
-          {/* Two-Column Editor: Left = 3-State Controls, Right = Resulting User Live Preview */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            {/* Left: 3-State Segments (7 cols) */}
-            <div className="lg:col-span-7 space-y-4">
-              {MENU_CATALOG.map(cat => {
-                const isCollapsed = !!collapsedCats['user_' + cat.id];
+          {/* User Overrides Category Hierarchy */}
+          <div className="space-y-4">
+            {MENU_CATALOG.map(cat => {
+              const isCollapsed = !!collapsedCats['user_' + cat.id];
 
-                return (
-                  <div key={cat.id} className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
-                    {/* Category Header */}
-                    <button
-                      onClick={() => toggleCatCollapse('user_' + cat.id)}
-                      className="flex items-center justify-between w-full px-5 py-3.5 bg-slate-50/70 border-b border-slate-200/60 cursor-pointer text-left"
-                    >
-                      <div className="flex items-center gap-2.5">
-                        {isCollapsed ? <ChevronRight className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
-                        <div>
-                          <span className="text-xs font-black uppercase tracking-wider text-slate-800">{cat.label}</span>
-                          <p className="text-[10px] text-slate-400">{cat.description}</p>
-                        </div>
+              return (
+                <div key={cat.id} className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+                  {/* Category Header */}
+                  <button
+                    onClick={() => toggleCatCollapse('user_' + cat.id)}
+                    className="flex items-center justify-between w-full px-5 py-3.5 bg-slate-50/70 border-b border-slate-200/60 cursor-pointer text-left"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      {isCollapsed ? <ChevronRight className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
+                      <div>
+                        <span className="text-xs font-black uppercase tracking-wider text-slate-800">{cat.label}</span>
+                        <p className="text-[10px] text-slate-400">{cat.description}</p>
                       </div>
-                    </button>
+                    </div>
+                  </button>
 
-                    {/* Page Items with 3-State Segmented Control */}
-                    {!isCollapsed && (
-                      <div className="divide-y divide-slate-100">
-                        {cat.items.map(item => {
-                          const IconComp = ICON_MAP[item.icon] || KeyRound;
-                          const state = getUserPageState(item.id);
-                          const isEffective = isUserPageEffective(item.id);
-                          const isRoleGranted = userRoleDefaults.includes(item.id);
-                          const isProtected = activeUser?.role === 'super_admin' && (item.id === 'super_access' || item.id === 'super_dashboard');
+                  {/* Page Items with 3-State Segmented Control */}
+                  {!isCollapsed && (
+                    <div className="divide-y divide-slate-100">
+                      {cat.items.map(item => {
+                        const IconComp = ICON_MAP[item.icon] || KeyRound;
+                        const state = getUserPageState(item.id);
+                        const isEffective = isUserPageEffective(item.id);
+                        const isRoleGranted = userRoleDefaults.includes(item.id);
+                        const isProtected = activeUser?.role === 'super_admin' && (item.id === 'super_access' || item.id === 'super_dashboard');
 
-                          return (
-                            <div
-                              key={item.id}
-                              className={`flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-3 transition-colors ${
-                                state === 'allow'
-                                  ? 'bg-emerald-50/30'
-                                  : state === 'deny'
-                                  ? 'bg-rose-50/30'
-                                  : 'hover:bg-slate-50/60'
-                              }`}
-                            >
-                              {/* Left details */}
-                              <div className="flex items-center gap-3">
-                                <div className={`p-2 rounded-xl ${
-                                  isEffective ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-400'
-                                }`}>
-                                  <IconComp className="w-4 h-4" />
-                                </div>
-                                <div>
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-xs font-bold text-slate-900">{item.label}</span>
-                                    {state !== 'inherit' && (
-                                      <span className={`text-[9px] font-extrabold uppercase px-1.5 py-0.2 rounded ${
-                                        state === 'allow' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
-                                      }`}>
-                                        Override: {state}
-                                      </span>
-                                    )}
-                                  </div>
-                                  <div className="flex items-center gap-2 mt-0.5">
-                                    <span className="text-[10px] font-mono text-slate-400">{item.path}</span>
-                                    <span className="text-[10px] text-slate-400">•</span>
-                                    <span className="text-[10px] text-slate-500">
-                                      Role Default: <strong className={isRoleGranted ? 'text-emerald-600' : 'text-slate-500'}>{isRoleGranted ? 'Allowed' : 'Denied'}</strong>
-                                    </span>
-                                  </div>
-                                </div>
+                        return (
+                          <div
+                            key={item.id}
+                            className={`flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-3 transition-colors ${
+                              state === 'allow'
+                                ? 'bg-emerald-50/30'
+                                : state === 'deny'
+                                ? 'bg-rose-50/30'
+                                : 'hover:bg-slate-50/60'
+                            }`}
+                          >
+                            {/* Left details */}
+                            <div className="flex items-center gap-3">
+                              <div className={`p-2 rounded-xl ${
+                                isEffective ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-400'
+                              }`}>
+                                <IconComp className="w-4 h-4" />
                               </div>
-
-                              {/* Right: 3-State Segmented Control */}
-                              <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 self-start sm:self-auto">
-                                <button
-                                  type="button"
-                                  onClick={() => handleSetUserOverride(item.id, 'inherit')}
-                                  className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition-all cursor-pointer ${
-                                    state === 'inherit'
-                                      ? 'bg-white text-slate-800 shadow-xs'
-                                      : 'text-slate-500 hover:text-slate-800'
-                                  }`}
-                                >
-                                  Inherit
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => handleSetUserOverride(item.id, 'allow')}
-                                  className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition-all cursor-pointer ${
-                                    state === 'allow'
-                                      ? 'bg-emerald-600 text-white shadow-xs'
-                                      : 'text-slate-500 hover:text-emerald-700'
-                                  }`}
-                                >
-                                  Allow
-                                </button>
-                                <button
-                                  type="button"
-                                  disabled={isProtected}
-                                  onClick={() => handleSetUserOverride(item.id, 'deny')}
-                                  className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
-                                    state === 'deny'
-                                      ? 'bg-rose-600 text-white shadow-xs'
-                                      : 'text-slate-500 hover:text-rose-700'
-                                  }`}
-                                >
-                                  Deny
-                                </button>
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs font-bold text-slate-900">{item.label}</span>
+                                  {state !== 'inherit' && (
+                                    <span className={`text-[9px] font-extrabold uppercase px-1.5 py-0.2 rounded ${
+                                      state === 'allow' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
+                                    }`}>
+                                      Override: {state}
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-2 mt-0.5">
+                                  <span className="text-[10px] font-mono text-slate-400">{item.path}</span>
+                                  <span className="text-[10px] text-slate-400">•</span>
+                                  <span className="text-[10px] text-slate-500">
+                                    Role Default: <strong className={isRoleGranted ? 'text-emerald-600' : 'text-slate-500'}>{isRoleGranted ? 'Allowed' : 'Denied'}</strong>
+                                  </span>
+                                </div>
                               </div>
                             </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
 
-            {/* Right: Effective User Live Preview (5 cols) */}
-            <div className="lg:col-span-5">
-              <div className="sticky top-6 bg-slate-900 text-slate-200 p-5 rounded-2xl border border-slate-800 shadow-xl space-y-4">
-                <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-                  <div className="flex items-center gap-2">
-                    <Eye className="w-4 h-4 text-emerald-400" />
-                    <span className="text-xs font-black uppercase tracking-wider text-white">Live User Menu Preview</span>
-                  </div>
-                  <span className="text-[10px] font-mono text-slate-400 truncate max-w-[150px]">
-                    {activeUser?.name}
-                  </span>
-                </div>
-
-                <p className="text-[11px] text-slate-400 leading-snug">
-                  The actual menu rendered for <strong className="text-slate-200">{activeUser?.name}</strong> upon logging into ARGUS CNC ERP.
-                </p>
-
-                {/* Simulated Left Nav Rail for this user */}
-                <div className="bg-slate-950/80 rounded-xl p-4 border border-slate-800/80 max-h-[580px] overflow-y-auto space-y-4 text-xs font-semibold">
-                  {MENU_CATALOG.map(cat => {
-                    const visibleItems = cat.items.filter(i => isUserPageEffective(i.id));
-                    if (visibleItems.length === 0) return null;
-
-                    return (
-                      <div key={cat.id} className="space-y-1">
-                        <div className="text-[9px] font-black uppercase tracking-widest text-slate-400 px-2">
-                          {cat.label}
-                        </div>
-                        <div className="space-y-0.5">
-                          {visibleItems.map(item => {
-                            const IconComp = ICON_MAP[item.icon] || KeyRound;
-                            const isOverridden = userOverrides[item.id] === 'allow';
-                            return (
-                              <div
-                                key={item.id}
-                                className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/60 transition-colors"
+                            {/* Right: 3-State Segmented Control */}
+                            <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 self-start sm:self-auto">
+                              <button
+                                type="button"
+                                onClick={() => handleSetUserOverride(item.id, 'inherit')}
+                                className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition-all cursor-pointer ${
+                                  state === 'inherit'
+                                    ? 'bg-white text-slate-800 shadow-xs'
+                                    : 'text-slate-500 hover:text-slate-800'
+                                }`}
                               >
-                                <IconComp className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" />
-                                <span className="truncate flex-1">{item.label}</span>
-                                {isOverridden && (
-                                  <span className="px-1.5 py-0.5 rounded text-[8px] font-extrabold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                                    Override
-                                  </span>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    );
-                  })}
+                                Inherit
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleSetUserOverride(item.id, 'allow')}
+                                className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition-all cursor-pointer ${
+                                  state === 'allow'
+                                    ? 'bg-emerald-600 text-white shadow-xs'
+                                    : 'text-slate-500 hover:text-emerald-700'
+                                }`}
+                              >
+                                Allow
+                              </button>
+                              <button
+                                type="button"
+                                disabled={isProtected}
+                                onClick={() => handleSetUserOverride(item.id, 'deny')}
+                                className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
+                                  state === 'deny'
+                                    ? 'bg-rose-600 text-white shadow-xs'
+                                    : 'text-slate-500 hover:text-rose-700'
+                                }`}
+                              >
+                                Deny
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
-              </div>
-            </div>
+              );
+            })}
           </div>
         </div>
       )}
