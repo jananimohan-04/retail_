@@ -280,12 +280,12 @@ export const Topbar = forwardRef(function Topbar({ onMobileToggle, sidebarOpen, 
               <select
                 value={activeCompany}
                 onChange={(e) => setActiveCompany(e.target.value)}
-                className="bg-slate-800 text-xs font-bold text-slate-200 outline-none cursor-pointer border-none py-0.5 pr-1 max-w-[150px] sm:max-w-[185px] truncate"
+                className="company-select bg-slate-800 text-xs font-bold text-slate-100 outline-none cursor-pointer border-none py-0.5 pr-1 max-w-[150px] sm:max-w-[185px] truncate"
                 title="Filter active company scope across Super Admin pages"
               >
-                <option value="all" className="bg-slate-900 text-slate-200">🏢 All Companies (Platform)</option>
+                <option value="all" className="bg-slate-900 text-slate-100">🏢 All Companies (Platform)</option>
                 {companies.map((c) => (
-                  <option key={c.id} value={c.id} className="bg-slate-900 text-slate-200">
+                  <option key={c.id} value={c.id} className="bg-slate-900 text-slate-100">
                     {c.logo || '🏭'} {c.name} ({c.code || c.id})
                   </option>
                 ))}
