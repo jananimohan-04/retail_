@@ -332,11 +332,15 @@ export const Topbar = forwardRef(function Topbar({ onMobileToggle, sidebarOpen, 
 
         <div className="flex items-center gap-2.5 sm:gap-3.5 flex-shrink-0">
           {me && me.google ? (
-            <div className="hidden sm:flex items-center gap-2 bg-slate-100 px-3 py-1.5 rounded-full border border-slate-200">
+            <Link
+              to="/store/profile"
+              className="hidden sm:flex items-center gap-2 bg-slate-100 hover:bg-slate-200/80 px-3 py-1.5 rounded-full border border-slate-200 transition-colors cursor-pointer"
+              title="View Profile"
+            >
               <span className="w-2 h-2 rounded-full bg-emerald-500" />
               <span className="text-xs font-bold text-slate-800 truncate max-w-[140px]">{me.name}</span>
               <span className="text-[10px] uppercase font-extrabold text-blue-600 tracking-wider">({roleLabel})</span>
-            </div>
+            </Link>
           ) : (
             <div className="hidden xl:flex items-center gap-1 p-1 bg-slate-100 rounded-full border border-slate-200/80 text-[11px] font-bold flex-wrap">
               <button
@@ -421,10 +425,11 @@ export const Topbar = forwardRef(function Topbar({ onMobileToggle, sidebarOpen, 
 
           <Link
             to="/store/profile"
-            className="w-9 h-9 rounded-xl bg-slate-900 text-white flex items-center justify-center text-xs font-extrabold shadow-sm hover:ring-2 hover:ring-blue-500 hover:ring-offset-2 transition-all cursor-pointer"
-            title={me?.name ? `${me.name} (${roleLabel})` : 'Profile'}
+            className="p-2.5 rounded-xl border border-slate-200/90 bg-white hover:bg-slate-50 text-slate-700 hover:text-blue-600 transition-all duration-200 shadow-xs cursor-pointer group"
+            title={me?.name ? `${me.name} (${roleLabel}) — User Profile` : 'User Profile'}
+            aria-label="User Profile"
           >
-            {((me?.name) || 'A')[0].toUpperCase()}
+            <User className="w-4 h-4 transition-transform group-hover:scale-110" />
           </Link>
 
           <button
