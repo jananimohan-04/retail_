@@ -13,14 +13,16 @@
   --t-fast:180ms; --t-med:220ms; --t-slow:260ms;
   --font:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
 }
-*{box-sizing:border-box}
-html,body{margin:0;padding:0}
-body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
-a{color:inherit;text-decoration:none}
-img{display:block;max-width:100%}
-button{font-family:inherit}
-h1,h2,h3{letter-spacing:-.01em;margin:0}
-::selection{background:rgba(255,101,0,.22)}
+@layer base {
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  a{color:inherit;text-decoration:none}
+  img{display:block;max-width:100%}
+  button{font-family:inherit}
+  h1,h2,h3{letter-spacing:-.01em;margin:0}
+  ::selection{background:rgba(255,101,0,.22)}
+}
 
 /* page enter */
 @keyframes pageIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}

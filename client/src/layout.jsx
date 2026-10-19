@@ -52,7 +52,13 @@ function sideLink(to, label, IconComponent, badge = null, onClick = null, mini =
           }`}>
             {IconComponent && <IconComponent className="w-4 h-4 flex-shrink-0" />}
           </span>
-          {!mini && <span className="truncate flex-1 tracking-tight">{label}</span>}
+          {!mini && (
+            <span className={`truncate flex-1 tracking-tight font-semibold ${
+              isActive ? '!text-white' : 'text-slate-200 group-hover:!text-white'
+            }`}>
+              {label}
+            </span>
+          )}
           {!mini && badge ? (
             <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold tracking-wide ${isActive ? badgeClass : 'bg-slate-800 text-slate-300 border border-slate-700'}`}>
               {badge}
@@ -155,7 +161,13 @@ export function Sidebar({ counts, onItemClick, mini = false }) {
                   `}
                 >
                   <span className="text-sm flex-shrink-0">{c.icon || '📦'}</span>
-                  {!mini && <span className="truncate">{c.name}</span>}
+                  {!mini && (
+                    <span className={`truncate flex-1 tracking-tight font-semibold ${
+                      isActive ? '!text-white' : 'text-slate-200 group-hover:!text-white'
+                    }`}>
+                      {c.name}
+                    </span>
+                  )}
                 </NavLink>
               ))}
             </div>
@@ -462,7 +474,7 @@ export function Shell({ counts, noSide, children }) {
         {!noSide && (
           <aside 
             style={{ top: `${headerH}px`, height: `calc(100vh - ${headerH}px)` }}
-            className={`hidden lg:flex flex-col flex-shrink-0 bg-[#0B1329] border-r border-slate-800 sticky self-start overflow-y-auto transition-all duration-200 z-30 shadow-md ${
+            className={`hidden lg:flex flex-col flex-shrink-0 bg-[#0B1329] border-r border-slate-800 sticky self-start overflow-y-auto sidebar-scroll sidebar-dark text-slate-200 transition-all duration-200 z-30 shadow-md ${
               sidebarOpen ? 'w-64 px-2 py-2.5' : 'w-14 p-1.5 items-center'
             }`}
           >
@@ -513,7 +525,7 @@ export function Shell({ counts, noSide, children }) {
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 250 }}
-              className="fixed inset-y-0 left-0 w-72 bg-[#0B1329] border-r border-slate-800 shadow-2xl p-4 flex flex-col z-10 overflow-y-auto text-slate-100"
+              className="fixed inset-y-0 left-0 w-72 bg-[#0B1329] border-r border-slate-800 shadow-2xl p-4 flex flex-col z-10 overflow-y-auto sidebar-scroll sidebar-dark text-slate-200"
             >
               <div className="flex items-center justify-between pb-4 border-b border-slate-800 mb-2">
                 <div className="bg-white px-2 py-1 rounded-lg">
