@@ -534,7 +534,7 @@ export function Shell({ counts, noSide, children }) {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setMobileOpen(false)}
-              className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs"
+              className="fixed inset-0 bg-slate-950/60"
             />
             <motion.div
               initial={{ x: '-100%' }}

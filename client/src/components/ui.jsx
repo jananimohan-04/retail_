@@ -1,9 +1,10 @@
 /* Shared UI components with Framer Motion animations & Lucide icons */
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   X, AlertTriangle, CheckCircle2, Info, ChevronLeft, 
-  ChevronRight, ArrowRight, ShieldAlert, Sparkles 
+  ChevronRight, ArrowRight, ShieldAlert, Sparkles,
+  GripHorizontal, Maximize2, Minimize2
 } from 'lucide-react';
 
 /* ---------- Toast Notification Bus ---------- */
@@ -91,29 +92,266 @@ export function statusBadge(status) {
 }
 
 /* ---------- Modal Dialog ---------- */
+/* ---------- Modal Dialog (Draggable, 4-Side Resizable, Zero Backdrop Blur) ---------- */
 export function Modal({ title, onClose, wide, children }) {
+  const initWidth = typeof window !== 'undefined'
+    ? (wide ? Math.min(1040, window.innerWidth - 32) : Math.min(620, window.innerWidth - 32))
+    : 620;
+  const initHeight = typeof window !== 'undefined'
+    ? Math.min(660, window.innerHeight - 48)
+    : 560;
+  const initLeft = typeof window !== 'undefined'
+    ? Math.max(16, Math.round((window.innerWidth - initWidth) / 2))
+    : 32;
+  const initTop = typeof window !== 'undefined'
+    ? Math.max(20, Math.round((window.innerHeight - initHeight) / 2))
+    : 32;
+
+  const [rect, setRect] = useState({
+    left: initLeft,
+    top: initTop,
+    width: initWidth,
+    height: initHeight
+  });
+  const [isMaximized, setIsMaximized] = useState(false);
+  const prevRectRef = useRef(rect);
+  const dragRef = useRef(null);
+  const resizeRef = useRef(null);
+
+  // Close on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && onClose) onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
+  // Handle Dragging via Header
+  const handleHeaderMouseDown = (e) => {
+    if (e.target.closest('button, a, input, select, textarea')) return;
+    if (isMaximized) return;
+    e.preventDefault();
+
+    dragRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      startLeft: rect.left,
+      startTop: rect.top
+    };
+
+    const handleMouseMove = (moveEvent) => {
+      if (!dragRef.current) return;
+      const dx = moveEvent.clientX - dragRef.current.startX;
+      const dy = moveEvent.clientY - dragRef.current.startY;
+      setRect((prev) => {
+        const newLeft = dragRef.current.startLeft + dx;
+        const newTop = dragRef.current.startTop + dy;
+        const clampedTop = Math.max(0, Math.min(window.innerHeight - 50, newTop));
+        const clampedLeft = Math.max(-prev.width + 120, Math.min(window.innerWidth - 120, newLeft));
+        return { ...prev, left: clampedLeft, top: clampedTop };
+      });
+    };
+
+    const handleMouseUp = () => {
+      dragRef.current = null;
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+  };
+
+  // Handle Resizing from 4 Sides and 4 Corners
+  const handleResizeStart = (dir, e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (isMaximized) return;
+
+    resizeRef.current = {
+      dir,
+      startX: e.clientX,
+      startY: e.clientY,
+      startLeft: rect.left,
+      startTop: rect.top,
+      startWidth: rect.width,
+      startHeight: rect.height
+    };
+
+    const handleResizeMove = (moveEvent) => {
+      if (!resizeRef.current) return;
+      const { dir: direction, startX, startY, startLeft, startTop, startWidth, startHeight } = resizeRef.current;
+      const dx = moveEvent.clientX - startX;
+      const dy = moveEvent.clientY - startY;
+
+      setRect(() => {
+        let newWidth = startWidth;
+        let newHeight = startHeight;
+        let newLeft = startLeft;
+        let newTop = startTop;
+
+        const minW = 340;
+        const minH = 200;
+        const maxW = window.innerWidth - 16;
+        const maxH = window.innerHeight - 16;
+
+        if (direction.includes('e')) {
+          newWidth = Math.max(minW, Math.min(maxW, startWidth + dx));
+        } else if (direction.includes('w')) {
+          const potentialW = startWidth - dx;
+          if (potentialW >= minW && potentialW <= maxW) {
+            newWidth = potentialW;
+            newLeft = startLeft + dx;
+          }
+        }
+
+        if (direction.includes('s')) {
+          newHeight = Math.max(minH, Math.min(maxH, startHeight + dy));
+        } else if (direction.includes('n')) {
+          const potentialH = startHeight - dy;
+          if (potentialH >= minH && potentialH <= maxH) {
+            newHeight = potentialH;
+            newTop = startTop + dy;
+          }
+        }
+
+        return { left: newLeft, top: newTop, width: newWidth, height: newHeight };
+      });
+    };
+
+    const handleResizeEnd = () => {
+      resizeRef.current = null;
+      window.removeEventListener('mousemove', handleResizeMove);
+      window.removeEventListener('mouseup', handleResizeEnd);
+    };
+
+    window.addEventListener('mousemove', handleResizeMove);
+    window.addEventListener('mouseup', handleResizeEnd);
+  };
+
+  const toggleMaximize = () => {
+    if (isMaximized) {
+      setRect(prevRectRef.current);
+      setIsMaximized(false);
+    } else {
+      prevRectRef.current = rect;
+      setRect({
+        left: 12,
+        top: 12,
+        width: window.innerWidth - 24,
+        height: window.innerHeight - 24
+      });
+      setIsMaximized(true);
+    }
+  };
+
   return (
-    <div className="modal-backdrop fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 15 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 15 }}
-        transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-        className={`modal bg-white rounded-2xl shadow-2xl border border-slate-200/80 w-full overflow-hidden my-auto max-h-[90vh] flex flex-col ${
-          wide ? 'max-w-4xl' : 'max-w-xl'
-        }`}
+    <div
+      className="fixed inset-0 z-[200] bg-slate-900/35 overflow-hidden"
+      style={{ backdropFilter: 'none', WebkitBackdropFilter: 'none' }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget && onClose) onClose();
+      }}
+    >
+      <div
+        style={{
+          position: 'fixed',
+          left: `${rect.left}px`,
+          top: `${rect.top}px`,
+          width: `${rect.width}px`,
+          height: `${rect.height}px`,
+          zIndex: 210,
+          maxWidth: '100vw',
+          maxHeight: '100vh'
+        }}
+        onClick={(e) => e.stopPropagation()}
+        className="modal bg-white rounded-2xl shadow-2xl border border-slate-300/80 overflow-hidden flex flex-col relative select-text"
       >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
-          <h3 className="font-extrabold text-slate-900 text-sm tracking-tight">{title}</h3>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition-colors cursor-pointer"
-          >
-            <X className="w-4 h-4" />
-          </button>
+        {/* Resize Handles (4 Sides + 4 Corners) */}
+        {!isMaximized && (
+          <>
+            {/* Top Side */}
+            <div
+              onMouseDown={(e) => handleResizeStart('n', e)}
+              className="absolute -top-1.5 left-4 right-4 h-3 cursor-ns-resize z-30"
+              title="Drag to resize top"
+            />
+            {/* Bottom Side */}
+            <div
+              onMouseDown={(e) => handleResizeStart('s', e)}
+              className="absolute -bottom-1.5 left-4 right-4 h-3 cursor-ns-resize z-30"
+              title="Drag to resize bottom"
+            />
+            {/* Left Side */}
+            <div
+              onMouseDown={(e) => handleResizeStart('w', e)}
+              className="absolute top-4 bottom-4 -left-1.5 w-3 cursor-ew-resize z-30"
+              title="Drag to resize left"
+            />
+            {/* Right Side */}
+            <div
+              onMouseDown={(e) => handleResizeStart('e', e)}
+              className="absolute top-4 bottom-4 -right-1.5 w-3 cursor-ew-resize z-30"
+              title="Drag to resize right"
+            />
+
+            {/* Corners */}
+            <div
+              onMouseDown={(e) => handleResizeStart('nw', e)}
+              className="absolute -top-2 -left-2 w-5 h-5 cursor-nwse-resize z-40"
+              title="Resize corner"
+            />
+            <div
+              onMouseDown={(e) => handleResizeStart('ne', e)}
+              className="absolute -top-2 -right-2 w-5 h-5 cursor-nesw-resize z-40"
+              title="Resize corner"
+            />
+            <div
+              onMouseDown={(e) => handleResizeStart('sw', e)}
+              className="absolute -bottom-2 -left-2 w-5 h-5 cursor-nesw-resize z-40"
+              title="Resize corner"
+            />
+            <div
+              onMouseDown={(e) => handleResizeStart('se', e)}
+              className="absolute -bottom-1.5 -right-1.5 w-5 h-5 cursor-nwse-resize z-40 flex items-end justify-end p-0.5"
+              title="Resize corner"
+            >
+              <div className="w-2.5 h-2.5 border-r-2 border-b-2 border-slate-400 rounded-br-xs pointer-events-none mb-0.5 mr-0.5" />
+            </div>
+          </>
+        )}
+
+        {/* Draggable Header */}
+        <div
+          onMouseDown={handleHeaderMouseDown}
+          className="flex items-center justify-between px-5 py-3.5 border-b border-slate-200 bg-slate-50/90 select-none cursor-move flex-shrink-0"
+        >
+          <div className="flex items-center gap-2 min-w-0">
+            <GripHorizontal className="w-4 h-4 text-slate-400 flex-shrink-0 cursor-move" title="Drag to move popup" />
+            <h3 className="font-extrabold text-slate-900 text-sm tracking-tight truncate">{title}</h3>
+          </div>
+          <div className="flex items-center gap-1.5 flex-shrink-0" onMouseDown={(e) => e.stopPropagation()}>
+            <button
+              onClick={toggleMaximize}
+              className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition-colors cursor-pointer"
+              title={isMaximized ? "Restore size" : "Maximize popup"}
+            >
+              {isMaximized ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+            </button>
+            <button
+              onClick={onClose}
+              className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition-colors cursor-pointer"
+              title="Close (Esc)"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
-        <div className="p-6 overflow-y-auto flex-1">{children}</div>
-      </motion.div>
+
+        {/* Modal Body */}
+        <div className="p-6 overflow-auto flex-1">{children}</div>
+      </div>
     </div>
   );
 }

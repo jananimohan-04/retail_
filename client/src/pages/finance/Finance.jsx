@@ -4,7 +4,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api, fmt, imgFallback } from '../../api';
-import { PageHead, Empty, Skeleton, Pager, Field, Confirm, toast } from '../../components/ui';
+import { PageHead, Empty, Skeleton, Pager, Field, Confirm, Modal, toast } from '../../components/ui';
 import {
   ArrowLeft, BadgeIndianRupee, CheckCircle2, Eye, FileText,
   Loader2, Package, RotateCcw, Save, Send
@@ -480,19 +480,16 @@ function FinanceDetail({ id }) {
       )}
 
       {confirmReturn && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200/80 w-full max-w-md p-6">
-            <h3 className="font-extrabold text-slate-900 text-sm mb-1">↩ Return for correction</h3>
-            <p className="text-[11px] text-slate-500 mb-4">The Content Writer sees your comments and can edit and resubmit. The product is hidden from Sales while returned.</p>
-            <textarea rows={4} value={returnComment} onChange={(e) => setReturnComment(e.target.value)} placeholder="e.g. Replace the first image with a clear product shot, and add the chuck size to the specs table." />
-            <div className="flex gap-2 justify-end mt-4">
-              <button className="btn btn-ghost btn-sm" type="button" onClick={() => setConfirmReturn(false)}>Cancel</button>
-              <button className="btn btn-primary btn-sm" type="button" disabled={busy === 'return' || returnComment.trim().length < 3} onClick={sendBack}>
-                {busy === 'return' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />} Return to Content Writer
-              </button>
-            </div>
+        <Modal title="↩ Return for correction" onClose={() => setConfirmReturn(false)}>
+          <p className="text-[11px] text-slate-500 mb-4">The Content Writer sees your comments and can edit and resubmit. The product is hidden from Sales while returned.</p>
+          <textarea rows={4} value={returnComment} onChange={(e) => setReturnComment(e.target.value)} placeholder="e.g. Replace the first image with a clear product shot, and add the chuck size to the specs table." />
+          <div className="flex gap-2 justify-end mt-4">
+            <button className="btn btn-ghost btn-sm" type="button" onClick={() => setConfirmReturn(false)}>Cancel</button>
+            <button className="btn btn-primary btn-sm" type="button" disabled={busy === 'return' || returnComment.trim().length < 3} onClick={sendBack}>
+              {busy === 'return' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />} Return to Content Writer
+            </button>
           </div>
-        </div>
+        </Modal>
       )}
     </>
   );

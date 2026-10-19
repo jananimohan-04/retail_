@@ -535,15 +535,15 @@ function RolesModal({ onClose, onAddRole, onEditRole }) {
 
       {!loading && !err && (
         <div style={{ overflowX: 'auto', border: '1px solid #E2E8F0', borderRadius: 8 }}>
-          <table className="data-table" style={{ width: '100%', fontSize: 12 }}>
+          <table className="data-table" style={{ width: '100%', minWidth: 780, fontSize: 12 }}>
             <thead>
               <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', textAlign: 'left' }}>
-                <th style={{ padding: '8px 10px' }}>Role / Tier Name</th>
-                <th style={{ padding: '8px 10px' }}>Category</th>
-                <th style={{ padding: '8px 10px' }}>Price Markup %</th>
-                <th style={{ padding: '8px 10px' }}>T&C Required</th>
-                <th style={{ padding: '8px 10px' }}>Description</th>
-                <th style={{ padding: '8px 10px', textAlign: 'right' }}>Actions</th>
+                <th style={{ padding: '8px 10px', minWidth: 150 }}>Role / Tier Name</th>
+                <th style={{ padding: '8px 10px', minWidth: 120 }}>Category</th>
+                <th style={{ padding: '8px 10px', minWidth: 120 }}>Price Markup %</th>
+                <th style={{ padding: '8px 10px', minWidth: 120 }}>T&C Required</th>
+                <th style={{ padding: '8px 10px', minWidth: 160 }}>Description</th>
+                <th style={{ padding: '8px 10px', minWidth: 110, textAlign: 'right' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
