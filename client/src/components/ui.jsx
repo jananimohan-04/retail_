@@ -338,21 +338,21 @@ export function Field({ label, req, hint, full, children }) {
 }
 
 /* ---------- KPI Metric Tile ---------- */
-export function Kpi({ to, onClick, value, label, sub, grad, compact = false }) {
+export function Kpi({ to, onClick, value, label, sub, grad, compact = false, small = false }) {
   const content = (
     <div
       onClick={onClick}
       style={{ background: grad || 'linear-gradient(135deg,#172554,#2563EB)' }}
-      className={`rounded-xl text-white shadow-xs hover:shadow-md transition-all flex flex-col justify-between ${
+      className={`rounded-lg text-white shadow-xs hover:shadow-md transition-all flex flex-col justify-between ${
         onClick ? 'cursor-pointer hover:scale-[1.015] active:scale-[0.98]' : ''
-      } ${compact ? 'p-2 min-h-[58px]' : 'p-2.5 sm:p-3 min-h-[64px]'}`}
+      } ${small ? 'p-1.5 px-2.5 min-h-[46px]' : compact ? 'p-2 min-h-[58px]' : 'p-2.5 sm:p-3 min-h-[64px]'}`}
     >
       <div className="flex items-baseline justify-between gap-1">
-        <div className="text-xl sm:text-2xl font-black font-mono tracking-tight leading-none">{value}</div>
+        <div className={`${small ? 'text-lg' : 'text-xl sm:text-2xl'} font-black font-mono tracking-tight leading-none`}>{value}</div>
       </div>
-      <div className="mt-1 min-w-0">
-        <div className="text-[11px] sm:text-xs font-bold opacity-90 truncate leading-tight">{label}</div>
-        {sub && <div className="text-[9.5px] sm:text-[10px] opacity-75 mt-0.5 truncate leading-tight">{sub}</div>}
+      <div className="mt-0.5 min-w-0">
+        <div className={`${small ? 'text-[10.5px]' : 'text-[11px] sm:text-xs'} font-bold opacity-90 truncate leading-tight`}>{label}</div>
+        {sub && <div className={`${small ? 'text-[9px]' : 'text-[9.5px] sm:text-[10px]'} opacity-75 mt-0.5 truncate leading-tight`}>{sub}</div>}
       </div>
     </div>
   );
