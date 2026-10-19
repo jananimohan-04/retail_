@@ -219,29 +219,8 @@ export const Topbar = forwardRef(function Topbar({ onMobileToggle, sidebarOpen, 
 
   return (
     <header ref={ref} className="sticky top-0 z-50 bg-[#0B1329] backdrop-blur-md border-b border-slate-800 shadow-md shadow-slate-950/20 w-full text-slate-100">
-      <div className="bg-[#060B18] text-slate-400 text-[11px] font-medium py-1.5 px-4 sm:px-6 border-b border-slate-800/80 flex items-center justify-between w-full">
-        <div className="flex items-center gap-2 truncate">
-          <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse shadow-sm shadow-orange-500/50" />
-          <span className="font-extrabold text-white tracking-wide">ARGUSCNC ERP</span>
-          <span className="hidden sm:inline text-slate-600">•</span>
-          <span className="hidden sm:inline truncate text-slate-400">Precision Manufacturing & Industrial Procurement</span>
-        </div>
-        <div className="flex items-center gap-3 text-[11px] text-slate-400 font-medium">
-          {me?.salesTier || (me?.markupPct !== undefined && me?.markupPct > 0) ? (
-            <span className="text-orange-300 font-bold uppercase tracking-wider bg-orange-950/80 border border-orange-700/80 px-2.5 py-0.5 rounded-full flex items-center gap-1.5">
-              <span>🏷️</span>
-              <span>{me.salesTier || 'Partner Tier'} (+{me.markupPct || 0}%)</span>
-            </span>
-          ) : (
-            <span className="text-orange-400 font-bold uppercase tracking-wider bg-orange-950/50 border border-orange-800/60 px-2 py-0.5 rounded-full text-[10px]">GST Verified</span>
-          )}
-          <span className="text-slate-600">•</span>
-          <span className="text-slate-200 font-semibold">{me?.name || 'Argus Enterprise'}</span>
-        </div>
-      </div>
-
-      <div className="w-full px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
+      <div className="w-full px-3 sm:px-5 h-14 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5 flex-shrink-0">
           <button
             type="button"
             onClick={onMobileToggle}
@@ -252,7 +231,7 @@ export const Topbar = forwardRef(function Topbar({ onMobileToggle, sidebarOpen, 
           </button>
 
           <Link to="/store/home" className="flex items-center gap-2 group flex-shrink-0 bg-white px-2.5 py-1 rounded-xl shadow-xs border border-white/20 transition-transform hover:scale-105 duration-200">
-            <img src="assets/argus-logo.png" alt="ARGUSCNC" className="h-7 w-auto object-contain" />
+            <img src="assets/argus-logo.png" alt="ARGUSCNC" className="h-6 w-auto object-contain" />
           </Link>
 
           {!noSide && (
@@ -260,7 +239,7 @@ export const Topbar = forwardRef(function Topbar({ onMobileToggle, sidebarOpen, 
               type="button"
               onClick={onToggleSidebar}
               title={sidebarOpen ? "Collapse sidebar to Full Page view" : "Expand sidebar with full labels"}
-              className={`hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-all text-xs font-bold cursor-pointer ml-2 shadow-xs ${
+              className={`hidden lg:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border transition-all text-xs font-bold cursor-pointer shadow-xs ${
                 !sidebarOpen
                   ? 'bg-gradient-to-r from-orange-500 to-amber-600 text-white border-orange-500 hover:from-orange-600 hover:to-amber-700 shadow-sm shadow-orange-500/30'
                   : 'bg-slate-800/90 border-slate-700/80 text-slate-300 hover:bg-slate-700 hover:text-white'
@@ -268,12 +247,12 @@ export const Topbar = forwardRef(function Topbar({ onMobileToggle, sidebarOpen, 
             >
               {!sidebarOpen ? (
                 <>
-                  <Maximize2 className="w-4 h-4 text-white" />
+                  <Maximize2 className="w-3.5 h-3.5 text-white" />
                   <span className="hidden xl:inline">Full Page View</span>
                 </>
               ) : (
                 <>
-                  <PanelLeftClose className="w-4 h-4 text-slate-400" />
+                  <PanelLeftClose className="w-3.5 h-3.5 text-slate-400" />
                   <span className="hidden xl:inline">Full Page</span>
                 </>
               )}
@@ -281,27 +260,27 @@ export const Topbar = forwardRef(function Topbar({ onMobileToggle, sidebarOpen, 
           )}
         </div>
 
-        <form onSubmit={submit} className="flex-1 max-w-2xl hidden md:flex items-center relative">
+        <form onSubmit={submit} className="flex-1 max-w-xl hidden md:flex items-center relative">
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 pointer-events-none" />
           <input
             id="headerSearchInput"
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Search SKU, part number, brand, industrial tooling..."
-            className="w-full pl-10 pr-12 py-2 text-xs bg-slate-800/80 border border-slate-700/80 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 focus:bg-slate-800 transition-all text-slate-100 placeholder-slate-400"
+            className="w-full pl-9 pr-10 py-1.5 text-xs bg-slate-800/90 border border-slate-700/90 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all text-slate-100 placeholder-slate-400"
           />
           <kbd className="absolute right-3 px-1.5 py-0.5 text-[10px] font-mono font-semibold text-slate-400 bg-slate-700/80 border border-slate-600 rounded-md pointer-events-none shadow-xs">/</kbd>
         </form>
 
-        <div className="flex items-center gap-2.5 sm:gap-3.5 flex-shrink-0">
+        <div className="flex items-center gap-2 sm:gap-2.5 flex-shrink-0">
           {/* Global Company Selector for Super Admin */}
           {me?.role === 'super_admin' && (
-            <div className="flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-orange-950/60 via-slate-800 to-slate-800 border border-orange-500/40 hover:border-orange-400 rounded-full shadow-xs transition-all">
+            <div className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-800 border border-slate-700 hover:border-orange-500/50 rounded-xl shadow-xs transition-colors">
               <Building2 className="w-3.5 h-3.5 text-orange-400 flex-shrink-0" />
               <select
                 value={activeCompany}
                 onChange={(e) => setActiveCompany(e.target.value)}
-                className="bg-transparent text-xs font-bold text-orange-200 outline-none cursor-pointer py-0.5 pr-1 max-w-[160px] sm:max-w-[200px] truncate"
+                className="bg-slate-800 text-xs font-bold text-slate-200 outline-none cursor-pointer border-none py-0.5 pr-1 max-w-[150px] sm:max-w-[185px] truncate"
                 title="Filter active company scope across Super Admin pages"
               >
                 <option value="all" className="bg-slate-900 text-slate-200">🏢 All Companies (Platform)</option>
@@ -314,84 +293,63 @@ export const Topbar = forwardRef(function Topbar({ onMobileToggle, sidebarOpen, 
             </div>
           )}
 
-          {me && me.google ? (
+          {me && (
             <Link
               to="/store/profile"
-              className="hidden sm:flex items-center gap-2 bg-slate-800/90 hover:bg-slate-700 px-3 py-1.5 rounded-full border border-slate-700 transition-colors cursor-pointer"
+              className="hidden sm:flex items-center gap-2 bg-slate-800/90 hover:bg-slate-750 px-2.5 py-1 rounded-xl border border-slate-700 transition-colors cursor-pointer"
               title="View Profile"
             >
-              <span className="w-2 h-2 rounded-full bg-emerald-400" />
-              <span className="text-xs font-bold text-slate-200 truncate max-w-[140px]">{me.name}</span>
-              <span className="text-[10px] uppercase font-extrabold text-orange-400 tracking-wider">({roleLabel})</span>
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="text-xs font-bold text-slate-200 truncate max-w-[130px]">{me.name}</span>
+              <span className="text-[10px] uppercase font-extrabold text-orange-400 bg-orange-950/60 border border-orange-800/60 px-1.5 py-0.5 rounded-md tracking-wider">
+                {roleLabel}
+              </span>
             </Link>
-          ) : (
-            <div className="hidden xl:flex items-center gap-1 p-1 bg-slate-800/90 rounded-full border border-slate-700 text-[11px] font-bold flex-wrap shadow-2xs">
+          )}
+
+          {(!me || !me.google) && (
+            <div className="hidden 2xl:flex items-center gap-1 p-0.5 bg-slate-800/90 rounded-xl border border-slate-700 text-[11px] font-bold">
               <button
                 type="button"
                 onClick={() => loginAs('super_admin')}
-                className={`px-2.5 py-1 rounded-full transition-all cursor-pointer ${me?.role === 'super_admin' ? 'bg-gradient-to-r from-orange-500 to-amber-600 text-white shadow-xs shadow-orange-500/30' : 'text-slate-400 hover:text-white hover:bg-slate-700/60'}`}
+                className={`px-2 py-0.5 rounded-lg transition-all cursor-pointer ${me?.role === 'super_admin' ? 'bg-orange-600 text-white shadow-xs' : 'text-slate-400 hover:text-white'}`}
               >
                 Super
               </button>
               <button
                 type="button"
                 onClick={() => loginAs('company_admin')}
-                className={`px-2.5 py-1 rounded-full transition-all cursor-pointer ${me?.role === 'company_admin' ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-xs shadow-blue-500/30' : 'text-slate-400 hover:text-white hover:bg-slate-700/60'}`}
+                className={`px-2 py-0.5 rounded-lg transition-all cursor-pointer ${me?.role === 'company_admin' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-400 hover:text-white'}`}
               >
                 Admin
               </button>
               <button
                 type="button"
                 onClick={() => loginAs('content_writer')}
-                className={`px-2.5 py-1 rounded-full transition-all cursor-pointer ${me?.role === 'content_writer' ? 'bg-gradient-to-r from-fuchsia-600 to-pink-600 text-white shadow-xs shadow-fuchsia-500/30' : 'text-slate-400 hover:text-white hover:bg-slate-700/60'}`}
+                className={`px-2 py-0.5 rounded-lg transition-all cursor-pointer ${me?.role === 'content_writer' ? 'bg-fuchsia-600 text-white shadow-xs' : 'text-slate-400 hover:text-white'}`}
               >
                 Content
               </button>
               <button
                 type="button"
                 onClick={() => loginAs('finance')}
-                className={`px-2.5 py-1 rounded-full transition-all cursor-pointer ${me?.role === 'finance' ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-xs shadow-emerald-500/30' : 'text-slate-400 hover:text-white hover:bg-slate-700/60'}`}
+                className={`px-2 py-0.5 rounded-lg transition-all cursor-pointer ${me?.role === 'finance' ? 'bg-teal-600 text-white shadow-xs' : 'text-slate-400 hover:text-white'}`}
               >
                 Finance
               </button>
               <button
                 type="button"
-                onClick={() => loginAs('sales_regional_partner')}
-                className={`px-2.5 py-1 rounded-full transition-all cursor-pointer ${me?.role === 'sales_regional_partner' ? 'bg-gradient-to-r from-teal-600 to-cyan-600 text-white shadow-xs shadow-teal-500/30' : 'text-slate-400 hover:text-white hover:bg-slate-700/60'}`}
-                title="Regional Partner (+10% Pricing)"
-              >
-                Regional (+10%)
-              </button>
-              <button
-                type="button"
-                onClick={() => loginAs('sales_channel_partner')}
-                className={`px-2.5 py-1 rounded-full transition-all cursor-pointer ${me?.role === 'sales_channel_partner' ? 'bg-gradient-to-r from-purple-600 to-violet-600 text-white shadow-xs shadow-purple-500/30' : 'text-slate-400 hover:text-white hover:bg-slate-700/60'}`}
-                title="Channel Partner (+15% Pricing)"
-              >
-                Channel (+15%)
-              </button>
-              <button
-                type="button"
-                onClick={() => loginAs('sales_referral_partner')}
-                className={`px-2.5 py-1 rounded-full transition-all cursor-pointer ${me?.role === 'sales_referral_partner' ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-xs shadow-cyan-500/30' : 'text-slate-400 hover:text-white hover:bg-slate-700/60'}`}
-                title="Referral Partner (+5% Pricing)"
-              >
-                Referral (+5%)
-              </button>
-              <button
-                type="button"
                 onClick={() => loginAs('sales_user')}
-                className={`px-2.5 py-1 rounded-full transition-all cursor-pointer ${me?.role === 'sales_user' ? 'bg-gradient-to-r from-orange-600 to-amber-600 text-white shadow-xs shadow-orange-500/30' : 'text-slate-400 hover:text-white hover:bg-slate-700/60'}`}
-                title="Direct Sales (Base Price)"
+                className={`px-2 py-0.5 rounded-lg transition-all cursor-pointer ${me?.role === 'sales_user' ? 'bg-amber-600 text-white shadow-xs' : 'text-slate-400 hover:text-white'}`}
               >
-                Direct Sales
+                Sales
               </button>
             </div>
           )}
 
           <Link
             to="/store/cart"
-            className="relative p-2.5 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-750 text-slate-300 hover:text-orange-400 transition-all duration-200 shadow-xs group cursor-pointer"
+            className="relative p-2 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-750 text-slate-300 hover:text-orange-400 transition-all duration-200 shadow-xs group cursor-pointer"
             aria-label="Shopping Cart"
           >
             <ShoppingCart className="w-4 h-4 transition-transform group-hover:scale-110" />
@@ -399,7 +357,7 @@ export const Topbar = forwardRef(function Topbar({ onMobileToggle, sidebarOpen, 
               <motion.span
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
-                className="absolute -top-1.5 -right-1.5 bg-orange-600 text-white font-extrabold text-[10px] min-w-5 h-5 rounded-full flex items-center justify-center px-1 shadow-sm border-2 border-slate-900"
+                className="absolute -top-1.5 -right-1.5 bg-orange-600 text-white font-extrabold text-[10px] min-w-4 h-4 rounded-full flex items-center justify-center px-1 shadow-sm border border-slate-900"
               >
                 {cartN}
               </motion.span>
@@ -408,7 +366,7 @@ export const Topbar = forwardRef(function Topbar({ onMobileToggle, sidebarOpen, 
 
           <Link
             to="/store/profile"
-            className="p-2.5 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-750 text-slate-300 hover:text-orange-400 transition-all duration-200 shadow-xs cursor-pointer group"
+            className="p-2 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-750 text-slate-300 hover:text-orange-400 transition-all duration-200 shadow-xs cursor-pointer group"
             title={me?.name ? `${me.name} (${roleLabel}) — User Profile` : 'User Profile'}
             aria-label="User Profile"
           >
@@ -418,7 +376,7 @@ export const Topbar = forwardRef(function Topbar({ onMobileToggle, sidebarOpen, 
           <button
             type="button"
             onClick={() => { logout(); nav('/login'); }}
-            className="p-2.5 rounded-xl text-slate-400 hover:text-rose-400 hover:bg-rose-950/40 border border-slate-700 transition-colors cursor-pointer"
+            className="p-2 rounded-xl text-slate-400 hover:text-rose-400 hover:bg-rose-950/40 border border-slate-700 transition-colors cursor-pointer"
             title="Sign Out"
           >
             <LogOut className="w-4 h-4" />
@@ -439,7 +397,7 @@ export function Shell({ counts, noSide, children }) {
   });
   const location = useLocation();
   const headerRef = useRef(null);
-  const [headerH, setHeaderH] = useState(93);
+  const [headerH, setHeaderH] = useState(56);
 
   const toggleSidebar = () => {
     setSidebarOpen((prev) => {
