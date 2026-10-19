@@ -52,72 +52,52 @@ function FinanceQueue() {
   }, [load]);
 
   const counts = (data && data.counts) || {};
-  const rows = (data && data.rows) || [];
+  const tabCount = (t) => {
+    if (t.id === 'all') return (data && data.total) || 0;
+    if (t.id === 'submitted_to_finance') return counts.submitted_to_finance || 0;
+    if (t.id === 'finance_review') return (counts.finance_review || 0) + (counts.pricing_saved || 0);
+    if (t.id === 'published') return counts.published || 0;
+    if (t.id === 'returned_for_correction') return counts.returned_for_correction || 0;
+    return 0;
+  };
 
   return (
     <>
       <PageHero
         icon={IndianRupee}
         title="Finance & Pricing Review"
-        subtitle="Review marketing product submissions, configure sales partner tier margins, and publish products live to the B2B catalog."
         badgeText="Publishing Step 2"
         badgeColor="teal"
         gradient="from-teal-600 via-emerald-600 to-cyan-600"
-        actions={<Link className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors" to="/content">← Content queue</Link>}
+        actions={
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-1 p-1 bg-slate-100/90 rounded-xl border border-slate-200/80 shadow-2xs">
+              {TABS.map((t) => (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => { setTab(t.id); setPage(1); }}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${
+                    tab === t.id
+                      ? 'bg-white text-slate-900 shadow-xs border border-slate-200/60'
+                      : 'text-slate-500 hover:text-slate-900 hover:bg-slate-200/60'
+                  }`}
+                >
+                  <span>{t.label}</span>
+                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
+                    tab === t.id ? 'bg-teal-100 text-teal-800 font-extrabold' : 'bg-slate-200/70 text-slate-600'
+                  }`}>
+                    {tabCount(t)}
+                  </span>
+                </button>
+              ))}
+            </div>
+            <Link className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors whitespace-nowrap" to="/content">
+              ← Content queue
+            </Link>
+          </div>
+        }
       />
-
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 mb-3.5">
-        <Tile
-          value={counts.submitted_to_finance || 0}
-          label="Waiting for review"
-          sub="Submitted by Content Writers"
-          tone="violet"
-          onClick={() => { setTab('submitted_to_finance'); setPage(1); }}
-          active={tab === 'submitted_to_finance'}
-        />
-        <Tile
-          value={(counts.finance_review || 0) + (counts.pricing_saved || 0)}
-          label="In progress"
-          sub="Under review or priced"
-          tone="blue"
-          onClick={() => { setTab('finance_review'); setPage(1); }}
-          active={tab === 'finance_review'}
-        />
-        <Tile
-          value={counts.published || 0}
-          label="Published to Sales"
-          sub="Visible in the Sales catalog"
-          tone="emerald"
-          onClick={() => { setTab('published'); setPage(1); }}
-          active={tab === 'published'}
-        />
-        <Tile
-          value={counts.returned_for_correction || 0}
-          label="Returned for correction"
-          sub="Sent back with comments"
-          tone="red"
-          onClick={() => { setTab('returned_for_correction'); setPage(1); }}
-          active={tab === 'returned_for_correction'}
-        />
-      </div>
-
-      <div className="flex items-center gap-3 flex-wrap mb-4">
-        <div className="flex items-center gap-1.5 p-1 bg-slate-100/90 rounded-2xl border border-slate-200/80 overflow-x-auto max-w-full">
-          {TABS.map((t) => (
-            <button
-              key={t.id}
-              type="button"
-              onClick={() => { setTab(t.id); setPage(1); }}
-              className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
-                tab === t.id ? 'bg-white text-slate-900 shadow-xs border border-slate-200/60' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-200/60'
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
-        <input value={q} onChange={(e) => { setQ(e.target.value); setPage(1); }} placeholder="Search name, SKU, brand…" className="flex-1 min-w-[200px] max-w-sm" />
-      </div>
 
       {busy && !data ? (
         <Skeleton h={72} count={4} />

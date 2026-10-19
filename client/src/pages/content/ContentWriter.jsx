@@ -111,73 +111,38 @@ function ContentQueue() {
       <PageHero
         icon={PenLine}
         title="Content Writer Workspace"
-        subtitle="Prepare marketing copy, technical specifications, CAD sheets, and multimedia assets before submission to Finance review."
         badgeText="Publishing Step 1"
         badgeColor="fuchsia"
         gradient="from-fuchsia-600 via-pink-600 to-purple-600"
-        actions={<Link className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors" to="/finance">Finance queue →</Link>}
+        actions={
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-1 p-1 bg-slate-100/90 rounded-xl border border-slate-200/80 shadow-2xs">
+              {TABS.map((t) => (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => { setTab(t.id); setPage(1); }}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${
+                    tab === t.id
+                      ? 'bg-white text-slate-900 shadow-xs border border-slate-200/60'
+                      : 'text-slate-500 hover:text-slate-900 hover:bg-slate-200/60'
+                  }`}
+                >
+                  <span>{t.label}</span>
+                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
+                    tab === t.id ? 'bg-fuchsia-100 text-fuchsia-800 font-extrabold' : 'bg-slate-200/70 text-slate-600'
+                  }`}>
+                    {tabCount(t)}
+                  </span>
+                </button>
+              ))}
+            </div>
+            <Link className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors whitespace-nowrap" to="/finance">
+              Finance queue →
+            </Link>
+          </div>
+        }
       />
-
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 mb-3.5">
-        <StatTile
-          value={(data && data.total) || 0}
-          label="All Products"
-          sub="Full catalog overview"
-          tone="blue"
-          onClick={() => { setTab('all'); setPage(1); }}
-          active={tab === 'all'}
-        />
-        <StatTile
-          value={(counts.content_pending || 0) + (counts.returned_for_correction || 0)}
-          label="Needs Content"
-          sub="New from ERP awaiting copy"
-          tone="amber"
-          onClick={() => { setTab('needs_content'); setPage(1); }}
-          active={tab === 'needs_content'}
-        />
-        <StatTile
-          value={counts.content_in_progress || 0}
-          label="In Progress"
-          sub="Drafts currently being edited"
-          tone="blue"
-          onClick={() => { setTab('content_in_progress'); setPage(1); }}
-          active={tab === 'content_in_progress'}
-        />
-        <StatTile
-          value={(counts.submitted_to_finance || 0) + (counts.finance_review || 0) + (counts.pricing_saved || 0) + (counts.published || 0)}
-          label="Published"
-          sub={`${counts.published || 0} live · ${(counts.submitted_to_finance || 0) + (counts.finance_review || 0) + (counts.pricing_saved || 0)} waiting finance`}
-          tone="emerald"
-          onClick={() => { setTab('published'); setPage(1); }}
-          active={tab === 'published'}
-        />
-      </div>
-
-      <div className="flex items-center gap-3 flex-wrap mb-4">
-        <div className="flex items-center gap-1.5 p-1 bg-slate-100/90 rounded-2xl border border-slate-200/80 overflow-x-auto max-w-full">
-          {TABS.map((t) => (
-            <button
-              key={t.id}
-              type="button"
-              onClick={() => { setTab(t.id); setPage(1); }}
-              className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer flex items-center gap-2 ${
-                tab === t.id ? 'bg-white text-slate-900 shadow-xs border border-slate-200/60' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-200/60'
-              }`}
-            >
-              <span>{t.label}</span>
-              <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono ${tab === t.id ? 'bg-slate-100 text-slate-800' : 'bg-slate-200/70 text-slate-600'}`}>
-                {tabCount(t)}
-              </span>
-            </button>
-          ))}
-        </div>
-        <input
-          value={q}
-          onChange={(e) => { setQ(e.target.value); setPage(1); }}
-          placeholder="Search name, SKU, brand…"
-          className="flex-1 min-w-[200px] max-w-sm"
-        />
-      </div>
 
       {busy && !data ? (
         <Skeleton h={72} count={4} />
