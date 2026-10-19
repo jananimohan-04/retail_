@@ -386,55 +386,50 @@ function ContentEditor({ id }) {
 
   return (
     <>
-      <PageHead
-        eyebrow={`Content Writer · ${p.categoryName || p.category || 'Uncategorised'}`}
-        title={p.name}
-        desc={`${p.sku || p.id}${p.brand ? ' · ' + p.brand : ''}${p.mpn ? ' · MPN ' + p.mpn : ''} · ${p.uom || 'Unit'} · Received from ${p.erp_synced ? 'ERP Inventory' : 'catalog'}`}
-        actions={
-          <>
-            <Link className="btn btn-ghost btn-sm" to="/content"><ArrowLeft className="w-3.5 h-3.5" /> Queue</Link>
-            <button className="btn btn-ghost btn-sm" type="button" onClick={() => setPreview(true)}>👁 Preview listing</button>
-            {canSave && (
-              <button className="btn btn-ghost btn-sm border border-slate-200" type="button" disabled={saving || submitting} onClick={() => save()}>
-                {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-                {saving ? 'Saving…' : 'Save draft'}
-              </button>
-            )}
-            {canSave && (
-              <button
-                className="btn btn-primary btn-sm bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs"
-                type="button"
-                disabled={submitting || saving}
-                onClick={() => setConfirmSubmit(true)}
-              >
-                {submitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
-                Send to Accounts / Finance
-              </button>
-            )}
-          </>
-        }
-      />
+      {/* Combined Single-Line Header */}
+      <div className="bg-white rounded-xl border border-slate-200/90 px-4 py-2.5 sm:px-5 sm:py-3 shadow-xs mb-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5 flex-wrap min-w-0">
+          <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">
+            {`Content Writer · ${p.categoryName || p.category || 'Uncategorised'}`}
+          </span>
+          <span className="text-slate-300">•</span>
+          <h1 className="text-base sm:text-lg font-black text-slate-900 tracking-tight truncate max-w-xs sm:max-w-md">
+            {p.name}
+          </h1>
+          <StageBadge stage={p.workflow_stage} label={p.stageLabel} />
+          <span className="text-[11px] text-slate-500 hidden md:inline">
+            Last updated {fmtDate(p.workflow_updated_at)}
+          </span>
+        </div>
 
-      {/* status strip */}
-      <div className="rounded-2xl border border-slate-200/80 bg-white p-4 mb-5 flex items-center gap-3 flex-wrap">
-        <StageBadge stage={p.workflow_stage} label={p.stageLabel} />
-        <span className="text-xs text-slate-500">Last updated {fmtDate(p.workflow_updated_at)}</span>
-        {p.workflow_stage === 'returned_for_correction' && p.return_comment && (
-          <div className="w-full mt-1 rounded-xl bg-red-50 border border-red-200 p-3 text-xs text-red-800">
-            <b className="font-extrabold">Finance asked for a correction ({p.returned_by || 'Finance'}):</b> {p.return_comment}
-          </div>
-        )}
-        {canSave && (
-          <button
-            className="btn btn-primary btn-sm ml-auto bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs"
-            type="button"
-            disabled={submitting || saving}
-            onClick={() => setConfirmSubmit(true)}
-          >
-            <Send className="w-3.5 h-3.5" /> Send to Accounts / Finance
-          </button>
-        )}
+        <div className="flex items-center gap-2 flex-wrap flex-shrink-0">
+          <Link className="btn btn-ghost btn-sm" to="/content"><ArrowLeft className="w-3.5 h-3.5" /> Queue</Link>
+          <button className="btn btn-ghost btn-sm" type="button" onClick={() => setPreview(true)}>👁 Preview listing</button>
+          {canSave && (
+            <button className="btn btn-ghost btn-sm border border-slate-200" type="button" disabled={saving || submitting} onClick={() => save()}>
+              {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+              {saving ? 'Saving…' : 'Save draft'}
+            </button>
+          )}
+          {canSave && (
+            <button
+              className="btn btn-primary btn-sm bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs"
+              type="button"
+              disabled={submitting || saving}
+              onClick={() => setConfirmSubmit(true)}
+            >
+              {submitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+              Send to Accounts / Finance
+            </button>
+          )}
+        </div>
       </div>
+
+      {p.workflow_stage === 'returned_for_correction' && p.return_comment && (
+        <div className="rounded-xl bg-red-50 border border-red-200 p-3 text-xs text-red-800 mb-3.5">
+          <b className="font-extrabold">Finance asked for a correction ({p.returned_by || 'Finance'}):</b> {p.return_comment}
+        </div>
+      )}
 
       <div className="grid lg:grid-cols-3 gap-5 items-start">
         {/* ------- main column ------- */}

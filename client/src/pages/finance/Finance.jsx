@@ -273,46 +273,48 @@ function FinanceDetail({ id }) {
 
   return (
     <>
-      <PageHead
-        eyebrow={`Finance Review · ${p.categoryName || p.category || 'Uncategorised'}`}
-        title={p.name}
-        desc={`${p.sku || p.id}${p.brand ? ' · ' + p.brand : ''} · Stock ${p.stock ?? '—'} ${p.uom || ''}`}
-        actions={
-          <>
-            <Link className="btn btn-ghost btn-sm" to="/finance"><ArrowLeft className="w-3.5 h-3.5" /> Queue</Link>
-            {perm.canPrice && (
-              <button className="btn btn-ghost btn-sm" type="button" disabled={!!busy} onClick={savePricing}>
-                {busy === 'pricing' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />} Save price draft
-              </button>
-            )}
-            {perm.canReturn && (
-              <button className="btn btn-ghost btn-sm" type="button" disabled={!!busy} onClick={() => setConfirmReturn(true)}>
-                <RotateCcw className="w-3.5 h-3.5" /> Return for correction
-              </button>
-            )}
-            {perm.canApprove && (
-              <button className="btn btn-primary btn-sm" type="button" disabled={!!busy} onClick={() => setConfirmApprove(true)}>
-                <CheckCircle2 className="w-3.5 h-3.5" /> Approve &amp; publish
-              </button>
-            )}
-          </>
-        }
-      />
+      {/* Combined Single-Line Header */}
+      <div className="bg-white rounded-xl border border-slate-200/90 px-4 py-2.5 sm:px-5 sm:py-3 shadow-xs mb-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5 flex-wrap min-w-0">
+          <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">
+            {`Finance Review · ${p.categoryName || p.category || 'Uncategorised'}`}
+          </span>
+          <span className="text-slate-300">•</span>
+          <h1 className="text-base sm:text-lg font-black text-slate-900 tracking-tight truncate max-w-xs sm:max-w-md">
+            {p.name}
+          </h1>
+          <StageBadge stage={p.workflow_stage} label={p.stageLabel} />
+          <span className="text-[11px] text-slate-500 hidden md:inline">
+            {p.workflow_stage === 'published'
+              ? `Published ${fmtDate(p.published_at)} by ${p.approved_by || 'Finance'}`
+              : `Submitted by ${p.submitted_by || 'Content Writer'} ${fmtDate(p.submitted_at)}`}
+          </span>
+        </div>
 
-      {/* status strip */}
-      <div className="rounded-2xl border border-slate-200/80 bg-white p-4 mb-5 flex items-center gap-3 flex-wrap">
-        <StageBadge stage={p.workflow_stage} label={p.stageLabel} />
-        <span className="text-xs text-slate-500">
-          {p.workflow_stage === 'published'
-            ? `Published ${fmtDate(p.published_at)} by ${p.approved_by || 'Finance'} — visible to Salespeople`
-            : `Submitted by ${p.submitted_by || 'Content Writer'} ${fmtDate(p.submitted_at)}`}
-        </span>
-        {perm.canStartReview && (
-          <button className="btn btn-ghost btn-sm ml-auto" type="button" disabled={!!busy} onClick={() => act('start-review')}>Mark as under review</button>
-        )}
-        {p.workflow_stage === 'published' && (
-          <Link className="btn btn-ghost btn-sm ml-auto" to={'/store/product/' + p.id}><Eye className="w-3.5 h-3.5" /> View in store</Link>
-        )}
+        <div className="flex items-center gap-2 flex-wrap flex-shrink-0">
+          <Link className="btn btn-ghost btn-sm" to="/finance"><ArrowLeft className="w-3.5 h-3.5" /> Queue</Link>
+          {perm.canPrice && (
+            <button className="btn btn-ghost btn-sm" type="button" disabled={!!busy} onClick={savePricing}>
+              {busy === 'pricing' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />} Save price draft
+            </button>
+          )}
+          {perm.canReturn && (
+            <button className="btn btn-ghost btn-sm" type="button" disabled={!!busy} onClick={() => setConfirmReturn(true)}>
+              <RotateCcw className="w-3.5 h-3.5" /> Return for correction
+            </button>
+          )}
+          {perm.canStartReview && (
+            <button className="btn btn-ghost btn-sm" type="button" disabled={!!busy} onClick={() => act('start-review')}>Mark as under review</button>
+          )}
+          {p.workflow_stage === 'published' && (
+            <Link className="btn btn-ghost btn-sm" to={'/store/product/' + p.id}><Eye className="w-3.5 h-3.5" /> View in store</Link>
+          )}
+          {perm.canApprove && (
+            <button className="btn btn-primary btn-sm" type="button" disabled={!!busy} onClick={() => setConfirmApprove(true)}>
+              <CheckCircle2 className="w-3.5 h-3.5" /> Approve &amp; publish
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="grid lg:grid-cols-3 gap-5 items-start">
