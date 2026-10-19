@@ -170,6 +170,7 @@ export default function Companies({ tab: tabProp }) {
         actions={<>
           <button className="btn btn-ghost btn-sm" onClick={mgExport}>⤓ Export</button>
           <button className="btn btn-ghost btn-sm" onClick={refresh}>↻ Refresh</button>
+          <button className="btn btn-primary btn-sm" onClick={() => setUserModal({ preset: { role: 'company_admin' } })}>+ Invite Admin</button>
           <button className="btn btn-primary btn-sm" onClick={() => setCoModal({ id: '' })}>+ Create Company</button>
         </>}
       />
