@@ -5,10 +5,12 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FolderTree } from 'lucide-react';
 import { api } from '../../api';
+import { useCompany } from '../../companyContext';
 import { PageHero, DataTable, Field, Modal, Empty, Skeleton, statusBadge, toast } from '../../components/ui';
 import { asRows, fetchCompanyOptions } from './_shared';
 
 export default function Categories() {
+  const { activeCompany, activeCompanyObj, setActiveCompany } = useCompany();
   const [cats, setCats] = useState([]);
   const [cos, setCos] = useState([]);
   const [err, setErr] = useState('');
@@ -42,7 +44,8 @@ export default function Categories() {
   if (err) return <Empty title={'⚠️ ' + err} />;
 
   const globals = cats.filter((c) => c.scope !== 'company');
-  const byCompany = cos.map((co) => ({
+  const visibleCompanies = activeCompany !== 'all' ? cos.filter(c => c.id === activeCompany) : cos;
+  const byCompany = visibleCompanies.map((co) => ({
     co,
     specific: cats.filter((c) => c.scope === 'company' && c.companyId === co.id),
     assigned: globals.filter((c) => (c.assignedTo || []).includes(co.id))
@@ -59,6 +62,28 @@ export default function Categories() {
         gradient="from-amber-500 via-orange-500 to-yellow-500"
         actions={<button className="btn btn-primary btn-sm bg-amber-600 hover:bg-amber-700 border-none shadow-sm shadow-amber-600/30 text-white" onClick={() => setCreating('global')}>+ New category</button>}
       />
+      {activeCompanyObj && (
+        <div className="flex items-center justify-between gap-3 p-3.5 mb-4 bg-amber-50/90 border border-amber-200/90 rounded-2xl shadow-2xs">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">{activeCompanyObj.logo || '🏭'}</span>
+            <div>
+              <div className="text-xs font-bold text-slate-900">
+                Active Tenant Scope: <span className="text-amber-700 font-extrabold">{activeCompanyObj.name}</span> <span className="font-mono text-slate-500">({activeCompanyObj.code || activeCompanyObj.id})</span>
+              </div>
+              <div className="text-[11px] text-slate-500">
+                Category assignments and company-specific taxonomies are scoped to this company
+              </div>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setActiveCompany('all')}
+            className="px-3 py-1.5 rounded-xl text-xs font-bold text-amber-800 hover:text-amber-950 bg-white hover:bg-amber-100/60 border border-amber-200 transition-colors cursor-pointer shadow-2xs"
+          >
+            Reset to All Companies
+          </button>
+        </div>
+      )}
       <div className="card"><div className="card-pad">
         <div className="cat-row" style={{ flexWrap: 'wrap' }}>
           {globals.map((c) => <span key={c.id} className="cat-chip">{c.icon} {c.name} <b>• {c.productCount ?? 0}</b></span>)}

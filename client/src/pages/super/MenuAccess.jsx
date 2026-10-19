@@ -8,11 +8,13 @@ import {
 } from 'lucide-react';
 import { api } from '../../api';
 import { useAuth } from '../../auth';
+import { useCompany } from '../../companyContext';
 import { toast } from '../../components/ui';
 import { MENU_CATALOG, ICON_MAP, getAllPageIds } from '../../menuCatalog';
 
 export default function MenuAccess() {
   const { me, refreshPermissions } = useAuth();
+  const { activeCompany, activeCompanyObj, setActiveCompany } = useCompany();
   const [activeTab, setActiveTab] = useState('roles'); // 'roles' | 'users' | 'audit'
   const [loading, setLoading] = useState(true);
 
@@ -289,15 +291,19 @@ export default function MenuAccess() {
 
   /* Filtered users list */
   const filteredUsers = useMemo(() => {
-    if (!userSearch) return users;
+    let list = users;
+    if (activeCompany !== 'all') {
+      list = list.filter(u => u.companyId === activeCompany);
+    }
+    if (!userSearch) return list;
     const q = userSearch.toLowerCase();
-    return users.filter(u =>
+    return list.filter(u =>
       (u.name || '').toLowerCase().includes(q) ||
       (u.email || '').toLowerCase().includes(q) ||
       (u.companyId || '').toLowerCase().includes(q) ||
       (u.role || '').toLowerCase().includes(q)
     );
-  }, [users, userSearch]);
+  }, [users, userSearch, activeCompany]);
 
   if (loading) {
     return (
@@ -366,6 +372,29 @@ export default function MenuAccess() {
           </div>
         </div>
       </div>
+
+      {activeCompanyObj && (
+        <div className="flex items-center justify-between gap-3 p-3.5 bg-rose-50/90 border border-rose-200/90 rounded-2xl shadow-2xs">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">{activeCompanyObj.logo || '🏭'}</span>
+            <div>
+              <div className="text-xs font-bold text-slate-900">
+                Active Tenant Scope: <span className="text-rose-700 font-extrabold">{activeCompanyObj.name}</span> <span className="font-mono text-slate-500">({activeCompanyObj.code || activeCompanyObj.id})</span>
+              </div>
+              <div className="text-[11px] text-slate-500">
+                User access overrides and role assignments are filtered to this company
+              </div>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setActiveCompany('all')}
+            className="px-3 py-1.5 rounded-xl text-xs font-bold text-rose-800 hover:text-rose-950 bg-white hover:bg-rose-100/60 border border-rose-200 transition-colors cursor-pointer shadow-2xs"
+          >
+            Reset to All Companies
+          </button>
+        </div>
+      )}
 
       {/* =========================================================================
           TAB 1: ROLE-WISE PERMISSIONS

@@ -1,15 +1,15 @@
-/* Global cross-company catalog — route /super/catalog.
-   Data: GET /api/catalog (query: companyId/cat/brand/visible/avail/archived/q/page/limit). */
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Boxes } from 'lucide-react';
 import { api, fmt, imgFallback } from '../../api';
+import { useCompany } from '../../companyContext';
 import { PageHero, DataTable, Pager, Empty, Skeleton, statusBadge } from '../../components/ui';
 import { asRows } from './_shared';
 
 const LIMIT = 8;
 
 export default function Catalog() {
+  const { activeCompany, activeCompanyObj, setActiveCompany } = useCompany();
   const [page, setPage] = useState(1);
   const [data, setData] = useState({ rows: [], total: 0 });
   const [loading, setLoading] = useState(true);
@@ -18,7 +18,8 @@ export default function Catalog() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const d = await api.get(`/api/catalog?page=${page}&limit=${LIMIT}`);
+      const cid = activeCompany !== 'all' ? `&companyId=${encodeURIComponent(activeCompany)}` : '';
+      const d = await api.get(`/api/catalog?page=${page}&limit=${LIMIT}${cid}`);
       const n = asRows(d);
       setData({ rows: n.rows, total: n.total });
       setErr('');
@@ -27,9 +28,9 @@ export default function Catalog() {
     } finally {
       setLoading(false);
     }
-  }, [page]);
+  }, [page, activeCompany]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { setPage(1); load(); }, [load]);
 
   return (
     <>
@@ -41,6 +42,28 @@ export default function Catalog() {
         badgeColor="amber"
         gradient="from-amber-500 via-orange-500 to-yellow-600"
       />
+      {activeCompanyObj && (
+        <div className="flex items-center justify-between gap-3 p-3.5 mb-4 bg-amber-50/90 border border-amber-200/90 rounded-2xl shadow-2xs">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">{activeCompanyObj.logo || '🏭'}</span>
+            <div>
+              <div className="text-xs font-bold text-slate-900">
+                Active Tenant Scope: <span className="text-amber-700 font-extrabold">{activeCompanyObj.name}</span> <span className="font-mono text-slate-500">({activeCompanyObj.code || activeCompanyObj.id})</span>
+              </div>
+              <div className="text-[11px] text-slate-500">
+                Catalog SKUs and industrial inventory are filtered to this company
+              </div>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setActiveCompany('all')}
+            className="px-3 py-1.5 rounded-xl text-xs font-bold text-amber-800 hover:text-amber-950 bg-white hover:bg-amber-100/60 border border-amber-200 transition-colors cursor-pointer shadow-2xs"
+          >
+            Reset to All Companies
+          </button>
+        </div>
+      )}
       <div className="card"><div className="card-pad">
         {loading ? <Skeleton h={220} /> : err ? <Empty title={'⚠️ ' + err} /> : (
           <>

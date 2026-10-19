@@ -1,12 +1,14 @@
-/* /super/orders — all-companies order table (previously a dead menu rendering home). */
 import { useCallback, useEffect, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Receipt } from 'lucide-react';
 import { api, fmt } from '../../api';
+import { useCompany } from '../../companyContext';
 import { PageHero, DataTable, statusBadge, Empty, Skeleton, Pager, toast } from '../../components/ui';
 
 const STATUSES = ['Pending', 'Confirmed', 'Processing', 'Ready for Dispatch', 'Shipped', 'Delivered', 'Cancelled'];
 
 export default function Orders() {
+  const { activeCompany, setActiveCompany } = useCompany();
   const [sp, setSp] = useSearchParams();
   const [rows, setRows] = useState(null);
   const [total, setTotal] = useState(0);
@@ -14,7 +16,7 @@ export default function Orders() {
   const [err, setErr] = useState('');
   const [companies, setCompanies] = useState([]);
   const status = sp.get('status') || 'all';
-  const company = sp.get('company') || 'all';
+  const company = sp.get('company') || activeCompany || 'all';
   const q = sp.get('q') || '';
 
   const load = useCallback(async (p) => {
@@ -38,6 +40,7 @@ export default function Orders() {
   useEffect(() => { window.scrollTo({ top: 0 }); }, []);
 
   const set = (k, v) => {
+    if (k === 'company') setActiveCompany(v);
     const n = new URLSearchParams(sp);
     if (!v || v === 'all') n.delete(k); else n.set(k, v);
     setSp(n);

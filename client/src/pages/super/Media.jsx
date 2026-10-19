@@ -5,6 +5,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Image as ImageIcon } from 'lucide-react';
 import { api, imgFallback, uploadFiles } from '../../api';
+import { useCompany } from '../../companyContext';
 import { PageHero, Pager, Field, Modal, Confirm, Empty, Skeleton, toast } from '../../components/ui';
 import { asRows, fetchCompanyOptions } from './_shared';
 import { MediaUploadModal } from './CompanyDetail';
@@ -12,9 +13,10 @@ import { MediaUploadModal } from './CompanyDetail';
 const LIMIT = 8;
 
 export default function Media() {
+  const { activeCompany, activeCompanyObj, setActiveCompany } = useCompany();
   const [cos, setCos] = useState([]);
   const [products, setProducts] = useState([]);
-  const [companyId, setCompanyId] = useState('all');
+  const [companyId, setCompanyId] = useState(activeCompany || 'all');
   const [productId, setProductId] = useState('all');
   const [type, setType] = useState('all');
   const [page, setPage] = useState(1);
@@ -28,6 +30,11 @@ export default function Media() {
   const [preview, setPreview] = useState(null);
 
   useEffect(() => { fetchCompanyOptions().then(setCos).catch(() => {}); }, []);
+
+  useEffect(() => {
+    setCompanyId(activeCompany);
+    setPage(1);
+  }, [activeCompany]);
 
   useEffect(() => {
     const cid = companyId === 'all' ? null : companyId;
@@ -93,9 +100,31 @@ export default function Media() {
           setUploading(cid || 'pick');
         }}>+ Upload media</button>}
       />
+      {activeCompanyObj && (
+        <div className="flex items-center justify-between gap-3 p-3.5 mb-4 bg-amber-50/90 border border-amber-200/90 rounded-2xl shadow-2xs">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">{activeCompanyObj.logo || '🏭'}</span>
+            <div>
+              <div className="text-xs font-bold text-slate-900">
+                Active Tenant Scope: <span className="text-amber-700 font-extrabold">{activeCompanyObj.name}</span> <span className="font-mono text-slate-500">({activeCompanyObj.code || activeCompanyObj.id})</span>
+              </div>
+              <div className="text-[11px] text-slate-500">
+                Product images, CAD renders, and videos are filtered to this company
+              </div>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setActiveCompany('all')}
+            className="px-3 py-1.5 rounded-xl text-xs font-bold text-amber-800 hover:text-amber-950 bg-white hover:bg-amber-100/60 border border-amber-200 transition-colors cursor-pointer shadow-2xs"
+          >
+            Reset to All Companies
+          </button>
+        </div>
+      )}
       <div className="card"><div className="card-pad">
         <div className="toolbar">
-          <select value={companyId} onChange={(e) => reset(setCompanyId)(e.target.value)}>
+          <select value={companyId} onChange={(e) => { setActiveCompany(e.target.value); reset(setCompanyId)(e.target.value); }}>
             <option value="all">All companies</option>
             {cos.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>

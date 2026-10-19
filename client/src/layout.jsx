@@ -10,6 +10,7 @@ import {
   PenLine, IndianRupee, ClipboardCheck
 } from 'lucide-react';
 import { useAuth } from './auth';
+import { useCompany } from './companyContext';
 import { getCart } from './api';
 
 import { MENU_CATALOG, ICON_MAP, getPageById } from './menuCatalog';
@@ -165,6 +166,7 @@ export function Sidebar({ counts, onItemClick, mini = false }) {
 
 export const Topbar = forwardRef(function Topbar({ onMobileToggle, sidebarOpen, onToggleSidebar, noSide }, ref) {
   const { me, loginAs, logout } = useAuth();
+  const { activeCompany, setActiveCompany, companies } = useCompany();
   const [q, setQ] = useState('');
   const nav = useNavigate();
   const cartN = (getCart() || []).reduce((a, c) => a + (c.qty || 0), 0);
@@ -274,6 +276,26 @@ export const Topbar = forwardRef(function Topbar({ onMobileToggle, sidebarOpen, 
         </form>
 
         <div className="flex items-center gap-2.5 sm:gap-3.5 flex-shrink-0">
+          {/* Global Company Selector for Super Admin */}
+          {me?.role === 'super_admin' && (
+            <div className="flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-sky-50 via-blue-50 to-indigo-50 border border-sky-200/90 hover:border-sky-300 rounded-full shadow-2xs transition-all">
+              <Building2 className="w-3.5 h-3.5 text-sky-600 flex-shrink-0" />
+              <select
+                value={activeCompany}
+                onChange={(e) => setActiveCompany(e.target.value)}
+                className="bg-transparent text-xs font-bold text-slate-800 outline-none cursor-pointer py-0.5 pr-1 max-w-[160px] sm:max-w-[200px] truncate"
+                title="Filter active company scope across Super Admin pages"
+              >
+                <option value="all">🏢 All Companies (Platform)</option>
+                {companies.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.logo || '🏭'} {c.name} ({c.code || c.id})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           {me && me.google ? (
             <Link
               to="/store/profile"

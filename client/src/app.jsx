@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { HashRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './auth';
+import { CompanyProvider } from './companyContext';
 import { Shell } from './layout';
 import { ToastHost } from './components/ui';
 import { api, getCart } from './api';
@@ -134,8 +135,9 @@ function Gate({ children, noSide, roles, perm }) {
 export default function App() {
   return (
     <AuthProvider>
-      <HashRouter>
-        <ToastHost />
+      <CompanyProvider>
+        <HashRouter>
+          <ToastHost />
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/pending" element={<Gate noSide><Pending /></Gate>} />
@@ -185,6 +187,7 @@ export default function App() {
           <Route path="*" element={<Gate><StoreHome /></Gate>} />
         </Routes>
       </HashRouter>
+      </CompanyProvider>
     </AuthProvider>
   );
 }

@@ -1,17 +1,20 @@
+import { useCallback, useEffect, useState } from 'react';
 import { FileText } from 'lucide-react';
 import { api, fmt } from '../../api';
+import { useCompany } from '../../companyContext';
 import { PageHero, DataTable, Field, statusBadge, Modal, Empty, Skeleton, Pager, toast } from '../../components/ui';
 
 const STATUSES = ['Pending', 'Quoted', 'Accepted', 'Rejected', 'Cancelled'];
 
 export default function Quotes() {
+  const { activeCompany, activeCompanyObj, setActiveCompany } = useCompany();
   const [rows, setRows] = useState(null);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [err, setErr] = useState('');
   const [companies, setCompanies] = useState([]);
   const [status, setStatus] = useState('all');
-  const [company, setCompany] = useState('all');
+  const [company, setCompany] = useState(activeCompany || 'all');
   const [resp, setResp] = useState(null);
   const [rStatus, setRStatus] = useState('Quoted');
   const [rPrice, setRPrice] = useState('');
@@ -34,11 +37,22 @@ export default function Quotes() {
 
   useEffect(() => {
     api.get('/api/companies').then((c) => setCompanies(c || [])).catch(() => {});
-    load(1, 'all', 'all');
     window.scrollTo({ top: 0 });
-  }, [load]);
+  }, []);
 
-  const refilter = (st, co) => { setPage(1); load(1, st, co); };
+  useEffect(() => {
+    setCompany(activeCompany);
+    load(1, status, activeCompany);
+  }, [activeCompany, load]);
+
+  const refilter = (st, co) => {
+    if (co !== undefined) {
+      setCompany(co);
+      setActiveCompany(co);
+    }
+    setPage(1);
+    load(1, st, co !== undefined ? co : company);
+  };
   const openResp = (q) => { setResp(q); setRStatus('Quoted'); setRPrice(q.quotePrice ?? ''); setRNote(q.adminNote || ''); setRErr(''); };
   const saveResp = async () => {
     setBusy(true); setRErr('');
@@ -65,6 +79,28 @@ export default function Quotes() {
         badgeColor="purple"
         gradient="from-violet-600 via-purple-600 to-pink-600"
       />
+      {activeCompanyObj && (
+        <div className="flex items-center justify-between gap-3 p-3.5 mb-4 bg-violet-50/90 border border-violet-200/90 rounded-2xl shadow-2xs">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">{activeCompanyObj.logo || '🏭'}</span>
+            <div>
+              <div className="text-xs font-bold text-slate-900">
+                Active Tenant Scope: <span className="text-violet-700 font-extrabold">{activeCompanyObj.name}</span> <span className="font-mono text-slate-500">({activeCompanyObj.code || activeCompanyObj.id})</span>
+              </div>
+              <div className="text-[11px] text-slate-500">
+                Commercial RFQs and buyer inquiries are filtered to this company
+              </div>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setActiveCompany('all')}
+            className="px-3 py-1.5 rounded-xl text-xs font-bold text-violet-800 hover:text-violet-950 bg-white hover:bg-violet-100/60 border border-violet-200 transition-colors cursor-pointer shadow-2xs"
+          >
+            Reset to All Companies
+          </button>
+        </div>
+      )}
       <div className="card"><div className="card-pad">
         <div className="toolbar">
           <select value={company} onChange={(e) => { setCompany(e.target.value); refilter(status, e.target.value); }} aria-label="Company filter">

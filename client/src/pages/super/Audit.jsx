@@ -1,16 +1,17 @@
-/* /super/audit — administrative audit trail with filters + pagination. */
 import { useCallback, useEffect, useState } from 'react';
 import { ShieldCheck } from 'lucide-react';
 import { api } from '../../api';
+import { useCompany } from '../../companyContext';
 import { PageHero, DataTable, Empty, Skeleton, Pager } from '../../components/ui';
 
 export default function Audit() {
+  const { activeCompany, activeCompanyObj, setActiveCompany } = useCompany();
   const [rows, setRows] = useState(null);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [err, setErr] = useState('');
   const [companies, setCompanies] = useState([]);
-  const [company, setCompany] = useState('all');
+  const [company, setCompany] = useState(activeCompany || 'all');
   const [action, setAction] = useState('all');
   const [q, setQ] = useState('');
   const [actions, setActions] = useState([]);
@@ -35,11 +36,22 @@ export default function Audit() {
       const r = d.rows || d;
       setActions([...new Set((r || []).map((a) => a.action).filter(Boolean))].sort());
     }).catch(() => {});
-    load(1, 'all', 'all', '');
     window.scrollTo({ top: 0 });
-  }, [load]);
+  }, []);
 
-  const refilter = (co, act, query) => { setPage(1); load(1, co, act, query); };
+  useEffect(() => {
+    setCompany(activeCompany);
+    load(1, activeCompany, action, q);
+  }, [activeCompany, load]);
+
+  const refilter = (co, act, query) => {
+    if (co !== undefined) {
+      setCompany(co);
+      setActiveCompany(co);
+    }
+    setPage(1);
+    load(1, co !== undefined ? co : company, act, query);
+  };
 
   return (
     <div>
@@ -51,10 +63,32 @@ export default function Audit() {
         badgeColor="rose"
         gradient="from-rose-500 via-pink-600 to-rose-700"
       />
+      {activeCompanyObj && (
+        <div className="flex items-center justify-between gap-3 p-3.5 mb-4 bg-rose-50/90 border border-rose-200/90 rounded-2xl shadow-2xs">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">{activeCompanyObj.logo || '🏭'}</span>
+            <div>
+              <div className="text-xs font-bold text-slate-900">
+                Active Tenant Scope: <span className="text-rose-700 font-extrabold">{activeCompanyObj.name}</span> <span className="font-mono text-slate-500">({activeCompanyObj.code || activeCompanyObj.id})</span>
+              </div>
+              <div className="text-[11px] text-slate-500">
+                Audit events, entity operations, and security logs are filtered to this company
+              </div>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setActiveCompany('all')}
+            className="px-3 py-1.5 rounded-xl text-xs font-bold text-rose-800 hover:text-rose-950 bg-white hover:bg-rose-100/60 border border-rose-200 transition-colors cursor-pointer shadow-2xs"
+          >
+            Reset to All Companies
+          </button>
+        </div>
+      )}
       <div className="card"><div className="card-pad">
         <div className="toolbar">
           <input placeholder="🔍 Search actor, summary, entity…" value={q} onChange={(e) => { setQ(e.target.value); refilter(company, action, e.target.value); }} aria-label="Search audit" />
-          <select value={company} onChange={(e) => { setCompany(e.target.value); refilter(e.target.value, action, q); }} aria-label="Company filter">
+          <select value={company} onChange={(e) => { refilter(e.target.value, action, q); }} aria-label="Company filter">
             <option value="all">All companies</option>
             {companies.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>

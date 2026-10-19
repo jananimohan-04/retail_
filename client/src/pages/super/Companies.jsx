@@ -5,6 +5,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../../api';
+import { useCompany } from '../../companyContext';
 import { Building2 } from 'lucide-react';
 import {
   PageHead, PageHero, Kpi, DataTable, Tabs, Modal, Field, Pager, Empty, Skeleton, statusBadge, toast
@@ -27,6 +28,7 @@ function useDebounced(value, ms = 280) {
 }
 
 export default function Companies({ tab: tabProp }) {
+  const { activeCompany, activeCompanyObj, setActiveCompany } = useCompany();
   const [sp, setSp] = useSearchParams();
   const nav = useNavigate();
   const tab = tabProp || (['admins', 'users', 'roles'].includes(sp.get('tab')) ? sp.get('tab') : 'companies');
@@ -48,12 +50,22 @@ export default function Companies({ tab: tabProp }) {
   const [coInd, setCoInd] = useState('all');
   const [coCity, setCoCity] = useState('all');
   const [admQ, setAdmQ] = useState('');
-  const [admCo, setAdmCo] = useState('all');
+  const [admCo, setAdmCo] = useState(activeCompany || 'all');
   const [admSt, setAdmSt] = useState('all');
   const [usrQ, setUsrQ] = useState('');
-  const [usrCo, setUsrCo] = useState('all');
+  const [usrCo, setUsrCo] = useState(activeCompany || 'all');
   const [usrRole, setUsrRole] = useState('all');
   const [usrSt, setUsrSt] = useState('all');
+
+  useEffect(() => {
+    if (activeCompany !== 'all') {
+      setAdmCo(activeCompany);
+      setUsrCo(activeCompany);
+    } else {
+      setAdmCo('all');
+      setUsrCo('all');
+    }
+  }, [activeCompany]);
 
   const dCoQ = useDebounced(coQ), dAdmQ = useDebounced(admQ), dUsrQ = useDebounced(usrQ);
 
@@ -219,6 +231,28 @@ export default function Companies({ tab: tabProp }) {
           )}
         </>}
       />
+      {activeCompanyObj && (
+        <div className="flex items-center justify-between gap-3 p-3.5 mb-3 bg-sky-50/90 border border-sky-200/90 rounded-2xl shadow-2xs">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">{activeCompanyObj.logo || '🏭'}</span>
+            <div>
+              <div className="text-xs font-bold text-slate-900">
+                Active Tenant Scope: <span className="text-sky-700 font-extrabold">{activeCompanyObj.name}</span> <span className="font-mono text-slate-500">({activeCompanyObj.code || activeCompanyObj.id})</span>
+              </div>
+              <div className="text-[11px] text-slate-500">
+                Admins and user directories are scoped to this company
+              </div>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setActiveCompany('all')}
+            className="px-3 py-1.5 rounded-xl text-xs font-bold text-sky-800 hover:text-sky-950 bg-white hover:bg-sky-100/60 border border-sky-200 transition-colors cursor-pointer shadow-2xs"
+          >
+            Reset to All Companies
+          </button>
+        </div>
+      )}
       {statsErr && <Empty icon="⚠️" title={'⚠️ ' + statsErr} />}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 my-1.5">
         <Kpi small onClick={() => mgCard('all')} value={s.companies ?? '—'} label="Total companies" sub={`${s.activeCompanies ?? 0} act · ${s.suspendedCompanies ?? 0} susp`} grad="linear-gradient(135deg,#0284c7,#0369a1)" />

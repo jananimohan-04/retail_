@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { LayoutDashboard } from 'lucide-react';
 import { api, fmt } from '../../api';
+import { useCompany } from '../../companyContext';
 import { PageHero, PageHead, Kpi, DataTable, Bars, Empty, Skeleton, statusBadge } from '../../components/ui';
 
 const ST_COLORS = {
@@ -12,6 +13,7 @@ const ST_COLORS = {
 };
 
 export default function Dashboard() {
+  const { activeCompany, activeCompanyObj, setActiveCompany } = useCompany();
   const [s, setS] = useState(null);
   const [err, setErr] = useState('');
 
@@ -42,16 +44,38 @@ export default function Dashboard() {
           </>
         }
       />
+      {co && (
+        <div className="flex items-center justify-between gap-3 p-3.5 mb-4 bg-sky-50/90 border border-sky-200/90 rounded-2xl shadow-2xs">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">{co.logo || '🏭'}</span>
+            <div>
+              <div className="text-xs font-bold text-slate-900">
+                Active Tenant Scope: <span className="text-sky-600 font-extrabold">{co.name}</span> <span className="font-mono text-slate-500">({co.code || co.id})</span>
+              </div>
+              <div className="text-[11px] text-slate-500">
+                Dashboard metrics, catalog inventory, and orders are scoped to this company
+              </div>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setActiveCompany('all')}
+            className="px-3 py-1.5 rounded-xl text-xs font-bold text-sky-700 hover:text-sky-900 bg-white hover:bg-sky-100/60 border border-sky-200 transition-colors cursor-pointer shadow-2xs"
+          >
+            Reset to All Companies
+          </button>
+        </div>
+      )}
       <div className="stat-grid">
-        <Kpi to="#/super/companies?tab=companies" value={s.companies} label="Total companies" sub={`${s.activeCompanies} active • ${s.suspendedCompanies} suspended`} grad="linear-gradient(135deg,#172554,#2563EB)" />
-        <Kpi to="#/super/companies?tab=admins" value={s.admins} label="Company admins" sub="across all companies" grad="linear-gradient(135deg,#6D28D9,#7C3AED)" />
-        <Kpi to="#/super/companies?tab=users" value={s.salesUsers} label="Sales users" sub="procurement teams" grad="linear-gradient(135deg,#0E7490,#0EA5E9)" />
-        <Kpi to="#/super/catalog" value={s.products} label="Industrial SKUs" sub={`${s.visibleProducts} visible in stores`} grad="linear-gradient(135deg,#9A3412,#F97316)" />
+        <Kpi to="#/super/companies?tab=companies" value={companiesCount} label={co ? "Company" : "Total companies"} sub={companiesSub} grad="linear-gradient(135deg,#172554,#2563EB)" />
+        <Kpi to="#/super/companies?tab=admins" value={co ? (co.admin || '1') : s.admins} label="Company admins" sub={co ? "Lead administrator" : "across all companies"} grad="linear-gradient(135deg,#6D28D9,#7C3AED)" />
+        <Kpi to="#/super/companies?tab=users" value={usersCount} label="Sales users" sub={co ? "Assigned team users" : "procurement teams"} grad="linear-gradient(135deg,#0E7490,#0EA5E9)" />
+        <Kpi to="#/super/catalog" value={productsCount} label="Industrial SKUs" sub={co ? `${co.name} inventory` : `${s.visibleProducts} visible in stores`} grad="linear-gradient(135deg,#9A3412,#F97316)" />
         <Kpi to="#/super/categories" value={s.categories} label="Global categories" sub="CNC catalog taxonomy" grad="linear-gradient(135deg,#92400E,#D97706)" />
-        <Kpi to="#/super/orders" value={s.orders} label="Total orders" sub={`${s.pendingOrders} pending action`} grad="linear-gradient(135deg,#14532D,#16A34A)" />
-        <Kpi to="#/super/orders?status=Pending" value={s.pendingOrders} label="Pending orders" sub="needs processing" grad="linear-gradient(135deg,#065F46,#10B981)" />
+        <Kpi to="#/super/orders" value={ordersCount} label="Total orders" sub={`${pendingCount} pending action`} grad="linear-gradient(135deg,#14532D,#16A34A)" />
+        <Kpi to="#/super/orders?status=Pending" value={pendingCount} label="Pending orders" sub="needs processing" grad="linear-gradient(135deg,#065F46,#10B981)" />
         <Kpi to="#/super/quotes" value={s.quotes} label="Quotation requests" sub={`${s.openQuotes} open RFQs`} grad="linear-gradient(135deg,#1E3A8A,#38BDF8)" />
-        <Kpi to="#/super/orders" value={fmt(s.gmv)} label="Order value" sub="all companies, live rows" grad="linear-gradient(135deg,#0B1533,#334155)" />
+        <Kpi to="#/super/orders" value={fmt(gmvValue)} label="Order value" sub={co ? `${co.name} gross value` : "all companies, live rows"} grad="linear-gradient(135deg,#0B1533,#334155)" />
       </div>
       <div className="grid2" style={{ marginTop: 14 }}>
         <div className="card"><div className="card-pad">
