@@ -653,70 +653,76 @@ export default function MenuAccess() {
           TAB 2: USER-WISE OVERRIDES
           ========================================================================= */}
       {activeTab === 'users' && (
-        <div className="space-y-6">
-          {/* User Selector Header & Search */}
-          <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div>
-                <span className="text-xs font-extrabold uppercase tracking-widest text-slate-400">Select User to Customize</span>
-                <p className="text-[11px] text-slate-500">Pick any user to grant or deny specific pages beyond their base role defaults.</p>
+        <div className="flex flex-col lg:flex-row items-start gap-6">
+          {/* LEFT SIDEBAR: Select User to Customize */}
+          <div className="w-full lg:w-80 xl:w-96 flex-shrink-0 lg:sticky lg:top-6">
+            <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-3.5">
+              <div className="border-b border-slate-100 pb-2.5">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs font-extrabold uppercase tracking-widest text-slate-400">Select User to Customize</span>
+                  <span className="text-[11px] font-semibold text-slate-500">{filteredUsers.length} users</span>
+                </div>
+                <p className="text-[11px] text-slate-500">Pick any user to grant or deny specific pages beyond role defaults.</p>
               </div>
 
               {/* User search bar */}
-              <div className="relative w-full sm:w-72">
+              <div className="relative w-full">
                 <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
                   type="text"
                   placeholder="Search user by name, email..."
                   value={userSearch}
                   onChange={(e) => setUserSearch(e.target.value)}
-                  className="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-blue-500/30"
+                  className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-blue-500/30"
                 />
               </div>
-            </div>
 
-            {/* User Badges Carousel / Pills */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 max-h-56 overflow-y-auto p-1">
-              {filteredUsers.map(u => {
-                const isSel = u.id === selectedUserId;
-                const overridesCount = Object.keys(u.menuOverrides || {}).length;
-                return (
-                  <button
-                    key={u.id}
-                    onClick={() => setSelectedUserId(u.id)}
-                    className={`flex items-start gap-2.5 text-left p-3 rounded-xl border transition-all cursor-pointer ${
-                      isSel
-                        ? 'bg-blue-50/80 border-blue-500 ring-2 ring-blue-500/20 shadow-xs'
-                        : 'bg-slate-50/60 border-slate-200 hover:bg-slate-100'
-                    }`}
-                  >
-                    <div className="w-8 h-8 rounded-full bg-slate-200 text-slate-700 font-extrabold flex items-center justify-center text-xs flex-shrink-0">
-                      {(u.name || 'U').charAt(0).toUpperCase()}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-slate-900 truncate">{u.name}</span>
-                        {isSel && <Check className="w-3.5 h-3.5 text-blue-600 flex-shrink-0" />}
+              {/* User Badges Vertical List */}
+              <div className="flex flex-col gap-2 max-h-[calc(100vh-270px)] overflow-y-auto p-0.5">
+                {filteredUsers.map(u => {
+                  const isSel = u.id === selectedUserId;
+                  const overridesCount = Object.keys(u.menuOverrides || {}).length;
+                  return (
+                    <button
+                      key={u.id}
+                      onClick={() => setSelectedUserId(u.id)}
+                      className={`flex items-start gap-2.5 text-left p-3 rounded-xl border transition-all cursor-pointer ${
+                        isSel
+                          ? 'bg-blue-50/80 border-blue-500 ring-2 ring-blue-500/20 shadow-xs'
+                          : 'bg-slate-50/60 border-slate-200 hover:bg-slate-100'
+                      }`}
+                    >
+                      <div className="w-8 h-8 rounded-full bg-slate-200 text-slate-700 font-extrabold flex items-center justify-center text-xs flex-shrink-0">
+                        {(u.name || 'U').charAt(0).toUpperCase()}
                       </div>
-                      <p className="text-[10px] text-slate-500 truncate">{u.email}</p>
-                      <div className="flex items-center gap-1.5 mt-1">
-                        <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-slate-200 text-slate-700">
-                          {ROLE_LABELS[u.role] || u.role}
-                        </span>
-                        {overridesCount > 0 ? (
-                          <span className="text-[9px] font-extrabold text-amber-700 bg-amber-100 px-1.5 py-0.2 rounded">
-                            {overridesCount} overrides
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-slate-900 truncate">{u.name}</span>
+                          {isSel && <Check className="w-3.5 h-3.5 text-blue-600 flex-shrink-0" />}
+                        </div>
+                        <p className="text-[10px] text-slate-500 truncate">{u.email}</p>
+                        <div className="flex items-center gap-1.5 mt-1">
+                          <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-slate-200 text-slate-700 truncate">
+                            {ROLE_LABELS[u.role] || u.role}
                           </span>
-                        ) : (
-                          <span className="text-[9px] text-slate-400">100% inherited</span>
-                        )}
+                          {overridesCount > 0 ? (
+                            <span className="text-[9px] font-extrabold text-amber-700 bg-amber-100 px-1.5 py-0.2 rounded flex-shrink-0">
+                              {overridesCount} overrides
+                            </span>
+                          ) : (
+                            <span className="text-[9px] text-slate-400 flex-shrink-0">100% inherited</span>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  </button>
-                );
-              })}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
+
+          {/* RIGHT SIDE: Active User Toolbar & Overrides Summary + Category Hierarchy */}
+          <div className="flex-1 min-w-0 w-full space-y-4">
 
           {/* Active User Toolbar & Overrides Summary */}
           {activeUser && (
@@ -891,7 +897,8 @@ export default function MenuAccess() {
             })}
           </div>
         </div>
-      )}
+      </div>
+    )}
 
       {/* =========================================================================
           TAB 3: AUDIT & CHANGE HISTORY
