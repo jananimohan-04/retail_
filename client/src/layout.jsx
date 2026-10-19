@@ -12,6 +12,8 @@ import {
 import { useAuth } from './auth';
 import { getCart } from './api';
 
+import { MENU_CATALOG, ICON_MAP, getPageById } from './menuCatalog';
+
 function sideLink(to, label, IconComponent, badge = null, onClick = null, mini = false) {
   return (
     <NavLink
@@ -56,166 +58,95 @@ export function Sidebar({ counts, onItemClick, mini = false }) {
   const { me } = useAuth();
   const role = me && me.role;
   const companyTitle = ((me && me.companyId) || 'ARGUS').toUpperCase();
+  const effective = me && me.effectivePermissions;
 
-  if (role === 'super_admin') {
-    return (
-      <div className={`w-full flex flex-col ${mini ? 'gap-1.5 py-1 items-center' : 'gap-5 py-2'}`}>
-        <div>
-          {!mini && <div className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-3.5 mb-1.5">OVERVIEW</div>}
-          {sideLink('/super/dashboard', 'Platform Dashboard', LayoutDashboard, null, onItemClick, mini)}
-        </div>
-        {mini && <div className="w-8 border-t border-slate-100 my-0.5" />}
-        <div>
-          {!mini && <div className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-3.5 mb-1.5">ORGANIZATIONS</div>}
-          {sideLink('/super/companies', 'Company Hub', Building2, null, onItemClick, mini)}
-        </div>
-        {mini && <div className="w-8 border-t border-slate-100 my-0.5" />}
-        <div className={mini ? 'flex flex-col gap-1' : ''}>
-          {!mini && <div className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-3.5 mb-1.5">GLOBAL CATALOG</div>}
-          {sideLink('/super/catalog', 'Master Catalog', Boxes, null, onItemClick, mini)}
-          {sideLink('/super/categories', 'Categories', FolderTree, null, onItemClick, mini)}
-          {sideLink('/super/media', 'Product Media', ImageIcon, null, onItemClick, mini)}
-        </div>
-        {mini && <div className="w-8 border-t border-slate-100 my-0.5" />}
-        <div className={mini ? 'flex flex-col gap-1' : ''}>
-          {!mini && <div className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-3.5 mb-1.5">COMMERCE</div>}
-          {sideLink('/super/orders', 'Platform Orders', Receipt, null, onItemClick, mini)}
-          {sideLink('/super/quotes', 'RFQ Quotations', FileText, null, onItemClick, mini)}
-        </div>
-        {mini && <div className="w-8 border-t border-slate-100 my-0.5" />}
-        <div className={mini ? 'flex flex-col gap-1' : ''}>
-          {!mini && <div className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-3.5 mb-1.5">GOVERNANCE</div>}
-          {sideLink('/super/settings', 'Global Settings', Settings, null, onItemClick, mini)}
-          {sideLink('/super/audit', 'Audit Logs', ShieldCheck, null, onItemClick, mini)}
-        </div>
-        {mini && <div className="w-8 border-t border-slate-100 my-0.5" />}
-        <div className={mini ? 'flex flex-col gap-1' : ''}>
-          {!mini && <div className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-3.5 mb-1.5">PUBLISHING</div>}
-          {sideLink('/content', 'Content Writer', PenLine, null, onItemClick, mini)}
-          {sideLink('/finance', 'Finance Review', IndianRupee, null, onItemClick, mini)}
-        </div>
-        {mini && <div className="w-8 border-t border-slate-100 my-0.5" />}
-        <div>
-          {!mini && <div className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-3.5 mb-1.5">STOREFRONT</div>}
-          {sideLink('/store/home', 'View Storefront', Store, null, onItemClick, mini)}
-        </div>
-      </div>
-    );
-  }
+  const hasPermission = (pageId) => {
+    if (Array.isArray(effective)) {
+      return effective.includes(pageId);
+    }
+    const page = getPageById(pageId);
+    if (!page) return false;
+    const userRole = role || 'sales_user';
+    return (page.defaultRoles || []).includes(userRole) || (userRole.startsWith('sales_') && (page.defaultRoles || []).includes('sales_user'));
+  };
 
-  if (role === 'company_admin') {
-    return (
-      <div className={`w-full flex flex-col ${mini ? 'gap-1.5 py-1 items-center' : 'gap-5 py-2'}`}>
-        <div className={mini ? 'flex flex-col gap-1' : ''}>
-          {!mini && (
-            <div className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-3.5 mb-1.5">
-              {companyTitle} • OPERATIONS
-            </div>
-          )}
-          {sideLink('/admin/dashboard', 'Dashboard', LayoutDashboard, null, onItemClick, mini)}
-          {sideLink('/admin/products', 'Industrial Catalog', Boxes, null, onItemClick, mini)}
-          {sideLink('/admin/media', 'Product Media', ImageIcon, null, onItemClick, mini)}
-          {sideLink('/admin/categories', 'Custom Categories', FolderTree, null, onItemClick, mini)}
-          {sideLink('/admin/users', 'Sales Representatives', User, null, onItemClick, mini)}
-          {sideLink('/admin/orders', 'Customer Orders', Receipt, counts?.pendingOrders || '', onItemClick, mini)}
-          {sideLink('/admin/quotes', 'RFQ Inquiries', FileText, counts?.openQuotes || '', onItemClick, mini)}
-          {sideLink('/admin/settings', 'Store Settings', Settings, null, onItemClick, mini)}
-        </div>
-        {mini && <div className="w-8 border-t border-slate-100 my-0.5" />}
-        <div className={mini ? 'flex flex-col gap-1' : ''}>
-          {!mini && <div className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-3.5 mb-1.5">PUBLISHING</div>}
-          {sideLink('/content', 'Content Writer', PenLine, null, onItemClick, mini)}
-          {sideLink('/finance', 'Finance Review', IndianRupee, null, onItemClick, mini)}
-        </div>
-        {mini && <div className="w-8 border-t border-slate-100 my-0.5" />}
-        <div>
-          {!mini && <div className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-3.5 mb-1.5">STOREFRONT</div>}
-          {sideLink('/store/home', 'Live Store', Store, null, onItemClick, mini)}
-        </div>
-      </div>
-    );
-  }
+  // Filter categories to only those with at least 1 visible page
+  const activeCategories = MENU_CATALOG.map(cat => ({
+    ...cat,
+    items: cat.items.filter(item => hasPermission(item.id))
+  })).filter(cat => cat.items.length > 0);
 
-  if (role === 'content_writer') {
-    return (
-      <div className={`w-full flex flex-col ${mini ? 'gap-1.5 py-1 items-center' : 'gap-5 py-2'}`}>
-        <div>
-          {!mini && (
-            <div className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-3.5 mb-1.5">
-              {companyTitle} • CONTENT
-            </div>
-          )}
-          {sideLink('/content', 'Content Queue', PenLine, counts?.pendingContent || '', onItemClick, mini)}
-        </div>
-        {!mini && (
-          <div>
-            <div className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-3.5 mb-1.5">GUIDANCE</div>
-            <p className="px-3.5 text-[11px] leading-relaxed text-slate-500">
-              Products arrive here automatically from ERP Inventory. Write the sales copy, attach media, then
-              <span className="font-bold text-slate-700"> Submit to Finance</span> for pricing.
-            </p>
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  if (role === 'finance') {
-    return (
-      <div className={`w-full flex flex-col ${mini ? 'gap-1.5 py-1 items-center' : 'gap-5 py-2'}`}>
-        <div>
-          {!mini && (
-            <div className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-3.5 mb-1.5">
-              {companyTitle} • FINANCE
-            </div>
-          )}
-          {sideLink('/finance', 'Review & Pricing', IndianRupee, counts?.financeQueue || '', onItemClick, mini)}
-        </div>
-        {!mini && (
-          <div>
-            <div className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-3.5 mb-1.5">GUIDANCE</div>
-            <p className="px-3.5 text-[11px] leading-relaxed text-slate-500">
-              Review submitted content, set the selling price, then
-              <span className="font-bold text-slate-700"> Approve &amp; Publish</span> to make the listing visible to Salespeople.
-            </p>
-          </div>
-        )}
-      </div>
-    );
-  }
+  const showCategories = hasPermission('store_listing') && (counts?.cats || []).length > 0;
 
   return (
     <div className={`w-full flex flex-col ${mini ? 'gap-1.5 py-1 items-center' : 'gap-5 py-2'}`}>
-      <div className={mini ? 'flex flex-col gap-1' : ''}>
-        {!mini && <div className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-3.5 mb-1.5">INDUSTRIAL STORE</div>}
-        {sideLink('/store/home', 'Home', Home, null, onItemClick, mini)}
-        {sideLink('/store/listing', 'All Products', Boxes, null, onItemClick, mini)}
-        {sideLink('/store/cart', 'My Cart', ShoppingCart, counts?.cart || '', onItemClick, mini)}
-        {sideLink('/store/quotes', 'My Quotations', FileText, counts?.openQuotes || '', onItemClick, mini)}
-        {sideLink('/store/orders', 'My Orders', Package, null, onItemClick, mini)}
-        {sideLink('/store/profile', 'My Profile', User, null, onItemClick, mini)}
-      </div>
-      {mini && <div className="w-8 border-t border-slate-100 my-0.5" />}
-      <div>
-        {!mini && <div className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-3.5 mb-1.5">BROWSE CATEGORIES</div>}
-        <div className={mini ? 'flex flex-col gap-1 items-center' : 'space-y-0.5'}>
-          {(counts?.cats || []).map((c) => (
-            <NavLink
-              key={c.id}
-              to={'/store/listing?cat=' + c.id}
-              onClick={onItemClick}
-              title={c.name}
-              className={({ isActive }) => `
-                flex items-center ${mini ? 'justify-center w-10 h-10 p-2' : 'gap-2.5 px-3.5 py-2'} rounded-xl text-xs font-semibold transition-all
-                ${isActive ? 'bg-orange-50 text-orange-700 font-bold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}
-              `}
-            >
-              <span className="text-sm flex-shrink-0">{c.icon || '📦'}</span>
-              {!mini && <span className="truncate">{c.name}</span>}
-            </NavLink>
-          ))}
+      {activeCategories.map((cat, idx) => (
+        <div key={cat.id} className="w-full">
+          {idx > 0 && mini && <div className="w-8 border-t border-slate-100 my-1 mx-auto" />}
+          <div>
+            {!mini && (
+              <div className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-3.5 mb-1.5 truncate">
+                {role === 'company_admin' && cat.id === 'operations' ? `${companyTitle} • ${cat.label}` : cat.label}
+              </div>
+            )}
+            <div className={mini ? 'flex flex-col gap-1 items-center' : 'space-y-0.5'}>
+              {cat.items.map(item => {
+                const IconComp = ICON_MAP[item.icon] || Boxes;
+                const badge = item.badgeKey ? (counts?.[item.badgeKey] || '') : null;
+                return sideLink(item.path, item.label, IconComp, badge, onItemClick, mini);
+              })}
+            </div>
+          </div>
         </div>
-      </div>
+      ))}
+
+      {/* Guidance boxes for content writer / finance if active and only workflow */}
+      {!mini && role === 'content_writer' && hasPermission('content_writer') && !hasPermission('admin_products') && (
+        <div className="mt-2">
+          <div className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-3.5 mb-1.5">GUIDANCE</div>
+          <p className="px-3.5 text-[11px] leading-relaxed text-slate-500">
+            Products arrive here automatically from ERP Inventory. Write sales copy, attach media, then
+            <span className="font-bold text-slate-700"> Submit to Finance</span> for pricing.
+          </p>
+        </div>
+      )}
+
+      {!mini && role === 'finance' && hasPermission('finance_review') && !hasPermission('admin_products') && (
+        <div className="mt-2">
+          <div className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-3.5 mb-1.5">GUIDANCE</div>
+          <p className="px-3.5 text-[11px] leading-relaxed text-slate-500">
+            Review submitted content, set the selling price, then
+            <span className="font-bold text-slate-700"> Approve &amp; Publish</span> to make the listing visible.
+          </p>
+        </div>
+      )}
+
+      {/* Dynamic Browse Categories for store browsers */}
+      {showCategories && (
+        <div className="w-full">
+          {mini && <div className="w-8 border-t border-slate-100 my-1 mx-auto" />}
+          <div>
+            {!mini && <div className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-3.5 mb-1.5">BROWSE CATEGORIES</div>}
+            <div className={mini ? 'flex flex-col gap-1 items-center' : 'space-y-0.5'}>
+              {(counts?.cats || []).map((c) => (
+                <NavLink
+                  key={c.id}
+                  to={'/store/listing?cat=' + c.id}
+                  onClick={onItemClick}
+                  title={c.name}
+                  className={({ isActive }) => `
+                    flex items-center ${mini ? 'justify-center w-10 h-10 p-2' : 'gap-2.5 px-3.5 py-2'} rounded-xl text-xs font-semibold transition-all
+                    ${isActive ? 'bg-orange-50 text-orange-700 font-bold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}
+                  `}
+                >
+                  <span className="text-sm flex-shrink-0">{c.icon || '📦'}</span>
+                  {!mini && <span className="truncate">{c.name}</span>}
+                </NavLink>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

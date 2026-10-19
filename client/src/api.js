@@ -29,6 +29,8 @@ function headers() {
     'x-role': s.role || 'sales_user',
     'x-company-id': cid,
     'x-user-name': s.name || '',
+    'x-user-email': s.email || '',
+    'x-user-id': s.id || '',
     ...(t ? { Authorization: 'Bearer ' + t } : {})
   };
 }

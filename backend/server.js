@@ -54,17 +54,170 @@ function seed() {
   };
 }
 
+/* ---------------- Menu Catalog & Dynamic Access Control ---------------- */
+const MENU_CATALOG = [
+  {
+    id: 'overview',
+    label: 'Overview',
+    description: 'Executive dashboard and high-level KPIs',
+    items: [
+      { id: 'super_dashboard', label: 'Platform Dashboard', path: '/super/dashboard', icon: 'LayoutDashboard', defaultRoles: ['super_admin'] },
+      { id: 'admin_dashboard', label: 'Company Dashboard', path: '/admin/dashboard', icon: 'LayoutDashboard', defaultRoles: ['company_admin'] }
+    ]
+  },
+  {
+    id: 'organizations',
+    label: 'Organizations',
+    description: 'Companies, multi-tenant workspaces, and admins',
+    items: [
+      { id: 'super_companies', label: 'Company Hub', path: '/super/companies', icon: 'Building2', defaultRoles: ['super_admin'] }
+    ]
+  },
+  {
+    id: 'global_catalog',
+    label: 'Global Catalog',
+    description: 'Global master SKUs, universal categories, and media',
+    items: [
+      { id: 'super_catalog', label: 'Master Catalog', path: '/super/catalog', icon: 'Boxes', defaultRoles: ['super_admin'] },
+      { id: 'super_categories', label: 'Categories', path: '/super/categories', icon: 'FolderTree', defaultRoles: ['super_admin'] },
+      { id: 'super_media', label: 'Product Media', path: '/super/media', icon: 'ImageIcon', defaultRoles: ['super_admin'] }
+    ]
+  },
+  {
+    id: 'operations',
+    label: 'Operations',
+    description: 'Tenant inventory, category mapping, sales reps, and store settings',
+    items: [
+      { id: 'admin_products', label: 'Industrial Catalog', path: '/admin/products', icon: 'Boxes', defaultRoles: ['company_admin'] },
+      { id: 'admin_media', label: 'Product Media', path: '/admin/media', icon: 'ImageIcon', defaultRoles: ['company_admin'] },
+      { id: 'admin_categories', label: 'Custom Categories', path: '/admin/categories', icon: 'FolderTree', defaultRoles: ['company_admin'] },
+      { id: 'admin_users', label: 'Sales Representatives', path: '/admin/users', icon: 'User', defaultRoles: ['company_admin'] },
+      { id: 'admin_settings', label: 'Store Settings', path: '/admin/settings', icon: 'Settings', defaultRoles: ['company_admin'] }
+    ]
+  },
+  {
+    id: 'commerce',
+    label: 'Commerce',
+    description: 'Customer orders, platform-wide fulfillment, and RFQ quotations',
+    items: [
+      { id: 'super_orders', label: 'Platform Orders', path: '/super/orders', icon: 'Receipt', defaultRoles: ['super_admin'] },
+      { id: 'super_quotes', label: 'RFQ Quotations', path: '/super/quotes', icon: 'FileText', defaultRoles: ['super_admin'] },
+      { id: 'admin_orders', label: 'Customer Orders', path: '/admin/orders', icon: 'Receipt', defaultRoles: ['company_admin'] },
+      { id: 'admin_quotes', label: 'RFQ Inquiries', path: '/admin/quotes', icon: 'FileText', defaultRoles: ['company_admin'] }
+    ]
+  },
+  {
+    id: 'governance',
+    label: 'Governance',
+    description: 'Menu access permissions, global settings, and audit logs',
+    items: [
+      { id: 'super_access', label: 'Menu Access Management', path: '/super/access', icon: 'ShieldCheck', defaultRoles: ['super_admin'] },
+      { id: 'super_settings', label: 'Global Settings', path: '/super/settings', icon: 'Settings', defaultRoles: ['super_admin'] },
+      { id: 'super_audit', label: 'Audit Logs', path: '/super/audit', icon: 'ShieldCheck', defaultRoles: ['super_admin'] }
+    ]
+  },
+  {
+    id: 'publishing',
+    label: 'Publishing',
+    description: 'Copywriting queue and finance pricing approval',
+    items: [
+      { id: 'content_writer', label: 'Content Writer', path: '/content', icon: 'PenLine', defaultRoles: ['super_admin', 'company_admin', 'content_writer'] },
+      { id: 'finance_review', label: 'Finance Review', path: '/finance', icon: 'IndianRupee', defaultRoles: ['super_admin', 'company_admin', 'finance'] }
+    ]
+  },
+  {
+    id: 'storefront',
+    label: 'Storefront',
+    description: 'Retail catalog browsing, order placement, and customer account',
+    items: [
+      { id: 'store_home', label: 'Store Home / Live', path: '/store/home', icon: 'Store', defaultRoles: ['super_admin', 'company_admin', 'sales_user', 'sales_regional_partner', 'sales_channel_partner', 'sales_referral_partner'] },
+      { id: 'store_listing', label: 'All Products', path: '/store/listing', icon: 'Boxes', defaultRoles: ['super_admin', 'company_admin', 'sales_user', 'sales_regional_partner', 'sales_channel_partner', 'sales_referral_partner'] },
+      { id: 'store_cart', label: 'My Cart', path: '/store/cart', icon: 'ShoppingCart', defaultRoles: ['super_admin', 'company_admin', 'sales_user', 'sales_regional_partner', 'sales_channel_partner', 'sales_referral_partner'] },
+      { id: 'store_quotes', label: 'My Quotations', path: '/store/quotes', icon: 'FileText', defaultRoles: ['super_admin', 'company_admin', 'sales_user', 'sales_regional_partner', 'sales_channel_partner', 'sales_referral_partner'] },
+      { id: 'store_orders', label: 'My Orders', path: '/store/orders', icon: 'Package', defaultRoles: ['super_admin', 'company_admin', 'sales_user', 'sales_regional_partner', 'sales_channel_partner', 'sales_referral_partner'] },
+      { id: 'store_profile', label: 'My Profile', path: '/store/profile', icon: 'User', defaultRoles: ['super_admin', 'company_admin', 'sales_user', 'sales_regional_partner', 'sales_channel_partner', 'sales_referral_partner'] }
+    ]
+  }
+];
+
+function defaultPermissionsForRole(roleId) {
+  const perms = [];
+  for (const cat of MENU_CATALOG) {
+    for (const item of cat.items) {
+      if (item.defaultRoles.includes(roleId) || (roleId && roleId.startsWith('sales_') && item.defaultRoles.includes('sales_user'))) {
+        perms.push(item.id);
+      }
+    }
+  }
+  return perms;
+}
+
 function defaultRoles() {
   return [
-    { id: 'sales_regional_partner', name: 'Regional Partner', category: 'sales_partner', markupPct: 10, requireTerms: true, terms: 'By registering as an ARGUS CNC Regional Partner, you agree to uphold our brand pricing guidelines, maintain active territory coverage, and adhere to our confidentiality and customer service standards. All orders are subject to regional quota allocations.', description: 'Authorized regional distribution partner with territory rights and 10% markup tier.', isSystem: true, active: true },
-    { id: 'sales_channel_partner', name: 'Channel Partner', category: 'sales_partner', markupPct: 15, requireTerms: true, terms: 'By registering as an ARGUS CNC Channel Partner, you agree to our resale terms, minimum advertised price (MAP) policies, and prompt payment settlements. Commercial warranty and return terms apply.', description: 'Certified industrial channel sales partner with 15% markup tier.', isSystem: true, active: true },
-    { id: 'sales_referral_partner', name: 'Referral Partner', category: 'sales_partner', markupPct: 5, requireTerms: true, terms: 'By registering as an ARGUS CNC Referral Partner, you agree that referrals must be bona fide commercial inquiries. Commission entitlements are calculated on the 5% tier basis upon order delivery.', description: 'Registered commercial referral agent with 5% markup tier.', isSystem: true, active: true },
-    { id: 'sales_user', name: 'Direct Sales User', category: 'sales_partner', markupPct: 0, requireTerms: true, terms: 'Standard direct sales representative agreement: confidential catalog pricing, customer order processing, and quotation terms apply.', description: 'Standard sales representative with base retail catalog pricing (0% markup).', isSystem: true, active: true },
-    { id: 'company_admin', name: 'Company Admin', category: 'internal', markupPct: 0, requireTerms: false, terms: '', description: 'Full company administration: manages catalog, inventory, users, and orders.', isSystem: true, active: true },
-    { id: 'content_writer', name: 'Content Writer', category: 'internal', markupPct: 0, requireTerms: false, terms: '', description: 'Prepares product marketing copy, technical specifications, and media.', isSystem: true, active: true },
-    { id: 'finance', name: 'Finance / Accounts', category: 'internal', markupPct: 0, requireTerms: false, terms: '', description: 'Sets selling price, review margins, and publishes products live.', isSystem: true, active: true },
-    { id: 'super_admin', name: 'Super Admin', category: 'internal', markupPct: 0, requireTerms: false, terms: '', description: 'Platform super administrator with cross-company governance.', isSystem: true, active: true }
+    { id: 'sales_regional_partner', name: 'Regional Partner', category: 'sales_partner', markupPct: 10, requireTerms: true, terms: 'By registering as an ARGUS CNC Regional Partner, you agree to uphold our brand pricing guidelines, maintain active territory coverage, and adhere to our confidentiality and customer service standards. All orders are subject to regional quota allocations.', description: 'Authorized regional distribution partner with territory rights and 10% markup tier.', isSystem: true, active: true, menuPermissions: defaultPermissionsForRole('sales_regional_partner') },
+    { id: 'sales_channel_partner', name: 'Channel Partner', category: 'sales_partner', markupPct: 15, requireTerms: true, terms: 'By registering as an ARGUS CNC Channel Partner, you agree to our resale terms, minimum advertised price (MAP) policies, and prompt payment settlements. Commercial warranty and return terms apply.', description: 'Certified industrial channel sales partner with 15% markup tier.', isSystem: true, active: true, menuPermissions: defaultPermissionsForRole('sales_channel_partner') },
+    { id: 'sales_referral_partner', name: 'Referral Partner', category: 'sales_partner', markupPct: 5, requireTerms: true, terms: 'By registering as an ARGUS CNC Referral Partner, you agree that referrals must be bona fide commercial inquiries. Commission entitlements are calculated on the 5% tier basis upon order delivery.', description: 'Registered commercial referral agent with 5% markup tier.', isSystem: true, active: true, menuPermissions: defaultPermissionsForRole('sales_referral_partner') },
+    { id: 'sales_user', name: 'Direct Sales User', category: 'sales_partner', markupPct: 0, requireTerms: true, terms: 'Standard direct sales representative agreement: confidential catalog pricing, customer order processing, and quotation terms apply.', description: 'Standard sales representative with base retail catalog pricing (0% markup).', isSystem: true, active: true, menuPermissions: defaultPermissionsForRole('sales_user') },
+    { id: 'company_admin', name: 'Company Admin', category: 'internal', markupPct: 0, requireTerms: false, terms: '', description: 'Full company administration: manages catalog, inventory, users, and orders.', isSystem: true, active: true, menuPermissions: defaultPermissionsForRole('company_admin') },
+    { id: 'content_writer', name: 'Content Writer', category: 'internal', markupPct: 0, requireTerms: false, terms: '', description: 'Prepares product marketing copy, technical specifications, and media.', isSystem: true, active: true, menuPermissions: defaultPermissionsForRole('content_writer') },
+    { id: 'finance', name: 'Finance / Accounts', category: 'internal', markupPct: 0, requireTerms: false, terms: '', description: 'Sets selling price, review margins, and publishes products live.', isSystem: true, active: true, menuPermissions: defaultPermissionsForRole('finance') },
+    { id: 'super_admin', name: 'Super Admin', category: 'internal', markupPct: 0, requireTerms: false, terms: '', description: 'Platform super administrator with cross-company governance.', isSystem: true, active: true, menuPermissions: defaultPermissionsForRole('super_admin') }
   ];
+}
+
+function ensureRolePermissions() {
+  if (!Array.isArray(db.roles)) db.roles = defaultRoles();
+  db.roles.forEach(r => {
+    if (!Array.isArray(r.menuPermissions) || r.menuPermissions.length === 0) {
+      r.menuPermissions = defaultPermissionsForRole(r.id);
+    }
+    if (r.id === 'super_admin' && !r.menuPermissions.includes('super_access')) {
+      r.menuPermissions.push('super_access');
+    }
+  });
+  if (Array.isArray(db.users)) {
+    db.users.forEach(u => {
+      if (!u.menuOverrides || typeof u.menuOverrides !== 'object') {
+        u.menuOverrides = {};
+      }
+    });
+  }
+}
+
+function getEffectivePermissionsForUser(uOrCtx) {
+  if (!uOrCtx) return [];
+  const email = (uOrCtx.email || '').toLowerCase();
+  const u = email ? (db.users || []).find(x => (x.email || '').toLowerCase() === email) : (uOrCtx.id ? (db.users || []).find(x => x.id === uOrCtx.id) : null);
+  const roleId = (u && u.role) || uOrCtx.role || 'sales_user';
+  const roleObj = (db.roles || []).find(r => r.id === roleId);
+
+  // 1. Base role permissions
+  const rolePerms = new Set(roleObj && Array.isArray(roleObj.menuPermissions) && roleObj.menuPermissions.length > 0
+    ? roleObj.menuPermissions
+    : defaultPermissionsForRole(roleId));
+
+  // 2. User-specific overrides ('allow' | 'deny' | 'inherit')
+  const overrides = (u && u.menuOverrides) || (uOrCtx && uOrCtx.menuOverrides) || {};
+  const effective = new Set(rolePerms);
+
+  for (const [pageId, state] of Object.entries(overrides)) {
+    if (state === 'allow') {
+      effective.add(pageId);
+    } else if (state === 'deny') {
+      // Super admin critical safeguard: can never deny super_access or super_dashboard
+      if (roleId === 'super_admin' && (pageId === 'super_access' || pageId === 'super_dashboard')) {
+        continue;
+      }
+      effective.delete(pageId);
+    }
+  }
+
+  // 3. Absolute system safety: Super Admin role ALWAYS has super_access
+  if (roleId === 'super_admin') {
+    effective.add('super_access');
+  }
+
+  return Array.from(effective);
 }
 
 let db;
@@ -72,6 +225,7 @@ try { db = JSON.parse(fs.readFileSync(DB_FILE, 'utf8')); }
 catch { db = seed(); try { fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2)); } catch(e){} }
 if (!Array.isArray(db.quotations)) { db.quotations = []; }
 if (!Array.isArray(db.roles)) { db.roles = defaultRoles(); }
+ensureRolePermissions();
 
 let lastSyncTime = 0;
 let pendingSave = null;
@@ -196,7 +350,15 @@ app.use(async (req, _res, next) => {
       }
     } catch (e) { /* fall through to demo headers */ }
   }
-  req.ctx = { role: req.headers['x-role'] || 'sales_user', companyId: req.headers['x-company-id'] || 'C-ARGUS', name: req.headers['x-user-name'] || 'Argus User' };
+  const userEmail = req.headers['x-user-email'] || '';
+  const userId = req.headers['x-user-id'] || '';
+  req.ctx = { 
+    role: req.headers['x-role'] || 'sales_user', 
+    companyId: req.headers['x-company-id'] || 'C-ARGUS', 
+    name: req.headers['x-user-name'] || 'Argus User',
+    email: userEmail,
+    id: userId
+  };
   next();
 });
 /* pending/disabled Google users may only reach health, config and /api/me */
@@ -365,8 +527,10 @@ app.get('/api/me', (req, res) => {
   const u = req.ctx.email ? db.users.find(x => (x.email || '').toLowerCase() === req.ctx.email) : null;
   const roleId = (u && u.role) || req.ctx.role;
   const roleObj = (db.roles || []).find(r => r.id === roleId);
+  const effectivePermissions = getEffectivePermissionsForUser(u || req.ctx);
   res.json({
     data: {
+      id: (u && u.id) || 'U-GUEST',
       role: roleId,
       companyId: (u && u.companyId) || req.ctx.companyId,
       name: (u && u.name) || req.ctx.name,
@@ -375,7 +539,9 @@ app.get('/api/me', (req, res) => {
       google: !!req.ctx.google,
       salesTier: (roleObj && roleObj.category === 'sales_partner') ? roleObj.name : null,
       markupPct: (roleObj && typeof roleObj.markupPct === 'number') ? roleObj.markupPct : 0,
-      termsAccepted: (u && u.termsAccepted) || false
+      termsAccepted: (u && u.termsAccepted) || false,
+      effectivePermissions,
+      menuOverrides: (u && u.menuOverrides) || {}
     }
   });
 });
@@ -390,7 +556,10 @@ app.patch('/api/me', (req, res) => {
 
 /* companies (super_admin) — searchable, filterable, paginated */
 app.get('/api/companies', (req, res) => {
-  if (req.ctx.role !== 'super_admin') return res.status(403).json({ error: 'super_admin only' });
+  const effective = getEffectivePermissionsForUser(req.ctx);
+  if (!effective.includes('super_companies') && req.ctx.role !== 'super_admin') {
+    return res.status(403).json({ error: 'Permission denied: Company Hub access required', code: 'PERMISSION_DENIED' });
+  }
   let list = [...db.companies];
   if (req.query.q) { const q = req.query.q.toLowerCase(); list = list.filter(c => (c.name + ' ' + (c.code || '') + ' ' + (c.city || '') + ' ' + (c.industry || '') + ' ' + (c.email || '')).toLowerCase().includes(q)); }
   if (req.query.status && req.query.status !== 'all') list = list.filter(c => (c.storeStatus || c.status) === req.query.status);
@@ -512,6 +681,167 @@ app.delete('/api/roles/:id', scopeCompany, (req, res) => {
   save();
   audit(req, 'role.delete', 'role', deleted.id, req.companyId, `Deleted role ${deleted.name}`);
   ok(res, { ok: true, deleted: deleted.id });
+});
+
+/* ---------------- Dynamic Menu Permissions API ---------------- */
+
+// 1. Get full menu catalog
+app.get('/api/permissions/catalog', (req, res) => {
+  ok(res, MENU_CATALOG);
+});
+
+// 2. Get all roles with configured permissions
+app.get('/api/permissions/roles', (req, res) => {
+  if (!isAdmin(req)) return res.status(403).json({ error: 'admin only' });
+  ensureRolePermissions();
+  const list = (db.roles || []).map(r => ({
+    id: r.id,
+    name: r.name,
+    category: r.category,
+    isSystem: !!r.isSystem,
+    markupPct: r.markupPct,
+    menuPermissions: r.menuPermissions || defaultPermissionsForRole(r.id),
+    userCount: (db.users || []).filter(u => u.role === r.id).length
+  }));
+  ok(res, list);
+});
+
+// 3. Update role default menu permissions
+app.patch('/api/permissions/roles/:id', (req, res) => {
+  if (req.ctx.role !== 'super_admin') {
+    return res.status(403).json({ error: 'Only Super Admin can configure role menu permissions' });
+  }
+  ensureRolePermissions();
+  const role = (db.roles || []).find(r => r.id === req.params.id);
+  if (!role) return res.status(404).json({ error: 'Role not found' });
+  
+  const { menuPermissions } = req.body;
+  if (!Array.isArray(menuPermissions)) {
+    return res.status(400).json({ error: 'menuPermissions must be an array of page IDs' });
+  }
+
+  // Precedence safeguard: super_admin role must ALWAYS retain super_access
+  const finalPerms = [...new Set(menuPermissions)];
+  if (role.id === 'super_admin' && !finalPerms.includes('super_access')) {
+    finalPerms.push('super_access');
+  }
+
+  const prevCount = (role.menuPermissions || []).length;
+  role.menuPermissions = finalPerms;
+  role.updatedAt = new Date().toISOString();
+  save();
+
+  audit(req, 'permissions.role_update', 'role', role.id, req.companyId,
+    `Updated role permissions for "${role.name}": ${finalPerms.length} pages enabled (was ${prevCount})`);
+
+  ok(res, {
+    role: role.id,
+    name: role.name,
+    menuPermissions: role.menuPermissions,
+    updatedAt: role.updatedAt
+  });
+});
+
+// 4. Get specific user permissions & overrides
+app.get('/api/permissions/users/:id', (req, res) => {
+  if (!isAdmin(req)) return res.status(403).json({ error: 'admin only' });
+  ensureRolePermissions();
+  const u = (db.users || []).find(x => x.id === req.params.id);
+  if (!u) return res.status(404).json({ error: 'User not found' });
+
+  const roleObj = (db.roles || []).find(r => r.id === u.role);
+  const roleDefaults = roleObj && Array.isArray(roleObj.menuPermissions)
+    ? roleObj.menuPermissions
+    : defaultPermissionsForRole(u.role);
+
+  const effective = getEffectivePermissionsForUser(u);
+
+  ok(res, {
+    user: {
+      id: u.id,
+      name: u.name,
+      email: u.email,
+      role: u.role,
+      roleName: roleObj ? roleObj.name : u.role,
+      companyId: u.companyId,
+      companyName: (companyById(u.companyId) || {}).name || (u.companyId ? u.companyId : '— platform —')
+    },
+    roleDefaults,
+    menuOverrides: u.menuOverrides || {},
+    effectivePermissions: effective
+  });
+});
+
+// 5. Update user-specific overrides ('allow' | 'deny')
+app.patch('/api/permissions/users/:id', (req, res) => {
+  if (req.ctx.role !== 'super_admin') {
+    return res.status(403).json({ error: 'Only Super Admin can configure user permission overrides' });
+  }
+  ensureRolePermissions();
+  const u = (db.users || []).find(x => x.id === req.params.id);
+  if (!u) return res.status(404).json({ error: 'User not found' });
+
+  const { menuOverrides } = req.body;
+  if (!menuOverrides || typeof menuOverrides !== 'object') {
+    return res.status(400).json({ error: 'menuOverrides must be an object of { [pageId]: "allow" | "deny" }' });
+  }
+
+  // Sanitize: only 'allow' and 'deny' values kept; protect super_admin from denying super_access
+  const cleanOverrides = {};
+  for (const [k, v] of Object.entries(menuOverrides)) {
+    if (v === 'allow' || v === 'deny') {
+      if (u.role === 'super_admin' && (k === 'super_access' || k === 'super_dashboard') && v === 'deny') {
+        continue; // lockout protection
+      }
+      cleanOverrides[k] = v;
+    }
+  }
+
+  u.menuOverrides = cleanOverrides;
+  u.updatedAt = new Date().toISOString();
+  save();
+
+  const effective = getEffectivePermissionsForUser(u);
+  audit(req, 'permissions.user_update', 'user', u.id, u.companyId,
+    `Updated permission overrides for user "${u.name}" (${u.email}): ${Object.keys(cleanOverrides).length} overrides active`);
+
+  ok(res, {
+    user: u.id,
+    menuOverrides: u.menuOverrides,
+    effectivePermissions: effective
+  });
+});
+
+// 6. Reset user overrides back to role defaults (Inherit All)
+app.post('/api/permissions/users/:id/reset', (req, res) => {
+  if (req.ctx.role !== 'super_admin') {
+    return res.status(403).json({ error: 'Only Super Admin can reset user permission overrides' });
+  }
+  ensureRolePermissions();
+  const u = (db.users || []).find(x => x.id === req.params.id);
+  if (!u) return res.status(404).json({ error: 'User not found' });
+
+  const prevCount = Object.keys(u.menuOverrides || {}).length;
+  u.menuOverrides = {};
+  u.updatedAt = new Date().toISOString();
+  save();
+
+  const effective = getEffectivePermissionsForUser(u);
+  audit(req, 'permissions.user_reset', 'user', u.id, u.companyId,
+    `Reset permission overrides for user "${u.name}" (${u.email}) back to role defaults (cleared ${prevCount} overrides)`);
+
+  ok(res, {
+    user: u.id,
+    menuOverrides: {},
+    effectivePermissions: effective
+  });
+});
+
+// 7. Permission audit logs
+app.get('/api/permissions/audit', (req, res) => {
+  if (!isAdmin(req)) return res.status(403).json({ error: 'admin only' });
+  const logs = (db.audit_logs || []).filter(a => a.action && a.action.startsWith('permissions.'));
+  ok(res, logs);
 });
 
 /* users — super_admin manages across companies; company_admin only own company */
@@ -1132,6 +1462,10 @@ app.delete('/api/media/:id', scopeCompany, (req, res) => {
 
 /* audit trail (super: all/filterable; admin: own company) */
 app.get('/api/audit', scopeCompany, (req, res) => {
+  const effective = getEffectivePermissionsForUser(req.ctx);
+  if (!effective.includes('super_audit') && req.ctx.role !== 'super_admin') {
+    return res.status(403).json({ error: 'Permission denied: Audit Logs access required', code: 'PERMISSION_DENIED' });
+  }
   let list = [...(db.audit_logs || [])];
   if (req.ctx.role !== 'super_admin') list = list.filter(a => a.companyId === req.companyId);
   else if (req.query.companyId && req.query.companyId !== 'all') list = list.filter(a => a.companyId === req.query.companyId);
@@ -1144,11 +1478,17 @@ app.get('/api/audit', scopeCompany, (req, res) => {
 
 /* global store settings (super) vs company overrides */
 app.get('/api/settings/global', (req, res) => {
-  if (req.ctx.role !== 'super_admin') return res.status(403).json({ error: 'super_admin only' });
+  const effective = getEffectivePermissionsForUser(req.ctx);
+  if (!effective.includes('super_settings') && req.ctx.role !== 'super_admin') {
+    return res.status(403).json({ error: 'Permission denied: Global Settings access required', code: 'PERMISSION_DENIED' });
+  }
   ok(res, db.global_settings || {});
 });
 app.put('/api/settings/global', (req, res) => {
-  if (req.ctx.role !== 'super_admin') return res.status(403).json({ error: 'super_admin only' });
+  const effective = getEffectivePermissionsForUser(req.ctx);
+  if (!effective.includes('super_settings') && req.ctx.role !== 'super_admin') {
+    return res.status(403).json({ error: 'Permission denied: Global Settings access required', code: 'PERMISSION_DENIED' });
+  }
   db.global_settings = { ...(db.global_settings || {}), ...req.body, updatedAt: new Date().toISOString().slice(0, 10) };
   save();
   audit(req, 'settings.global', 'settings', 'global', '', `Updated global settings: ${Object.keys(req.body).join(', ')}`);

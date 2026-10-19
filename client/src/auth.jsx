@@ -23,12 +23,49 @@ export function AuthProvider({ children }) {
   const [oauth, setOauth] = useState(null); // supabase client or null
   const resolved = useRef(false);
 
+  const refreshPermissions = useCallback(async () => {
+    try {
+      const cur = getSession();
+      if (!cur) return;
+      const t = googleToken();
+      const cid = cur.role === 'super_admin' ? (cur.companyId || '') : (cur.companyId || 'C-ARGUS');
+      const r = await fetch('/api/me', {
+        headers: {
+          'Content-Type': 'application/json',
+          'x-role': cur.role || 'sales_user',
+          'x-company-id': cid,
+          'x-user-name': cur.name || '',
+          'x-user-email': cur.email || '',
+          'x-user-id': cur.id || '',
+          ...(t ? { Authorization: 'Bearer ' + t } : {})
+        }
+      });
+      const j = await r.json().catch(() => ({}));
+      const u = (j && j.data) || {};
+      if (u && u.role) {
+        setMe(prev => {
+          const updated = {
+            ...(prev || cur),
+            ...u,
+            effectivePermissions: u.effectivePermissions || [],
+            menuOverrides: u.menuOverrides || {}
+          };
+          setSession(updated);
+          return updated;
+        });
+      }
+    } catch (e) {
+      console.warn('refreshPermissions error', e);
+    }
+  }, []);
+
   const resolveMe = useCallback(async (token) => {
     const r = await fetch('/api/me', { headers: { Authorization: 'Bearer ' + (token || '') } });
     const j = await r.json().catch(() => ({}));
     const u = (j && j.data) || {};
     if (!u.role) throw new Error('no role');
     const s = {
+      id: u.id,
       role: u.role,
       companyId: u.companyId,
       name: u.name || 'User',
@@ -36,7 +73,9 @@ export function AuthProvider({ children }) {
       google: true,
       salesTier: u.salesTier,
       markupPct: u.markupPct,
-      termsAccepted: u.termsAccepted
+      termsAccepted: u.termsAccepted,
+      effectivePermissions: u.effectivePermissions || [],
+      menuOverrides: u.menuOverrides || {}
     };
     setSession(s);
     setMe(s);
@@ -67,16 +106,36 @@ export function AuthProvider({ children }) {
               setGoogleToken(null); setSession(null); setMe(null); resolved.current = false;
             }
           });
+        } else {
+          // If in demo/local mode and we have a session, refresh permissions from server
+          await refreshPermissions();
         }
       } catch { /* offline demo continues */ }
       setReady(true);
     })();
-  }, [resolveMe]);
+  }, [resolveMe, refreshPermissions]);
 
-  const loginAs = useCallback((role) => {
+  const loginAs = useCallback(async (role) => {
     const s = { ...DEMO[role] };
     setSession(s);
     setMe(s);
+    try {
+      const res = await fetch('/api/me', {
+        headers: {
+          'x-role': s.role,
+          'x-company-id': s.role === 'super_admin' ? '' : (s.companyId || 'C-ARGUS'),
+          'x-user-name': s.name || '',
+          'x-user-email': s.email || ''
+        }
+      });
+      const j = await res.json().catch(() => ({}));
+      if (j && j.data) {
+        const full = { ...s, ...j.data };
+        setSession(full);
+        setMe(full);
+        return full;
+      }
+    } catch {}
     return s;
   }, []);
 
@@ -95,5 +154,5 @@ export function AuthProvider({ children }) {
     resolved.current = false;
   }, [oauth]);
 
-  return <AuthCtx.Provider value={{ me, ready, oauthReady: !!oauth, loginAs, googleLogin, logout, resolveMe, setMe }}>{children}</AuthCtx.Provider>;
+  return <AuthCtx.Provider value={{ me, ready, oauthReady: !!oauth, loginAs, googleLogin, logout, resolveMe, setMe, refreshPermissions }}>{children}</AuthCtx.Provider>;
 }
