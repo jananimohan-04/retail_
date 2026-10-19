@@ -9,7 +9,7 @@ import {
 import { api } from '../../api';
 import { useAuth } from '../../auth';
 import { useCompany } from '../../companyContext';
-import { toast } from '../../components/ui';
+import { PageHero, toast } from '../../components/ui';
 import { MENU_CATALOG, ICON_MAP, getAllPageIds } from '../../menuCatalog';
 
 const ROLE_LABELS = {
@@ -345,63 +345,52 @@ export default function MenuAccess() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
-      {/* Page Header */}
-      <div className="relative overflow-hidden bg-white p-6 rounded-2xl border border-slate-200/90 shadow-xs">
-        <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 rounded-full bg-gradient-to-br from-rose-500 to-red-600 opacity-5 blur-3xl pointer-events-none" />
-        <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2.5 mb-1.5">
-              <div className="p-3 bg-gradient-to-br from-rose-500 via-red-600 to-pink-600 text-white shadow-md shadow-rose-900/10 rounded-2xl flex-shrink-0">
-                <KeyRound className="w-5 h-5" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h1 className="text-2xl font-black text-slate-900 tracking-tight">Dynamic Menu Access Control</h1>
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide bg-rose-50 text-rose-800 border border-rose-200">
-                    Security Governance
-                  </span>
-                </div>
-              </div>
-            </div>
-            <p className="text-xs text-slate-500 max-w-2xl leading-relaxed mt-1">
-              Configure system-wide left navigation permissions. Define default accessible pages per role,
-              or drill down into individual users with granular 3-state overrides (<span className="text-slate-700 font-bold">Inherit</span>, <span className="text-emerald-600 font-bold">Allow</span>, or <span className="text-rose-600 font-bold">Deny</span>).
-            </p>
-          </div>
-
-          {/* Top Navigation Tabs */}
-          <div className="flex items-center gap-1.5 p-1 bg-slate-100/90 rounded-2xl border border-slate-200/80 self-start md:self-auto shadow-2xs">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 space-y-4">
+      {/* Page Header (Compact Single-Line PageHero) */}
+      <PageHero
+        icon={KeyRound}
+        title="Dynamic Menu Access Control"
+        badgeText="Security Governance"
+        badgeColor="rose"
+        gradient="from-rose-500 via-red-600 to-pink-600"
+        actions={
+          <div className="flex items-center gap-1.5 p-1 bg-slate-100/90 rounded-2xl border border-slate-200/80 shadow-2xs">
             <button
               onClick={() => setActiveTab('roles')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                activeTab === 'roles' ? 'bg-gradient-to-r from-rose-600 to-red-600 text-white shadow-xs shadow-rose-500/30' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                activeTab === 'roles'
+                  ? 'bg-gradient-to-r from-rose-600 to-red-600 text-white shadow-xs shadow-rose-500/30'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
               }`}
             >
-              <ShieldCheck className="w-4 h-4" />
+              <ShieldCheck className="w-3.5 h-3.5" />
               <span>Role Defaults</span>
             </button>
             <button
               onClick={() => setActiveTab('users')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                activeTab === 'users' ? 'bg-gradient-to-r from-rose-600 to-red-600 text-white shadow-xs shadow-rose-500/30' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                activeTab === 'users'
+                  ? 'bg-gradient-to-r from-rose-600 to-red-600 text-white shadow-xs shadow-rose-500/30'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
               }`}
             >
-              <Users className="w-4 h-4" />
+              <Users className="w-3.5 h-3.5" />
               <span>User Overrides</span>
             </button>
             <button
               onClick={() => setActiveTab('audit')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                activeTab === 'audit' ? 'bg-gradient-to-r from-rose-600 to-red-600 text-white shadow-xs shadow-rose-500/30' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                activeTab === 'audit'
+                  ? 'bg-gradient-to-r from-rose-600 to-red-600 text-white shadow-xs shadow-rose-500/30'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
               }`}
             >
-              <History className="w-4 h-4" />
+              <History className="w-3.5 h-3.5" />
               <span>Audit History</span>
             </button>
           </div>
-        </div>
-      </div>
+        }
+      />
 
       {activeCompanyObj && (
         <div className="flex items-center justify-between gap-3 p-3.5 bg-rose-50/90 border border-rose-200/90 rounded-2xl shadow-2xs">
