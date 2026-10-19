@@ -445,7 +445,7 @@ export function Shell({ counts, noSide, children }) {
         )}
 
         <div className="flex-1 min-w-0 flex flex-col justify-between w-full bg-gradient-to-br from-slate-100 via-slate-50 to-orange-50/15">
-          <main className="w-full flex-1 p-4 sm:p-6 lg:p-6">
+          <main className="w-full flex-1 px-3 py-2 sm:px-4 sm:py-2.5 lg:px-4 lg:py-2.5">
             <motion.div
               key={location.pathname}
               initial={{ opacity: 0, y: 8, scale: 0.998 }}

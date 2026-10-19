@@ -345,7 +345,7 @@ export default function MenuAccess() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 space-y-4">
+    <div className="w-full space-y-3.5">
       {/* Page Header (Compact Single-Line PageHero) */}
       <PageHero
         icon={KeyRound}
@@ -421,7 +421,7 @@ export default function MenuAccess() {
       {activeTab === 'roles' && (
         <div className="flex flex-col lg:flex-row items-start gap-6">
           {/* LEFT SIDEBAR: Select Role to Configure */}
-          <div className="w-full lg:w-72 xl:w-80 flex-shrink-0 lg:sticky lg:top-6">
+          <div className="w-full lg:w-72 xl:w-80 flex-shrink-0 lg:sticky lg:top-3.5">
             <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
               <div className="flex items-center justify-between mb-3.5 pb-2.5 border-b border-slate-100">
                 <span className="text-xs font-extrabold uppercase tracking-widest text-slate-400">Select Role to Configure</span>
@@ -644,7 +644,7 @@ export default function MenuAccess() {
       {activeTab === 'users' && (
         <div className="flex flex-col lg:flex-row items-start gap-6">
           {/* LEFT SIDEBAR: Select User to Customize */}
-          <div className="w-full lg:w-80 xl:w-96 flex-shrink-0 lg:sticky lg:top-6">
+          <div className="w-full lg:w-80 xl:w-96 flex-shrink-0 lg:sticky lg:top-3.5">
             <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-3.5">
               <div className="border-b border-slate-100 pb-2.5">
                 <div className="flex items-center justify-between mb-1">
