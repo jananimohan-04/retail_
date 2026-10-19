@@ -160,13 +160,17 @@ export function Sidebar({ counts, onItemClick, mini = false }) {
                     ${isActive ? 'bg-gradient-to-r from-orange-600 to-amber-600 text-white font-bold shadow-xs' : 'text-slate-300 hover:text-white hover:bg-slate-800/80'}
                   `}
                 >
-                  <span className="text-sm flex-shrink-0">{c.icon || '📦'}</span>
-                  {!mini && (
-                    <span className={`truncate flex-1 tracking-tight font-semibold ${
-                      isActive ? '!text-white' : 'text-slate-200 group-hover:!text-white'
-                    }`}>
-                      {c.name}
-                    </span>
+                  {({ isActive }) => (
+                    <>
+                      <span className="text-sm flex-shrink-0">{c.icon || '📦'}</span>
+                      {!mini && (
+                        <span className={`truncate flex-1 tracking-tight font-semibold ${
+                          isActive ? '!text-white' : 'text-slate-200 group-hover:!text-white'
+                        }`}>
+                          {c.name}
+                        </span>
+                      )}
+                    </>
                   )}
                 </NavLink>
               ))}
