@@ -127,6 +127,19 @@
   ],
   "users": [
     {
+      "id": "U-1792391553693",
+      "name": "Test Sales OK",
+      "email": "test_tc_ok@example.com",
+      "mobile": "",
+      "role": "sales_regional_partner",
+      "companyId": "C-ARGUS",
+      "termsAccepted": true,
+      "termsAcceptedAt": "2026-10-19T06:32:33.695Z",
+      "termsVersion": "1.0",
+      "active": true,
+      "createdAt": "2026-10-19"
+    },
+    {
       "id": "U-1792231077265",
       "name": "test",
       "email": "productionargus@gmail.com",
@@ -517,6 +530,39 @@
     "version": 10
   },
   "audit_logs": [
+    {
+      "id": "A-179239155370066",
+      "ts": "2026-10-19T06:32:33.700Z",
+      "actor": "Argus User",
+      "role": "company_admin",
+      "action": "user.create",
+      "entity": "user",
+      "entityId": "U-1792391553693",
+      "companyId": "C-ARGUS",
+      "summary": "Created Test Sales OK (sales_regional_partner)"
+    },
+    {
+      "id": "A-179239010719914",
+      "ts": "2026-10-19T06:08:27.199Z",
+      "actor": "cleanup",
+      "role": "super_admin",
+      "action": "product.delete",
+      "entity": "product",
+      "entityId": "P-MVEUQZ202Q",
+      "companyId": "C-ARGUS",
+      "summary": "Deleted SKU RM-3711"
+    },
+    {
+      "id": "A-179239003596766",
+      "ts": "2026-10-19T06:07:15.967Z",
+      "actor": "Argus User",
+      "role": "sales_user",
+      "action": "erp.sync_created",
+      "entity": "product",
+      "entityId": "P-MVEUQZ202Q",
+      "companyId": "C-ARGUS",
+      "summary": "Created SKU RM-3711 from ERP"
+    },
     {
       "id": "A-179235005314872",
       "ts": "2026-10-18T19:00:53.148Z",
@@ -1013,5 +1059,95 @@
     "lowStockThreshold": 10,
     "announcement": "GST invoice on all orders • Bulk pricing on request",
     "updatedAt": "2026-10-16"
-  }
+  },
+  "roles": [
+    {
+      "id": "sales_regional_partner",
+      "name": "Regional Partner",
+      "category": "sales_partner",
+      "markupPct": 10,
+      "requireTerms": true,
+      "terms": "By registering as an ARGUS CNC Regional Partner, you agree to uphold our brand pricing guidelines, maintain active territory coverage, and adhere to our confidentiality and customer service standards. All orders are subject to regional quota allocations.",
+      "description": "Authorized regional distribution partner with territory rights and 10% markup tier.",
+      "isSystem": true,
+      "active": true
+    },
+    {
+      "id": "sales_channel_partner",
+      "name": "Channel Partner",
+      "category": "sales_partner",
+      "markupPct": 15,
+      "requireTerms": true,
+      "terms": "By registering as an ARGUS CNC Channel Partner, you agree to our resale terms, minimum advertised price (MAP) policies, and prompt payment settlements. Commercial warranty and return terms apply.",
+      "description": "Certified industrial channel sales partner with 15% markup tier.",
+      "isSystem": true,
+      "active": true
+    },
+    {
+      "id": "sales_referral_partner",
+      "name": "Referral Partner",
+      "category": "sales_partner",
+      "markupPct": 5,
+      "requireTerms": true,
+      "terms": "By registering as an ARGUS CNC Referral Partner, you agree that referrals must be bona fide commercial inquiries. Commission entitlements are calculated on the 5% tier basis upon order delivery.",
+      "description": "Registered commercial referral agent with 5% markup tier.",
+      "isSystem": true,
+      "active": true
+    },
+    {
+      "id": "sales_user",
+      "name": "Direct Sales User",
+      "category": "sales_partner",
+      "markupPct": 0,
+      "requireTerms": true,
+      "terms": "Standard direct sales representative agreement: confidential catalog pricing, customer order processing, and quotation terms apply.",
+      "description": "Standard sales representative with base retail catalog pricing (0% markup).",
+      "isSystem": true,
+      "active": true
+    },
+    {
+      "id": "company_admin",
+      "name": "Company Admin",
+      "category": "internal",
+      "markupPct": 0,
+      "requireTerms": false,
+      "terms": "",
+      "description": "Full company administration: manages catalog, inventory, users, and orders.",
+      "isSystem": true,
+      "active": true
+    },
+    {
+      "id": "content_writer",
+      "name": "Content Writer",
+      "category": "internal",
+      "markupPct": 0,
+      "requireTerms": false,
+      "terms": "",
+      "description": "Prepares product marketing copy, technical specifications, and media.",
+      "isSystem": true,
+      "active": true
+    },
+    {
+      "id": "finance",
+      "name": "Finance / Accounts",
+      "category": "internal",
+      "markupPct": 0,
+      "requireTerms": false,
+      "terms": "",
+      "description": "Sets selling price, review margins, and publishes products live.",
+      "isSystem": true,
+      "active": true
+    },
+    {
+      "id": "super_admin",
+      "name": "Super Admin",
+      "category": "internal",
+      "markupPct": 0,
+      "requireTerms": false,
+      "terms": "",
+      "description": "Platform super administrator with cross-company governance.",
+      "isSystem": true,
+      "active": true
+    }
+  ]
 }

@@ -27,14 +27,16 @@ export async function fetchCompanyOptions() {
   return asRows(d).rows;
 }
 
-/* Create/edit user modal — validation mirrors legacy saveUserModal exactly.
+/* Create/edit user modal — validation with dynamic roles and Terms & Conditions.
    Role select NEVER offers super_admin. */
 export function UserModal({ preset = {}, editId, onClose, onSaved }) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [mobile, setMobile] = useState('');
   const [companyId, setCompanyId] = useState(preset.companyId || '');
-  const [role, setRole] = useState(preset.role || 'sales_user');
+  const [role, setRole] = useState(preset.role || 'sales_regional_partner');
+  const [rolesList, setRolesList] = useState([]);
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [cos, setCos] = useState([]);
   const [err, setErr] = useState('');
   const [saving, setSaving] = useState(false);
@@ -47,12 +49,23 @@ export function UserModal({ preset = {}, editId, onClose, onSaved }) {
     } else {
       fetchCompanyOptions().then(setCos).catch(() => {});
     }
+    api.get('/api/roles').then((data) => {
+      const list = Array.isArray(data) ? data : [];
+      setRolesList(list);
+      if (!preset.role && list.length) {
+        // default to first active sales partner role or sales_user
+        const def = list.find((r) => r.id === 'sales_regional_partner') || list.find((r) => r.category === 'sales_partner') || list[0];
+        if (def && !isEdit) setRole(def.id);
+      }
+    }).catch(() => {});
+
     if (isEdit) {
       api.get('/api/users?limit=200').then((d) => {
         const u = asRows(d).rows.find((x) => x.id === editId);
         if (u) {
           setName(u.name || ''); setEmail(u.email || ''); setMobile(u.mobile || '');
-          setCompanyId(u.companyId || ''); setRole(u.role === 'company_admin' ? 'company_admin' : 'sales_user');
+          setCompanyId(u.companyId || ''); setRole(u.role || 'sales_user');
+          setTermsAccepted(!!u.termsAccepted);
         }
       }).catch(() => {});
     }
@@ -60,6 +73,8 @@ export function UserModal({ preset = {}, editId, onClose, onSaved }) {
   }, [editId]);
 
   const coName = (cid) => (cos.find((c) => c.id === cid) || {}).name || cid;
+  const selectedRoleObj = rolesList.find((r) => r.id === role);
+  const requiresTerms = selectedRoleObj ? !!selectedRoleObj.requireTerms : role.startsWith('sales_');
 
   async function save() {
     setErr('');
@@ -67,7 +82,9 @@ export function UserModal({ preset = {}, editId, onClose, onSaved }) {
     if (!nm) return setErr('Full name is required.');
     if (!EMAIL_RE.test(em)) return setErr('A valid Google email is required.');
     if (!companyId) return setErr('Select a company.');
-    if (!['sales_user', 'company_admin'].includes(role)) return setErr('Invalid role.');
+    if (requiresTerms && !termsAccepted) {
+      return setErr('Please confirm acceptance of the Sales Partner Terms & Conditions to create this account.');
+    }
     if (!isEdit) {
       try {
         const d = await api.get('/api/users?limit=200');
@@ -76,7 +93,9 @@ export function UserModal({ preset = {}, editId, onClose, onSaved }) {
     }
     setSaving(true);
     try {
-      const payload = isEdit ? { name: nm, mobile: mob, role, companyId } : { name: nm, email: em, mobile: mob, role, companyId };
+      const payload = isEdit 
+        ? { name: nm, mobile: mob, role, companyId, termsAccepted: !!termsAccepted } 
+        : { name: nm, email: em, mobile: mob, role, companyId, termsAccepted: !!termsAccepted };
       if (isEdit) await api.patch('/api/users/' + editId, payload);
       else await api.post('/api/users', payload);
       toast(isEdit ? 'User updated' : nm + ' added to ' + coName(companyId), '👥');
@@ -86,6 +105,11 @@ export function UserModal({ preset = {}, editId, onClose, onSaved }) {
       setSaving(false);
     }
   }
+
+  // Filter out super_admin from options
+  const assignableRoles = rolesList.filter((r) => r.id !== 'super_admin' && r.active !== false);
+  const salesPartnerRoles = assignableRoles.filter((r) => r.category === 'sales_partner' || r.id.startsWith('sales_'));
+  const internalRoles = assignableRoles.filter((r) => r.category !== 'sales_partner' && !r.id.startsWith('sales_'));
 
   return (
     <Modal title={'👥 ' + (isEdit ? 'Edit User' + (name ? ' — ' + name : '') : (role === 'company_admin' ? 'Invite Company Admin' : 'Add User'))} onClose={onClose}>
@@ -108,16 +132,52 @@ export function UserModal({ preset = {}, editId, onClose, onSaved }) {
             </select>
           )}
       </Field>
-      <Field label="Role" req hint="Super Admin can only be assigned from server-side provisioning.">
-        <select id="mu_role" value={role} onChange={(e) => setRole(e.target.value)}>
-          <option value="sales_user">Sales User</option>
-          <option value="company_admin">Company Admin</option>
+      <Field label="Role & Partner Tier" req hint="Select partner tier for automatic price markup calculation.">
+        <select id="mu_role" value={role} onChange={(e) => { setRole(e.target.value); setTermsAccepted(false); }}>
+          {salesPartnerRoles.length > 0 && (
+            <optgroup label="── Sales Partner Tiers ──">
+              {salesPartnerRoles.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.name} {r.markupPct ? `(+${r.markupPct}% price markup)` : '(Base price 0%)'}
+                </option>
+              ))}
+            </optgroup>
+          )}
+          {internalRoles.length > 0 && (
+            <optgroup label="── Internal / Management Roles ──">
+              {internalRoles.map((r) => (
+                <option key={r.id} value={r.id}>{r.name}</option>
+              ))}
+            </optgroup>
+          )}
         </select>
       </Field>
-      {err && <div className="hint" id="muErr" style={{ color: '#DC2626' }}>{err}</div>}
-      <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 12 }}>
+
+      {/* Dynamic Terms & Conditions prompt for Sales Partners */}
+      {requiresTerms && (
+        <div style={{ marginTop: 12, padding: 12, background: '#F8FAFC', borderRadius: 10, border: '1px solid #CBD5E1' }}>
+          <div style={{ fontWeight: 700, fontSize: 12, color: '#1E293B', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span>📜</span> Sales Partner Terms & Conditions ({selectedRoleObj?.name || 'Sales Partner'})
+          </div>
+          <div style={{ maxHeight: 90, overflowY: 'auto', fontSize: 11, color: '#475569', lineHeight: 1.45, padding: '6px 8px', background: '#fff', border: '1px solid #E2E8F0', borderRadius: 6, marginBottom: 8 }}>
+            {selectedRoleObj?.terms || 'Standard sales partner agreement: authorized partner agrees to catalog pricing guidelines, territory confidentiality, and prompt order processing rules.'}
+          </div>
+          <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, cursor: 'pointer', fontSize: 11.5, color: '#0F172A', fontWeight: 600 }}>
+            <input 
+              type="checkbox" 
+              checked={termsAccepted} 
+              onChange={(e) => setTermsAccepted(e.target.checked)} 
+              style={{ marginTop: 2, cursor: 'pointer', accentColor: '#2563EB' }}
+            />
+            <span>I confirm this sales partner agrees to the Terms & Conditions and {selectedRoleObj?.markupPct ? `+${selectedRoleObj.markupPct}% pricing tier` : 'catalog pricing policy'}.</span>
+          </label>
+        </div>
+      )}
+
+      {err && <div className="hint" id="muErr" style={{ color: '#DC2626', marginTop: 8 }}>{err}</div>}
+      <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 14 }}>
         <button className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
-        <button className="btn btn-primary btn-sm" id="muSaveBtn" disabled={saving} onClick={save}>💾 {saving ? 'Saving…' : (isEdit ? 'Save changes' : 'Create user')}</button>
+        <button className="btn btn-primary btn-sm" id="muSaveBtn" disabled={saving || (requiresTerms && !termsAccepted)} onClick={save}>💾 {saving ? 'Saving…' : (isEdit ? 'Save changes' : 'Create user')}</button>
       </div>
     </Modal>
   );
@@ -152,7 +212,15 @@ export function UserView({ id, onClose, onChanged, onEdit }) {
         <Field label="Email"><div><b>{u.email}</b></div></Field>
         <Field label="Mobile"><div>{u.mobile || '—'}</div></Field>
         <Field label="Company"><div><b>{u.companyName || u.companyId}</b> <span className="hint">{u.companyId || ''}</span></div></Field>
-        <Field label="Role"><div>{(u.role || '').replace('_', ' ')}</div></Field>
+        <Field label="Role & Tier">
+          <div>
+            <b>{u.roleName || (u.role || '').replace(/_/g, ' ')}</b>
+            {u.markupPct ? <span style={{ marginLeft: 6, fontSize: 11, padding: '2px 6px', background: '#DBEAFE', color: '#1E40AF', borderRadius: 4, fontWeight: 700 }}>+{u.markupPct}% Markup Tier</span> : null}
+          </div>
+        </Field>
+        <Field label="Terms & Conditions">
+          <div>{u.termsAccepted ? <span style={{ color: '#16A34A', fontWeight: 700 }}>✅ Accepted {u.termsAcceptedAt ? '(' + u.termsAcceptedAt.slice(0, 10) + ')' : ''}</span> : <span style={{ color: '#64748B' }}>Standard / Not applicable</span>}</div>
+        </Field>
         <Field label="Account status"><div>{statusBadge(u.active !== false ? 'Delivered' : 'Cancelled')}</div></Field>
         <Field label="Created"><div>{u.createdAt || '—'}</div></Field>
       </div>

@@ -11,7 +11,10 @@ const DEMO = {
   company_admin: { role: 'company_admin', name: 'argus', companyId: 'C-ARGUS', email: 'argushexadoc2021@gmail.com' },
   content_writer: { role: 'content_writer', name: 'Content Writer', companyId: 'C-ARGUS', email: 'content.writer@arguscnc.com' },
   finance: { role: 'finance', name: 'Finance Reviewer', companyId: 'C-ARGUS', email: 'finance@arguscnc.com' },
-  sales_user: { role: 'sales_user', name: 'janani', companyId: 'C-ARGUS', email: 'jananimohan1604@gmail.com' }
+  sales_regional_partner: { role: 'sales_regional_partner', name: 'Regional Partner (+10%)', companyId: 'C-ARGUS', email: 'regional.partner@arguscnc.com', markupPct: 10, salesTier: 'Regional Partner' },
+  sales_channel_partner: { role: 'sales_channel_partner', name: 'Channel Partner (+15%)', companyId: 'C-ARGUS', email: 'channel.partner@arguscnc.com', markupPct: 15, salesTier: 'Channel Partner' },
+  sales_referral_partner: { role: 'sales_referral_partner', name: 'Referral Partner (+5%)', companyId: 'C-ARGUS', email: 'referral.partner@arguscnc.com', markupPct: 5, salesTier: 'Referral Partner' },
+  sales_user: { role: 'sales_user', name: 'janani (Direct Sales)', companyId: 'C-ARGUS', email: 'jananimohan1604@gmail.com', markupPct: 0 }
 };
 
 export function AuthProvider({ children }) {
@@ -25,7 +28,16 @@ export function AuthProvider({ children }) {
     const j = await r.json().catch(() => ({}));
     const u = (j && j.data) || {};
     if (!u.role) throw new Error('no role');
-    const s = { role: u.role, companyId: u.companyId, name: u.name || 'User', email: u.email || '', google: true };
+    const s = {
+      role: u.role,
+      companyId: u.companyId,
+      name: u.name || 'User',
+      email: u.email || '',
+      google: true,
+      salesTier: u.salesTier,
+      markupPct: u.markupPct,
+      termsAccepted: u.termsAccepted
+    };
     setSession(s);
     setMe(s);
     return s;

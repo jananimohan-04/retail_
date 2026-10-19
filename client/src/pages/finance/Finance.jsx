@@ -374,9 +374,42 @@ function FinanceDetail({ id }) {
                 value={price}
                 disabled={!perm.canPrice}
                 onChange={(e) => setPrice(e.target.value)}
-                placeholder="e.g. 5499"
+                placeholder="e.g. 1000"
               />
             </Field>
+
+            {Number(price) > 0 && (
+              <div className="mb-4 p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+                <div className="text-[11px] font-bold text-slate-800 flex items-center justify-between">
+                  <span>Live Partner Tier Pricing (Base: ₹{Number(price).toLocaleString('en-IN')})</span>
+                  <span className="text-[10px] text-blue-600 font-semibold">Auto-computed</span>
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-xs">
+                  <div className="p-2 bg-white rounded-lg border border-slate-200">
+                    <div className="text-[10px] text-slate-500 font-bold">Regional (+{roles.find((r) => r.id === 'sales_regional_partner')?.markupPct ?? 10}%)</div>
+                    <div className="text-xs font-black font-mono text-blue-700 mt-0.5">
+                      ₹{Math.round(Number(price) * (1 + (roles.find((r) => r.id === 'sales_regional_partner')?.markupPct ?? 10) / 100)).toLocaleString('en-IN')}
+                    </div>
+                  </div>
+                  <div className="p-2 bg-white rounded-lg border border-slate-200">
+                    <div className="text-[10px] text-slate-500 font-bold">Channel (+{roles.find((r) => r.id === 'sales_channel_partner')?.markupPct ?? 15}%)</div>
+                    <div className="text-xs font-black font-mono text-purple-700 mt-0.5">
+                      ₹{Math.round(Number(price) * (1 + (roles.find((r) => r.id === 'sales_channel_partner')?.markupPct ?? 15) / 100)).toLocaleString('en-IN')}
+                    </div>
+                  </div>
+                  <div className="p-2 bg-white rounded-lg border border-slate-200">
+                    <div className="text-[10px] text-slate-500 font-bold">Referral (+{roles.find((r) => r.id === 'sales_referral_partner')?.markupPct ?? 5}%)</div>
+                    <div className="text-xs font-black font-mono text-emerald-700 mt-0.5">
+                      ₹{Math.round(Number(price) * (1 + (roles.find((r) => r.id === 'sales_referral_partner')?.markupPct ?? 5) / 100)).toLocaleString('en-IN')}
+                    </div>
+                  </div>
+                </div>
+                <p className="text-[10px] text-slate-400 m-0">
+                  Logged-in partners see their specific tier amount automatically. Percentages can be adjusted in Company Users &rarr; Manage Roles &amp; Tiers.
+                </p>
+              </div>
+            )}
+
             <Field label="Finance note" hint="Visible to admins and in the audit trail.">
               <textarea rows={3} value={note} disabled={!perm.canPrice} onChange={(e) => setNote(e.target.value)} placeholder="Pricing rationale, discount applied, effective date…" />
             </Field>

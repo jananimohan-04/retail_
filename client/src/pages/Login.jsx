@@ -125,7 +125,12 @@ export default function Login() {
             <span className="hint" style={{ width: '100%', textAlign: 'center' }}>Instant Demo Access</span>
             <button className="pill" onClick={() => demo('super_admin')}>Super Admin</button>
             <button className="pill" onClick={() => demo('company_admin')}>Argus Admin</button>
-            <button className="pill" onClick={() => demo('sales_user')}>Argus Sales User</button>
+            <button className="pill" onClick={() => demo('content_writer')}>Content Writer</button>
+            <button className="pill" onClick={() => demo('finance')}>Finance</button>
+            <button className="pill" style={{ background: '#ecfdf5', color: '#065f46', borderColor: '#a7f3d0' }} onClick={() => demo('sales_regional_partner')}>Regional Partner (+10%)</button>
+            <button className="pill" style={{ background: '#faf5ff', color: '#6b21a8', borderColor: '#e9d5ff' }} onClick={() => demo('sales_channel_partner')}>Channel Partner (+15%)</button>
+            <button className="pill" style={{ background: '#f0fdfa', color: '#115e59', borderColor: '#99f6e4' }} onClick={() => demo('sales_referral_partner')}>Referral Partner (+5%)</button>
+            <button className="pill" onClick={() => demo('sales_user')}>Direct Sales</button>
           </div>
         </div>
       </div>

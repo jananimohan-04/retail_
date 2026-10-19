@@ -54,10 +54,24 @@ function seed() {
   };
 }
 
+function defaultRoles() {
+  return [
+    { id: 'sales_regional_partner', name: 'Regional Partner', category: 'sales_partner', markupPct: 10, requireTerms: true, terms: 'By registering as an ARGUS CNC Regional Partner, you agree to uphold our brand pricing guidelines, maintain active territory coverage, and adhere to our confidentiality and customer service standards. All orders are subject to regional quota allocations.', description: 'Authorized regional distribution partner with territory rights and 10% markup tier.', isSystem: true, active: true },
+    { id: 'sales_channel_partner', name: 'Channel Partner', category: 'sales_partner', markupPct: 15, requireTerms: true, terms: 'By registering as an ARGUS CNC Channel Partner, you agree to our resale terms, minimum advertised price (MAP) policies, and prompt payment settlements. Commercial warranty and return terms apply.', description: 'Certified industrial channel sales partner with 15% markup tier.', isSystem: true, active: true },
+    { id: 'sales_referral_partner', name: 'Referral Partner', category: 'sales_partner', markupPct: 5, requireTerms: true, terms: 'By registering as an ARGUS CNC Referral Partner, you agree that referrals must be bona fide commercial inquiries. Commission entitlements are calculated on the 5% tier basis upon order delivery.', description: 'Registered commercial referral agent with 5% markup tier.', isSystem: true, active: true },
+    { id: 'sales_user', name: 'Direct Sales User', category: 'sales_partner', markupPct: 0, requireTerms: true, terms: 'Standard direct sales representative agreement: confidential catalog pricing, customer order processing, and quotation terms apply.', description: 'Standard sales representative with base retail catalog pricing (0% markup).', isSystem: true, active: true },
+    { id: 'company_admin', name: 'Company Admin', category: 'internal', markupPct: 0, requireTerms: false, terms: '', description: 'Full company administration: manages catalog, inventory, users, and orders.', isSystem: true, active: true },
+    { id: 'content_writer', name: 'Content Writer', category: 'internal', markupPct: 0, requireTerms: false, terms: '', description: 'Prepares product marketing copy, technical specifications, and media.', isSystem: true, active: true },
+    { id: 'finance', name: 'Finance / Accounts', category: 'internal', markupPct: 0, requireTerms: false, terms: '', description: 'Sets selling price, review margins, and publishes products live.', isSystem: true, active: true },
+    { id: 'super_admin', name: 'Super Admin', category: 'internal', markupPct: 0, requireTerms: false, terms: '', description: 'Platform super administrator with cross-company governance.', isSystem: true, active: true }
+  ];
+}
+
 let db;
 try { db = JSON.parse(fs.readFileSync(DB_FILE, 'utf8')); }
 catch { db = seed(); try { fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2)); } catch(e){} }
 if (!Array.isArray(db.quotations)) { db.quotations = []; }
+if (!Array.isArray(db.roles)) { db.roles = defaultRoles(); }
 
 let lastSyncTime = 0;
 let pendingSave = null;
@@ -210,6 +224,58 @@ const isContentWriter = req => isAdmin(req) || req.ctx.role === 'content_writer'
 const isFinance = req => isAdmin(req) || req.ctx.role === 'finance';
 const isWorkflowStaff = req => isContentWriter(req) || isFinance(req);
 
+const isSalesUser = req => {
+  const r = (req.ctx && req.ctx.role) || '';
+  if (r === 'sales_user' || r.startsWith('sales_')) return true;
+  const roleObj = (db.roles || []).find(x => x.id === r);
+  return !!(roleObj && roleObj.category === 'sales_partner');
+};
+
+function applyRolePricing(p, roleId) {
+  if (!p || p.price == null) return p;
+  const r = (db.roles || []).find(x => x.id === roleId);
+  const markupPct = (r && typeof r.markupPct === 'number') ? r.markupPct : 0;
+  if (markupPct > 0) {
+    const adjustedPrice = Math.round(Number(p.price) * (1 + markupPct / 100));
+    return {
+      ...p,
+      price: adjustedPrice,
+      basePrice: p.price,
+      appliedMarkupPct: markupPct,
+      partnerTier: (r && r.name) || roleId
+    };
+  }
+  return { ...p, basePrice: p.price, appliedMarkupPct: 0, partnerTier: (r && r.name) || null };
+}
+
+function attachTierBreakdown(p) {
+  if (!p || p.price == null) return p;
+  const roles = db.roles || [];
+  const regRole = roles.find(r => r.id === 'sales_regional_partner');
+  const chanRole = roles.find(r => r.id === 'sales_channel_partner');
+  const refRole = roles.find(r => r.id === 'sales_referral_partner');
+
+  const regPct = (regRole && typeof regRole.markupPct === 'number') ? regRole.markupPct : 10;
+  const chanPct = (chanRole && typeof chanRole.markupPct === 'number') ? chanRole.markupPct : 15;
+  const refPct = (refRole && typeof refRole.markupPct === 'number') ? refRole.markupPct : 5;
+
+  return {
+    ...p,
+    basePrice: p.price,
+    tierPricing: {
+      base: p.price,
+      regional: Math.round(Number(p.price) * (1 + regPct / 100)),
+      channel: Math.round(Number(p.price) * (1 + chanPct / 100)),
+      referral: Math.round(Number(p.price) * (1 + refPct / 100)),
+      percentages: {
+        regional: regPct,
+        channel: chanPct,
+        referral: refPct
+      }
+    }
+  };
+}
+
 /* --- product publishing workflow (ERP → Content Writer → Finance → Sales) --- */
 const WF = {
   PENDING: 'content_pending',
@@ -297,7 +363,21 @@ app.get('/api/health', (_req, res) => res.json({ ok: true, time: new Date().toIS
 app.get('/api/config', (_req, res) => res.json({ data: SB.publicConfig() }));
 app.get('/api/me', (req, res) => {
   const u = req.ctx.email ? db.users.find(x => (x.email || '').toLowerCase() === req.ctx.email) : null;
-  res.json({ data: { role: req.ctx.role, companyId: req.ctx.companyId, name: req.ctx.name, email: req.ctx.email || '', mobile: (u && u.mobile) || '', google: !!req.ctx.google } });
+  const roleId = (u && u.role) || req.ctx.role;
+  const roleObj = (db.roles || []).find(r => r.id === roleId);
+  res.json({
+    data: {
+      role: roleId,
+      companyId: (u && u.companyId) || req.ctx.companyId,
+      name: (u && u.name) || req.ctx.name,
+      email: req.ctx.email || '',
+      mobile: (u && u.mobile) || '',
+      google: !!req.ctx.google,
+      salesTier: (roleObj && roleObj.category === 'sales_partner') ? roleObj.name : null,
+      markupPct: (roleObj && typeof roleObj.markupPct === 'number') ? roleObj.markupPct : 0,
+      termsAccepted: (u && u.termsAccepted) || false
+    }
+  });
 });
 app.patch('/api/me', (req, res) => {
   const u = req.ctx.email ? db.users.find(x => (x.email || '').toLowerCase() === req.ctx.email) : null;
@@ -372,31 +452,120 @@ app.patch('/api/companies/:id', (req, res) => {
   ok(res, c);
 });
 
+/* ---------------- Roles Management & Partner Tiers ---------------- */
+app.get('/api/roles', (req, res) => {
+  ok(res, db.roles || []);
+});
+
+app.post('/api/roles', scopeCompany, (req, res) => {
+  if (!isAdmin(req)) return res.status(403).json({ error: 'admin only' });
+  const { name, category, markupPct, requireTerms, terms, description } = req.body;
+  if (!name || !name.trim()) return res.status(400).json({ error: 'Role name required' });
+  const cleanName = name.trim();
+  const id = 'role_' + cleanName.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+  if ((db.roles || []).some(r => r.id === id || r.name.toLowerCase() === cleanName.toLowerCase())) {
+    return res.status(400).json({ error: 'Role with this name already exists' });
+  }
+  const newRole = {
+    id,
+    name: cleanName,
+    category: category || 'sales_partner',
+    markupPct: markupPct != null ? Math.max(0, Number(markupPct)) : 0,
+    requireTerms: !!requireTerms,
+    terms: terms || '',
+    description: description || '',
+    isSystem: false,
+    active: true,
+    createdAt: new Date().toISOString()
+  };
+  db.roles.push(newRole);
+  save();
+  audit(req, 'role.create', 'role', id, req.companyId, `Created role ${cleanName} (${newRole.markupPct}%)`);
+  ok(res, newRole);
+});
+
+app.patch('/api/roles/:id', scopeCompany, (req, res) => {
+  if (!isAdmin(req)) return res.status(403).json({ error: 'admin only' });
+  const r = (db.roles || []).find(x => x.id === req.params.id);
+  if (!r) return res.status(404).json({ error: 'Role not found' });
+  if (req.body.name && req.body.name.trim()) r.name = req.body.name.trim();
+  if (req.body.category) r.category = req.body.category;
+  if (req.body.markupPct != null) r.markupPct = Math.max(0, Number(req.body.markupPct));
+  if (req.body.requireTerms != null) r.requireTerms = !!req.body.requireTerms;
+  if (req.body.terms != null) r.terms = req.body.terms;
+  if (req.body.description != null) r.description = req.body.description;
+  if (req.body.active != null) r.active = !!req.body.active;
+  save();
+  audit(req, 'role.update', 'role', r.id, req.companyId, `Updated role ${r.name}: markup ${r.markupPct}%`);
+  ok(res, r);
+});
+
+app.delete('/api/roles/:id', scopeCompany, (req, res) => {
+  if (!isAdmin(req)) return res.status(403).json({ error: 'admin only' });
+  const idx = (db.roles || []).findIndex(x => x.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: 'Role not found' });
+  if (db.roles[idx].isSystem) return res.status(400).json({ error: 'Cannot delete core system role' });
+  if ((db.users || []).some(u => u.role === req.params.id)) {
+    return res.status(400).json({ error: 'Cannot delete role because users are currently assigned to it' });
+  }
+  const deleted = db.roles.splice(idx, 1)[0];
+  save();
+  audit(req, 'role.delete', 'role', deleted.id, req.companyId, `Deleted role ${deleted.name}`);
+  ok(res, { ok: true, deleted: deleted.id });
+});
+
 /* users — super_admin manages across companies; company_admin only own company */
-const ROLES = ['super_admin', 'company_admin', 'content_writer', 'finance', 'sales_user'];
+const ROLES = ['super_admin', 'company_admin', 'content_writer', 'finance', 'sales_user', 'sales_regional_partner', 'sales_channel_partner', 'sales_referral_partner'];
 app.get('/api/users', scopeCompany, (req, res) => {
   const cid = req.ctx.role === 'super_admin' ? (req.query.companyId || null) : req.companyId;
   let list = db.users.filter(u => !cid || u.companyId === cid || (req.ctx.role === 'super_admin' && !cid && !req.query.companyId));
   if (req.query.q) { const q = req.query.q.toLowerCase(); list = list.filter(u => (u.name + ' ' + u.email).toLowerCase().includes(q)); }
   if (req.query.role && req.query.role !== 'all') list = list.filter(u => u.role === req.query.role);
   if (req.query.active && req.query.active !== 'all') list = list.filter(u => String(!!u.active) === req.query.active);
-  const withCo = l => l.map(u => ({ ...u, companyName: (companyById(u.companyId) || {}).name || (u.companyId ? u.companyId : '— platform —') }));
+  const withCo = l => l.map(u => {
+    const rObj = (db.roles || []).find(r => r.id === u.role);
+    return {
+      ...u,
+      roleName: (rObj && rObj.name) || (u.role === 'company_admin' ? 'Company Admin' : u.role === 'super_admin' ? 'Super Admin' : u.role),
+      markupPct: (rObj && typeof rObj.markupPct === 'number') ? rObj.markupPct : 0,
+      companyName: (companyById(u.companyId) || {}).name || (u.companyId ? u.companyId : '— platform —')
+    };
+  });
   if (req.query.page || req.query.limit) { const pg = pageOf(list, req); pg.rows = withCo(pg.rows); return ok(res, pg); }
   ok(res, withCo(list));
 });
 app.post('/api/users', scopeCompany, (req, res) => {
   if (!['company_admin', 'super_admin'].includes(req.ctx.role)) return res.status(403).json({ error: 'admin only' });
-  const { name, email, role, mobile } = req.body;
+  const { name, email, role, mobile, termsAccepted } = req.body;
   if (!name || !email) return res.status(400).json({ error: 'name and email required' });
   const cleanEmail = email.toLowerCase().trim();
-  if (role && !ROLES.includes(role)) return res.status(400).json({ error: 'invalid role' });
-  if (db.users.some(u => (u.email || '').toLowerCase().trim() === cleanEmail)) return res.status(400).json({ error: 'email already registered' });
+  const knownRoles = (db.roles || []).map(r => r.id);
   const targetRole = role || 'sales_user';
+  if (role && !knownRoles.includes(role) && !ROLES.includes(role)) return res.status(400).json({ error: 'invalid role' });
+  if (db.users.some(u => (u.email || '').toLowerCase().trim() === cleanEmail)) return res.status(400).json({ error: 'email already registered' });
+  
+  const roleObj = (db.roles || []).find(r => r.id === targetRole);
+  if (roleObj && roleObj.requireTerms && !termsAccepted) {
+    return res.status(400).json({ error: 'Sales Terms and Conditions must be accepted for ' + roleObj.name });
+  }
+
   if (targetRole === 'super_admin' && req.ctx.role !== 'super_admin') return res.status(403).json({ error: 'only Super Admin can assign super_admin role' });
   const targetCompany = req.ctx.role === 'super_admin' ? (targetRole === 'super_admin' ? null : req.body.companyId) : (req.companyId || req.ctx.companyId || req.body.companyId);
   if (targetRole !== 'super_admin' && !targetCompany) return res.status(400).json({ error: 'companyId required' });
   if (targetCompany && !companyById(targetCompany)) return res.status(400).json({ error: 'unknown company' });
-  const u = { id: 'U-' + Date.now(), name: name.trim(), email: cleanEmail, mobile: mobile || '', role: targetRole, companyId: targetCompany, active: true, createdAt: new Date().toISOString().slice(0, 10) };
+  const u = {
+    id: 'U-' + Date.now(),
+    name: name.trim(),
+    email: cleanEmail,
+    mobile: mobile || '',
+    role: targetRole,
+    companyId: targetCompany,
+    termsAccepted: !!termsAccepted,
+    termsAcceptedAt: termsAccepted ? new Date().toISOString() : null,
+    termsVersion: '1.0',
+    active: true,
+    createdAt: new Date().toISOString().slice(0, 10)
+  };
   db.users.unshift(u); save();
   audit(req, 'user.create', 'user', u.id, targetCompany, `Created ${name} (${targetRole})`);
   ok(res, u);
@@ -430,7 +599,8 @@ app.patch('/api/users/:id', scopeCompany, (req, res) => {
   const u = db.users.find(x => x.id === req.params.id);
   if (!u) return res.status(404).json({ error: 'not found' });
   if (req.ctx.role !== 'super_admin' && u.companyId !== req.companyId) return res.status(403).json({ error: 'denied' });
-  if (req.body.role && !ROLES.includes(req.body.role)) return res.status(400).json({ error: 'invalid role' });
+  const knownRoles = (db.roles || []).map(r => r.id);
+  if (req.body.role && !knownRoles.includes(req.body.role) && !ROLES.includes(req.body.role)) return res.status(400).json({ error: 'invalid role' });
   if (req.body.role === 'super_admin' && req.ctx.role !== 'super_admin') return res.status(403).json({ error: 'only Super Admin can assign super_admin role' });
   if (req.ctx.role !== 'super_admin') delete req.body.companyId; // company fixed for non-super
   delete req.body.id; delete req.body.email; // identity is fixed
@@ -520,7 +690,11 @@ app.get('/api/products', (req, res) => {
   if (req.query.brand && req.query.brand !== 'all') list = list.filter(p => p.brand === req.query.brand);
   if (req.query.q) { const q = req.query.q.toLowerCase(); list = list.filter(p => prodText(p).includes(q)); }
   if (req.query.archived && req.query.archived !== 'all') list = list.filter(p => String(!!p.archived) === req.query.archived);
-  if (req.ctx.role === 'sales_user') list = list.filter(salesVisible);
+  if (isSalesUser(req)) {
+    list = list.filter(salesVisible).map(p => applyRolePricing(p, req.ctx.role));
+  } else {
+    list = list.map(p => attachTierBreakdown(p));
+  }
   if (req.query.page || req.query.limit) return ok(res, pageOf(list, req));
   ok(res, list);
 });
@@ -529,11 +703,12 @@ app.get('/api/products/:id', (req, res) => {
   if (!p) return res.status(404).json({ error: 'not found' });
   if (req.ctx.role !== 'super_admin' && p.companyId !== req.ctx.companyId) return res.status(403).json({ error: 'denied' });
   /* Salespeople may only open published listings — a direct ID hit never leaks a draft */
-  if (req.ctx.role === 'sales_user' && !salesVisible(p)) return res.status(404).json({ error: 'not found' });
+  if (isSalesUser(req) && !salesVisible(p)) return res.status(404).json({ error: 'not found' });
   /* attach visible media (images, PDFs, video, YouTube) so the detail page can render it */
   const media = (db.product_media || []).filter(m => m.productId === p.id && m.visible !== false)
     .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
-  ok(res, { ...p, media });
+  const productWithPrice = isSalesUser(req) ? applyRolePricing(p, req.ctx.role) : attachTierBreakdown(p);
+  ok(res, { ...productWithPrice, media });
 });
 app.post('/api/products', scopeCompany, (req, res) => {
   if (req.ctx.role === 'sales_user') return res.status(403).json({ error: 'admin only' });
@@ -762,10 +937,11 @@ app.post('/api/orders', scopeCompany, (req, res) => {
     if (!p.visible) return res.status(400).json({ error: p.name + ' is not visible in the store' });
     if (p.price == null) return res.status(400).json({ error: p.name + ' is quotation-only — submit a quotation request instead' });
     if (!(it.qty > 0) || it.qty > p.stock) return res.status(400).json({ error: p.name + ' (' + (p.sku || p.id) + '): only ' + p.stock + ' ' + (p.uom || 'pcs') + ' in stock' });
-    total += p.price * it.qty; lines.push({ pid: p.id, qty: it.qty, price: p.price });
+    const finalPrice = isSalesUser(req) ? (applyRolePricing(p, req.ctx.role).price) : p.price;
+    total += finalPrice * it.qty; lines.push({ pid: p.id, qty: it.qty, price: finalPrice });
   }
   const id = uid('ORD-', db.orders);
-  const order = { id, companyId: cid, date: new Date().toISOString().slice(0, 16).replace('T', ' '), salesUser: req.ctx.name, customer, contact: contact || customer, companyName: companyName || '', mobile, city: city || '', address, poRef: poRef || '', total, status: 'Pending', items: lines, history: [['Pending', new Date().toLocaleString()]] };
+  const order = { id, companyId: cid, date: new Date().toISOString().slice(0, 16).replace('T', ' '), salesUser: req.ctx.name, partnerRole: req.ctx.role, customer, contact: contact || customer, companyName: companyName || '', mobile, city: city || '', address, poRef: poRef || '', total, status: 'Pending', items: lines, history: [['Pending', new Date().toLocaleString()]] };
   for (const l of lines) { const p = db.products.find(x => x.id === l.pid); p.stock -= l.qty; p.sold = (p.sold || 0) + l.qty; } // single atomic write
   db.orders.unshift(order); save();
   if (typeof triggerErpOrderDeduction === 'function') {

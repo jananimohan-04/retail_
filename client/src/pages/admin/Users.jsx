@@ -18,11 +18,16 @@ export default function Users() {
   const [nName, setNName] = useState('');
   const [nEmail, setNEmail] = useState('');
   const [nMobile, setNMobile] = useState('');
-  const [nRole, setNRole] = useState('sales_user');
+  const [nRole, setNRole] = useState('sales_regional_partner');
+  const [rolesList, setRolesList] = useState([]);
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [mErr, setMErr] = useState('');
   const [mBusy, setMBusy] = useState(false);
 
   function load() {
+    api.get('/api/roles')
+      .then((d) => setRolesList(Array.isArray(d) ? d : []))
+      .catch(() => {});
     api.get('/api/users')
       .then((d) => {
         const list = Array.isArray(d) ? d : (d.rows || []);
@@ -61,13 +66,19 @@ export default function Users() {
     const name = (nName || '').trim(), email = (nEmail || '').trim();
     if (!name) { setMErr('Full name is required.'); return; }
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { setMErr('A valid email address is required.'); return; }
+    const selectedRoleObj = (rolesList || []).find((r) => r.id === nRole);
+    const requiresTerms = selectedRoleObj ? !!selectedRoleObj.requireTerms : nRole.startsWith('sales_');
+    if (requiresTerms && !termsAccepted) {
+      setMErr('Please confirm acceptance of the Sales Partner Terms & Conditions.');
+      return;
+    }
     setMBusy(true);
     setMErr('');
     try {
-      await api.post('/api/users', { name, email, mobile: nMobile || '', role: nRole, companyId: me.companyId });
+      await api.post('/api/users', { name, email, mobile: nMobile || '', role: nRole, companyId: me.companyId, termsAccepted: !!termsAccepted });
       toast(name + ' created', '👥');
       setShow(false);
-      setNName(''); setNEmail(''); setNMobile(''); setNRole('sales_user');
+      setNName(''); setNEmail(''); setNMobile(''); setNRole('sales_regional_partner'); setTermsAccepted(false);
       load();
     } catch (e) {
       setMErr(e.message || 'Create failed');
@@ -133,9 +144,16 @@ export default function Users() {
                     </td>
 
                     <td className="py-3.5">
-                      <span className="px-2.5 py-1 rounded-lg text-xs font-bold uppercase tracking-wider bg-slate-100 text-slate-700">
-                        {(u.role || '').replace('_', ' ')}
-                      </span>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 text-slate-800">
+                          {u.roleName || (u.role || '').replace(/_/g, ' ')}
+                        </span>
+                        {u.markupPct ? (
+                          <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-blue-100 text-blue-800">
+                            +{u.markupPct}%
+                          </span>
+                        ) : null}
+                      </div>
                     </td>
 
                     <td className="py-3.5">
@@ -212,16 +230,49 @@ export default function Users() {
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700">Role & Access Level</label>
+              <label className="text-xs font-bold text-slate-700">Role & Partner Pricing Tier</label>
               <select 
                 value={nRole} 
-                onChange={(e) => setNRole(e.target.value)}
+                onChange={(e) => { setNRole(e.target.value); setTermsAccepted(false); }}
                 className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 focus:border-blue-500 rounded-xl outline-hidden"
               >
-                <option value="sales_user">Sales User (Catalog browsing & order creation)</option>
-                <option value="company_admin">Company Admin (Full company management)</option>
+                {rolesList.filter((r) => r.id !== 'super_admin' && r.active !== false).map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.name} {r.markupPct ? `(+${r.markupPct}% price markup)` : (r.category === 'sales_partner' ? '(Base price 0%)' : '')}
+                  </option>
+                ))}
+                {!rolesList.length && (
+                  <>
+                    <option value="sales_regional_partner">Regional Partner (+10% markup)</option>
+                    <option value="sales_channel_partner">Channel Partner (+15% markup)</option>
+                    <option value="sales_referral_partner">Referral Partner (+5% markup)</option>
+                    <option value="sales_user">Direct Sales User (0%)</option>
+                    <option value="company_admin">Company Admin</option>
+                  </>
+                )}
               </select>
             </div>
+
+            {/* Terms and conditions for sales partners */}
+            {((rolesList.find((r) => r.id === nRole) && rolesList.find((r) => r.id === nRole).requireTerms) || nRole.startsWith('sales_')) && (
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+                <div className="text-[11px] font-bold text-slate-800 flex items-center gap-1.5">
+                  <span>📜</span> Sales Partner Terms & Conditions
+                </div>
+                <div className="text-[10px] text-slate-600 bg-white p-2 rounded-lg border border-slate-200 max-h-20 overflow-y-auto leading-relaxed">
+                  {rolesList.find((r) => r.id === nRole)?.terms || 'Authorized sales partner agrees to catalog pricing guidelines, territory confidentiality, and prompt customer order processing.'}
+                </div>
+                <label className="flex items-start gap-2 cursor-pointer text-[11px] text-slate-800 font-semibold">
+                  <input 
+                    type="checkbox" 
+                    checked={termsAccepted} 
+                    onChange={(e) => setTermsAccepted(e.target.checked)} 
+                    className="mt-0.5 accent-blue-600 cursor-pointer" 
+                  />
+                  <span>Confirm user acceptance of Sales Terms & Conditions and Pricing Policy (Required)</span>
+                </label>
+              </div>
+            )}
 
             {mErr && (
               <p className="text-xs text-red-600 font-semibold bg-red-50 p-2.5 rounded-lg border border-red-200">

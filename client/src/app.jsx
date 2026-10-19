@@ -55,7 +55,7 @@ const R = {
   admin: ['super_admin', 'company_admin'],
   content: ['super_admin', 'company_admin', 'content_writer'],
   finance: ['super_admin', 'company_admin', 'finance'],
-  store: ['super_admin', 'company_admin', 'sales_user']
+  store: ['super_admin', 'company_admin', 'sales_user', 'sales_regional_partner', 'sales_channel_partner', 'sales_referral_partner']
 };
 
 /* "/" → each role's own home (a Content Writer no longer lands in the storefront) */
@@ -111,7 +111,8 @@ function Gate({ children, noSide, roles }) {
   if (!me) return <Navigate to="/login" replace />;
   if (me.role === 'pending' || me.role === 'disabled') return <Pending />;
   /* route-level authorization: a role never lands on a screen it may not act on */
-  if (roles && !roles.includes(me.role)) return <Navigate to={homeFor(me.role)} replace />;
+  const isAllowed = !roles || roles.includes(me.role) || (roles.includes('sales_user') && (me.role?.startsWith('sales_') || me.salesTier));
+  if (!isAllowed) return <Navigate to={homeFor(me.role)} replace />;
   return <Shell counts={counts} noSide={noSide}>{children}</Shell>;
 }
 

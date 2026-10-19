@@ -6,7 +6,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../../api';
 import {
-  PageHead, Kpi, DataTable, Tabs, Modal, Pager, Empty, Skeleton, statusBadge, toast
+  PageHead, Kpi, DataTable, Tabs, Modal, Field, Pager, Empty, Skeleton, statusBadge, toast
 } from '../../components/ui';
 import { CompanyFormFields, emptyCompany, companyFromDetail, validateCompany, companyPayload } from './CompanyForm';
 import { asRows, csvDownload, fetchCompanyOptions, UserModal, UserView, RoleButton, SuspendConfirm, toggleUserActive } from './_shared';
@@ -29,6 +29,11 @@ export default function Companies({ tab: tabProp }) {
   const [statsErr, setStatsErr] = useState('');
   const [cos, setCos] = useState([]); // company options for filters/dropdowns
   const [page, setPage] = useState(1);
+
+  // Role and pricing tiers modals
+  const [rolesModal, setRolesModal] = useState(false);
+  const [addRoleModal, setAddRoleModal] = useState(false);
+  const [editRole, setEditRole] = useState(null);
 
   // per-tab filters (mirror legacy ui.coFQ/coFStatus/…/admFQ…/usrFQ…)
   const [coQ, setCoQ] = useState('');
@@ -202,12 +207,36 @@ export default function Companies({ tab: tabProp }) {
               q={usrQ} setQ={(x) => { setUsrQ(x); setPage(1); }} co={usrCo} setCo={(x) => { setUsrCo(x); setPage(1); }}
               role={usrRole} setRole={(x) => { setUsrRole(x); setPage(1); }} st={usrSt} setSt={(x) => { setUsrSt(x); setPage(1); }}
               cos={cos} data={data} loading={loading} err={err} page={page} setPage={setPage}
-              onAdd={() => setUserModal({ preset: { role: 'sales_user' } })} onView={setViewUser}
+              onAdd={() => setUserModal({ preset: { role: 'sales_regional_partner' } })}
+              onManageRoles={() => setRolesModal(true)}
+              onAddRole={() => setAddRoleModal(true)}
+              onView={setViewUser}
               onEdit={(id) => setUserModal({ editId: id })} onToggle={(u) => toggleUserActive(u, load)} onRoleChanged={load}
             />
           )}
         </div>
       </div>
+
+      {rolesModal && (
+        <RolesModal 
+          onClose={() => setRolesModal(false)} 
+          onAddRole={() => { setRolesModal(false); setAddRoleModal(true); }}
+          onEditRole={(r) => { setRolesModal(false); setEditRole(r); }}
+        />
+      )}
+      {addRoleModal && (
+        <RoleEditModal 
+          onClose={() => setAddRoleModal(false)} 
+          onSaved={() => { setAddRoleModal(false); setRolesModal(true); load(); }} 
+        />
+      )}
+      {editRole && (
+        <RoleEditModal 
+          role={editRole} 
+          onClose={() => setEditRole(null)} 
+          onSaved={() => { setEditRole(null); setRolesModal(true); load(); }} 
+        />
+      )}
 
       {coModal && <CompanyModal id={coModal.id} onClose={() => setCoModal(null)} onSaved={() => { setCoModal(null); load(); loadStats(); }} />}
       {detailId && <CompanyDetails id={detailId} onClose={() => setDetailId(null)} onEdit={(id) => { setDetailId(null); setCoModal({ id }); }} onManage={(t, co) => { setDetailId(null); goTab(t, co); }} />}
@@ -323,14 +352,29 @@ function AdminsTab({ q, setQ, co, setCo, st, setSt, cos, data, loading, err, pag
 }
 
 /* ---------------- users tab ---------------- */
-function UsersTab({ q, setQ, co, setCo, role, setRole, st, setSt, cos, data, loading, err, page, setPage, onAdd, onView, onEdit, onToggle, onRoleChanged }) {
+function UsersTab({ q, setQ, co, setCo, role, setRole, st, setSt, cos, data, loading, err, page, setPage, onAdd, onManageRoles, onAddRole, onView, onEdit, onToggle, onRoleChanged }) {
+  const [roleOptions, setRoleOptions] = useState([]);
+  useEffect(() => {
+    api.get('/api/roles').then((d) => setRoleOptions(Array.isArray(d) ? d : [])).catch(() => {});
+  }, []);
+
   if (loading) return <Skeleton h={220} />;
   if (err) return <Empty title={'⚠️ ' + err} />;
   return (
     <>
       <div className="section-head" style={{ marginTop: 0 }}>
         <h2 style={{ fontSize: 16 }}>Company Users ({data.total})</h2>
-        <button className="btn btn-primary btn-sm" onClick={onAdd}>+ Add User</button>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+          <button className="btn btn-ghost btn-sm" onClick={onManageRoles} title="Configure partner tiers and markup percentages">
+            🛡️ Manage Roles & Tiers
+          </button>
+          <button className="btn btn-ghost btn-sm" onClick={onAddRole} title="Create new role">
+            + Add Role
+          </button>
+          <button className="btn btn-primary btn-sm" onClick={onAdd}>
+            + Add User
+          </button>
+        </div>
       </div>
       <div className="toolbar">
         <input placeholder="🔍 Search name, email, company…" value={q} onChange={(e) => setQ(e.target.value)} />
@@ -340,8 +384,18 @@ function UsersTab({ q, setQ, co, setCo, role, setRole, st, setSt, cos, data, loa
         </select>
         <select value={role} onChange={(e) => setRole(e.target.value)}>
           <option value="all">All roles</option>
-          <option value="sales_user">Sales User</option>
-          <option value="company_admin">Company Admin</option>
+          {roleOptions.map((r) => (
+            <option key={r.id} value={r.id}>{r.name} {r.markupPct ? `(+${r.markupPct}%)` : ''}</option>
+          ))}
+          {!roleOptions.length && (
+            <>
+              <option value="sales_regional_partner">Regional Partner (+10%)</option>
+              <option value="sales_channel_partner">Channel Partner (+15%)</option>
+              <option value="sales_referral_partner">Referral Partner (+5%)</option>
+              <option value="sales_user">Sales User</option>
+              <option value="company_admin">Company Admin</option>
+            </>
+          )}
         </select>
         <select value={st} onChange={(e) => setSt(e.target.value)}>
           <option value="all">All statuses</option>
@@ -356,7 +410,20 @@ function UsersTab({ q, setQ, co, setCo, role, setRole, st, setSt, cos, data, loa
           { key: 'name', label: 'Name', render: (u) => <b>{u.name}</b> },
           { key: 'email', label: 'Email', render: (u) => u.email },
           { key: 'co', label: 'Company', render: (u) => u.companyName || u.companyId },
-          { key: 'role', label: 'Role', render: (u) => u.role === 'company_admin' ? 'Company Admin' : 'Sales User' },
+          { 
+            key: 'role', 
+            label: 'Role & Tier', 
+            render: (u) => (
+              <span>
+                <b>{u.roleName || (u.role === 'company_admin' ? 'Company Admin' : u.role === 'super_admin' ? 'Super Admin' : u.role)}</b>
+                {u.markupPct ? (
+                  <span style={{ marginLeft: 6, fontSize: 10, padding: '2px 6px', background: '#DBEAFE', color: '#1E40AF', borderRadius: 4, fontWeight: 700 }}>
+                    +{u.markupPct}%
+                  </span>
+                ) : null}
+              </span>
+            )
+          },
           { key: 'mob', label: 'Mobile', render: (u) => u.mobile || '—' },
           { key: 'st', label: 'Status', render: (u) => statusBadge(u.active !== false ? 'Delivered' : 'Cancelled') },
           {
@@ -467,6 +534,225 @@ function CompanyDetails({ id, onClose, onEdit, onManage }) {
         <Link className="btn btn-ghost btn-sm" to={'/super/companies/' + d.id + '?tab=categories'} onClick={onClose}>Categories</Link>
         <Link className="btn btn-ghost btn-sm" to={'/super/companies/' + d.id + '?tab=orders'} onClick={onClose}>Orders</Link>
         <Link className="btn btn-ghost btn-sm" to={'/super/companies/' + d.id} onClick={onClose}>Full workspace →</Link>
+      </div>
+    </Modal>
+  );
+}
+
+/* ---------------- roles list modal ---------------- */
+function RolesModal({ onClose, onAddRole, onEditRole }) {
+  const [roles, setRoles] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState('');
+
+  const loadRoles = () => {
+    setLoading(true);
+    api.get('/api/roles')
+      .then((d) => { setRoles(Array.isArray(d) ? d : []); setLoading(false); })
+      .catch((e) => { setErr(e.message || 'Failed to load roles'); setLoading(false); });
+  };
+
+  useEffect(() => { loadRoles(); }, []);
+
+  async function handleDelete(r) {
+    if (r.isSystem) return;
+    if (!window.confirm(`Delete custom role "${r.name}"?`)) return;
+    try {
+      await api.del('/api/roles/' + r.id);
+      toast(`Role ${r.name} deleted`, '🗑️');
+      loadRoles();
+    } catch (e) {
+      toast(e.message || 'Delete failed', '⚠️');
+    }
+  }
+
+  return (
+    <Modal title="🛡️ Manage Roles & Partner Pricing Tiers" onClose={onClose} wide>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
+        <p className="hint" style={{ margin: 0 }}>
+          Configure partner markup tiers and required Terms & Conditions. Percentages adjust retail catalog pricing automatically.
+        </p>
+        <button className="btn btn-primary btn-sm" onClick={onAddRole}>
+          + Add Role
+        </button>
+      </div>
+
+      {loading && <Skeleton h={180} />}
+      {err && <div className="hint" style={{ color: '#DC2626' }}>{err}</div>}
+
+      {!loading && !err && (
+        <div style={{ overflowX: 'auto', border: '1px solid #E2E8F0', borderRadius: 8 }}>
+          <table className="data-table" style={{ width: '100%', fontSize: 12 }}>
+            <thead>
+              <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', textAlign: 'left' }}>
+                <th style={{ padding: '8px 10px' }}>Role / Tier Name</th>
+                <th style={{ padding: '8px 10px' }}>Category</th>
+                <th style={{ padding: '8px 10px' }}>Price Markup %</th>
+                <th style={{ padding: '8px 10px' }}>T&C Required</th>
+                <th style={{ padding: '8px 10px' }}>Description</th>
+                <th style={{ padding: '8px 10px', textAlign: 'right' }}>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {roles.map((r) => (
+                <tr key={r.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                  <td style={{ padding: '10px' }}>
+                    <b>{r.name}</b>
+                    <div className="hint" style={{ fontSize: 10 }}>{r.id}</div>
+                  </td>
+                  <td style={{ padding: '10px' }}>
+                    <span style={{ 
+                      fontSize: 10.5, 
+                      fontWeight: 700, 
+                      padding: '2px 8px', 
+                      borderRadius: 12, 
+                      background: r.category === 'sales_partner' ? '#EFF6FF' : '#F1F5F9',
+                      color: r.category === 'sales_partner' ? '#1D4ED8' : '#475569'
+                    }}>
+                      {r.category === 'sales_partner' ? '🤝 Sales Partner' : '🏢 Internal'}
+                    </span>
+                  </td>
+                  <td style={{ padding: '10px' }}>
+                    {r.markupPct != null ? (
+                      <span style={{
+                        fontWeight: 800,
+                        fontFamily: 'monospace',
+                        color: r.markupPct > 0 ? '#15803D' : '#64748B',
+                        background: r.markupPct > 0 ? '#DCFCE7' : '#F1F5F9',
+                        padding: '3px 8px',
+                        borderRadius: 6
+                      }}>
+                        {r.markupPct > 0 ? `+${r.markupPct}%` : '0% (Base)'}
+                      </span>
+                    ) : '—'}
+                  </td>
+                  <td style={{ padding: '10px' }}>
+                    {r.requireTerms ? (
+                      <span style={{ color: '#16A34A', fontWeight: 600 }}>✅ Mandatory</span>
+                    ) : (
+                      <span style={{ color: '#94A3B8' }}>Optional</span>
+                    )}
+                  </td>
+                  <td style={{ padding: '10px', maxWidth: 220, fontSize: 11, color: '#64748B' }}>
+                    {r.description || '—'}
+                  </td>
+                  <td style={{ padding: '10px', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                    <button className="btn btn-ghost btn-sm" onClick={() => onEditRole(r)}>
+                      ✏️ Edit
+                    </button>
+                    {!r.isSystem && (
+                      <button className="btn btn-ghost btn-sm" style={{ color: '#DC2626' }} onClick={() => handleDelete(r)}>
+                        🗑️
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 14 }}>
+        <button className="btn btn-ghost btn-sm" onClick={onClose}>Close</button>
+      </div>
+    </Modal>
+  );
+}
+
+/* ---------------- role create/edit modal ---------------- */
+function RoleEditModal({ role, onClose, onSaved }) {
+  const isEdit = !!role;
+  const [name, setName] = useState(role ? role.name : '');
+  const [category, setCategory] = useState(role ? (role.category || 'sales_partner') : 'sales_partner');
+  const [markupPct, setMarkupPct] = useState(role && role.markupPct != null ? String(role.markupPct) : '10');
+  const [requireTerms, setRequireTerms] = useState(role ? !!role.requireTerms : true);
+  const [terms, setTerms] = useState(role ? (role.terms || '') : 'By registering as an authorized sales partner, you agree to catalog pricing guidelines, territory confidentiality, and prompt customer order processing.');
+  const [description, setDescription] = useState(role ? (role.description || '') : '');
+  const [err, setErr] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  async function save() {
+    setErr('');
+    if (!name.trim()) return setErr('Role name is required.');
+    const pct = Number(markupPct);
+    if (isNaN(pct) || pct < 0) return setErr('Markup percentage must be a number >= 0.');
+
+    setSaving(true);
+    try {
+      const payload = {
+        name: name.trim(),
+        category,
+        markupPct: pct,
+        requireTerms: !!requireTerms,
+        terms: terms.trim(),
+        description: description.trim()
+      };
+      if (isEdit) {
+        await api.patch('/api/roles/' + role.id, payload);
+        toast(`Role "${name}" updated (${pct}% markup)`, '✅');
+      } else {
+        await api.post('/api/roles', payload);
+        toast(`Role "${name}" created (${pct}% markup)`, '🛡️');
+      }
+      onSaved();
+    } catch (e) {
+      setErr(e.message || 'Save failed');
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Modal title={isEdit ? `✏️ Edit Role: ${role.name}` : '🛡️ Add New Role & Partner Tier'} onClose={onClose}>
+      <Field label="Role / Tier Name" req>
+        <input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Regional Partner, Channel Partner" />
+      </Field>
+      <Field label="Role Category" req hint="Sales Partners will have access to the sales catalog with tier pricing.">
+        <select value={category} onChange={(e) => setCategory(e.target.value)}>
+          <option value="sales_partner">Sales Partner (Regional, Channel, Referral, etc.)</option>
+          <option value="internal">Internal / Operational Role</option>
+        </select>
+      </Field>
+      <Field label="Price Markup Percentage (%)" req hint="In accounts, if ₹1,000 is given, 10% markup displays ₹1,100 to users with this role.">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <input 
+            type="number" 
+            min="0" 
+            step="0.5" 
+            value={markupPct} 
+            onChange={(e) => setMarkupPct(e.target.value)} 
+            placeholder="e.g. 10" 
+            style={{ width: 140 }}
+          />
+          <span style={{ fontWeight: 700, fontSize: 13, color: '#334155' }}>% Markup over Accounts Base Price</span>
+        </div>
+      </Field>
+      <div style={{ marginTop: 10, marginBottom: 12 }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontWeight: 600, fontSize: 12 }}>
+          <input 
+            type="checkbox" 
+            checked={requireTerms} 
+            onChange={(e) => setRequireTerms(e.target.checked)} 
+            style={{ accentColor: '#2563EB' }}
+          />
+          <span>Require Terms & Conditions acceptance when creating this user</span>
+        </label>
+      </div>
+      {requireTerms && (
+        <Field label="Terms & Conditions Agreement Text" hint="Shown to admin when creating sales user under this tier.">
+          <textarea rows={3} value={terms} onChange={(e) => setTerms(e.target.value)} placeholder="Enter terms & conditions text..." />
+        </Field>
+      )}
+      <Field label="Description">
+        <input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Short notes about this role or tier" />
+      </Field>
+
+      {err && <div className="hint" style={{ color: '#DC2626', marginTop: 8 }}>{err}</div>}
+      <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 14 }}>
+        <button className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
+        <button className="btn btn-primary btn-sm" disabled={saving} onClick={save}>
+          💾 {saving ? 'Saving…' : (isEdit ? 'Save Changes' : 'Create Role')}
+        </button>
       </div>
     </Modal>
   );

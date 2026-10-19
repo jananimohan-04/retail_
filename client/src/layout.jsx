@@ -247,9 +247,12 @@ export function Topbar({ onMobileToggle, sidebarOpen, onToggleSidebar, noSide })
     company_admin: 'Company Admin',
     content_writer: 'Content Writer',
     finance: 'Finance',
+    sales_regional_partner: 'Regional Partner (+10%)',
+    sales_channel_partner: 'Channel Partner (+15%)',
+    sales_referral_partner: 'Referral Partner (+5%)',
     sales_user: 'Sales'
   };
-  const roleLabel = ROLE_LABELS[me?.role] || 'Sales';
+  const roleLabel = me?.salesTier ? `${me.salesTier} (+${me.markupPct || 0}%)` : (ROLE_LABELS[me?.role] || 'Sales');
 
   return (
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-xs w-full">
@@ -261,7 +264,14 @@ export function Topbar({ onMobileToggle, sidebarOpen, onToggleSidebar, noSide })
           <span className="hidden sm:inline truncate">Precision Manufacturing & Industrial Procurement</span>
         </div>
         <div className="flex items-center gap-3 text-[11px] text-slate-400 font-medium">
-          <span className="text-orange-400 font-bold uppercase tracking-wider">GST Verified</span>
+          {me?.salesTier || (me?.markupPct !== undefined && me?.markupPct > 0) ? (
+            <span className="text-emerald-300 font-bold uppercase tracking-wider bg-emerald-950/80 border border-emerald-700/80 px-2.5 py-0.5 rounded-full flex items-center gap-1.5">
+              <span>🏷️</span>
+              <span>{me.salesTier || 'Partner Tier'} (+{me.markupPct || 0}%)</span>
+            </span>
+          ) : (
+            <span className="text-orange-400 font-bold uppercase tracking-wider">GST Verified</span>
+          )}
           <span>•</span>
           <span className="text-slate-300">{me?.name || 'Argus Enterprise'}</span>
         </div>
@@ -332,37 +342,62 @@ export function Topbar({ onMobileToggle, sidebarOpen, onToggleSidebar, noSide })
               <button
                 type="button"
                 onClick={() => loginAs('super_admin')}
-                className={`px-2.5 py-1 rounded-full transition-all cursor-pointer ${me?.role === 'super_admin' ? 'bg-slate-900 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
+                className={`px-2 py-1 rounded-full transition-all cursor-pointer ${me?.role === 'super_admin' ? 'bg-slate-900 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
               >
                 Super
               </button>
               <button
                 type="button"
                 onClick={() => loginAs('company_admin')}
-                className={`px-2.5 py-1 rounded-full transition-all cursor-pointer ${me?.role === 'company_admin' ? 'bg-slate-900 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
+                className={`px-2 py-1 rounded-full transition-all cursor-pointer ${me?.role === 'company_admin' ? 'bg-slate-900 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
               >
                 Admin
               </button>
               <button
                 type="button"
                 onClick={() => loginAs('content_writer')}
-                className={`px-2.5 py-1 rounded-full transition-all cursor-pointer ${me?.role === 'content_writer' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
+                className={`px-2 py-1 rounded-full transition-all cursor-pointer ${me?.role === 'content_writer' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
               >
                 Content
               </button>
               <button
                 type="button"
                 onClick={() => loginAs('finance')}
-                className={`px-2.5 py-1 rounded-full transition-all cursor-pointer ${me?.role === 'finance' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
+                className={`px-2 py-1 rounded-full transition-all cursor-pointer ${me?.role === 'finance' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
               >
                 Finance
               </button>
               <button
                 type="button"
-                onClick={() => loginAs('sales_user')}
-                className={`px-2.5 py-1 rounded-full transition-all cursor-pointer ${me?.role === 'sales_user' ? 'bg-slate-900 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
+                onClick={() => loginAs('sales_regional_partner')}
+                className={`px-2 py-1 rounded-full transition-all cursor-pointer ${me?.role === 'sales_regional_partner' ? 'bg-emerald-600 text-white shadow-xs' : 'text-emerald-700 hover:bg-emerald-50'}`}
+                title="Regional Partner (+10% Pricing)"
               >
-                Sales
+                Regional (+10%)
+              </button>
+              <button
+                type="button"
+                onClick={() => loginAs('sales_channel_partner')}
+                className={`px-2 py-1 rounded-full transition-all cursor-pointer ${me?.role === 'sales_channel_partner' ? 'bg-purple-600 text-white shadow-xs' : 'text-purple-700 hover:bg-purple-50'}`}
+                title="Channel Partner (+15% Pricing)"
+              >
+                Channel (+15%)
+              </button>
+              <button
+                type="button"
+                onClick={() => loginAs('sales_referral_partner')}
+                className={`px-2 py-1 rounded-full transition-all cursor-pointer ${me?.role === 'sales_referral_partner' ? 'bg-teal-600 text-white shadow-xs' : 'text-teal-700 hover:bg-teal-50'}`}
+                title="Referral Partner (+5% Pricing)"
+              >
+                Referral (+5%)
+              </button>
+              <button
+                type="button"
+                onClick={() => loginAs('sales_user')}
+                className={`px-2 py-1 rounded-full transition-all cursor-pointer ${me?.role === 'sales_user' ? 'bg-slate-900 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
+                title="Direct Sales (Base Price)"
+              >
+                Direct Sales
               </button>
             </div>
           )}
