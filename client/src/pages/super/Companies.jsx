@@ -309,10 +309,6 @@ function AdminsTab({ q, setQ, co, setCo, st, setSt, cos, data, loading, err, pag
   if (err) return <Empty title={'⚠️ ' + err} />;
   return (
     <>
-      <div className="section-head" style={{ marginTop: 0 }}>
-        <h2 style={{ fontSize: 16 }}>Company Admins ({data.total})</h2>
-        <button className="btn btn-primary btn-sm" onClick={onInvite}>+ Invite Admin</button>
-      </div>
       <div className="toolbar">
         <input placeholder="🔍 Search name, email, company…" value={q} onChange={(e) => setQ(e.target.value)} />
         <select value={co} onChange={(e) => setCo(e.target.value)}>
