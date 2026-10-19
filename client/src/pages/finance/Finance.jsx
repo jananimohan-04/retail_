@@ -4,10 +4,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api, fmt, imgFallback } from '../../api';
-import { PageHead, Empty, Skeleton, Pager, Field, Confirm, Modal, toast } from '../../components/ui';
+import { PageHero, PageHead, Empty, Skeleton, Pager, Field, Confirm, Modal, toast } from '../../components/ui';
 import {
   ArrowLeft, BadgeIndianRupee, CheckCircle2, Eye, FileText,
-  Loader2, Package, RotateCcw, Save, Send
+  Loader2, Package, RotateCcw, Save, Send, IndianRupee
 } from 'lucide-react';
 import { StageBadge, ytId } from '../content/ContentWriter';
 
@@ -56,11 +56,14 @@ function FinanceQueue() {
 
   return (
     <>
-      <PageHead
-        eyebrow="Publishing Workflow · Step 2 of 2"
-        title="Finance Review"
-        desc="Products submitted by Content Writers wait here for pricing. Saving a price keeps the listing hidden — only Approve & Publish makes it visible to the Salesperson login."
-        actions={<Link className="btn btn-ghost btn-sm" to="/content">Content queue →</Link>}
+      <PageHero
+        icon={IndianRupee}
+        title="Finance & Pricing Review"
+        subtitle="Review marketing product submissions, configure sales partner tier margins, and publish products live to the B2B catalog."
+        badgeText="Publishing Step 2"
+        badgeColor="teal"
+        gradient="from-teal-600 via-emerald-600 to-cyan-600"
+        actions={<Link className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors" to="/content">← Content queue</Link>}
       />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">

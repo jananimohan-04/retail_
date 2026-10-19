@@ -7,7 +7,7 @@ import {
   LogOut, Save, CheckCircle2, Sparkles 
 } from 'lucide-react';
 import { useAuth } from '../../auth';
-import { toast } from '../../components/ui';
+import { toast, PageHero } from '../../components/ui';
 
 export default function Profile() {
   const { me, logout } = useAuth();
@@ -44,13 +44,14 @@ export default function Profile() {
       transition={{ duration: 0.2 }}
       className="space-y-6 w-full"
     >
-      {/* Header */}
-      <div className="pb-2 border-b border-slate-200">
-        <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-          <User className="w-6 h-6 text-blue-600" /> Account & Profile
-        </h1>
-        <p className="text-xs text-slate-500 mt-0.5">Manage identity credentials and preferred delivery preferences</p>
-      </div>
+      <PageHero
+        title="Account & Profile"
+        subtitle="Manage identity credentials, company associations, and delivery preferences."
+        icon={User}
+        badgeText="Verified Account"
+        badgeColor="orange"
+        gradient="from-orange-500 via-amber-500 to-red-500"
+      />
 
       {/* Profile Overview Card */}
       <div className="bg-white rounded-2xl border border-slate-200/80 p-6 sm:p-8 shadow-xs space-y-6">

@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { api, fmt, imgFallback } from '../../api';
 import { useAuth } from '../../auth';
-import { statusBadge, Empty, Skeleton } from '../../components/ui';
+import { statusBadge, Empty, Skeleton, PageHero } from '../../components/ui';
 
 export default function Dashboard() {
   const { me } = useAuth();
@@ -70,32 +70,31 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between gap-4 flex-wrap pb-2 border-b border-slate-200">
-        <div>
-          <span className="text-[11px] font-extrabold uppercase tracking-widest text-blue-600 block mb-0.5">
-            {displayName} • OPERATIONS HUB
-          </span>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight">
-            Commercial Dashboard
-          </h1>
-        </div>
-        <div className="flex items-center gap-2">
-          <Link 
-            to="/admin/products/new"
-            className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl transition-all shadow-sm cursor-pointer"
-          >
-            <Plus className="w-3.5 h-3.5" /> Add New Product
-          </Link>
-          <Link 
-            to="/store/home"
-            target="_blank"
-            className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-all cursor-pointer"
-          >
-            <ExternalLink className="w-3.5 h-3.5" /> View Storefront
-          </Link>
-        </div>
-      </div>
+      <PageHero
+        title="Commercial Dashboard"
+        subtitle={`Operations, inventory metrics, and commercial pipeline for ${displayName}.`}
+        icon={LayoutDashboard}
+        badgeText="Operations Hub"
+        badgeColor="emerald"
+        gradient="from-emerald-500 via-teal-600 to-green-600"
+        actions={
+          <div className="flex items-center gap-2">
+            <Link 
+              to="/admin/products/new"
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition-all shadow-sm shadow-emerald-600/30 cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5" /> Add New Product
+            </Link>
+            <Link 
+              to="/store/home"
+              target="_blank"
+              className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-all cursor-pointer"
+            >
+              <ExternalLink className="w-3.5 h-3.5" /> View Storefront
+            </Link>
+          </div>
+        }
+      />
 
       {/* KPI Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">

@@ -7,7 +7,7 @@ import {
   ChevronRight, Calendar, Building2, User, Eye 
 } from 'lucide-react';
 import { api, fmt } from '../../api';
-import { statusBadge, Empty, Skeleton, Pager } from '../../components/ui';
+import { statusBadge, Empty, Skeleton, Pager, PageHero } from '../../components/ui';
 
 const STATUSES = ['all', 'Pending', 'Confirmed', 'Processing', 'Ready for Dispatch', 'Shipped', 'Delivered', 'Cancelled'];
 
@@ -49,24 +49,23 @@ export default function Orders() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between gap-4 flex-wrap pb-2 border-b border-slate-200">
-        <div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-            <Receipt className="w-6 h-6 text-blue-600" /> Commercial Purchase Orders
-          </h1>
-          <p className="text-xs text-slate-500 mt-0.5">
-            {data.total} total order records • Linked to ERP sales requisition pipeline
-          </p>
-        </div>
-        <button 
-          type="button" 
-          onClick={() => window.print()}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 hover:bg-slate-50 text-slate-600 font-bold text-xs rounded-xl transition-all cursor-pointer"
-        >
-          <Printer className="w-3.5 h-3.5" /> Print Order Register
-        </button>
-      </div>
+      <PageHero
+        title="Commercial Purchase Orders"
+        subtitle={`${data.total} total order records • Linked to ERP sales requisition and delivery pipeline.`}
+        icon={Receipt}
+        badgeText="Purchase Orders"
+        badgeColor="purple"
+        gradient="from-purple-600 via-violet-600 to-indigo-600"
+        actions={
+          <button 
+            type="button" 
+            onClick={() => window.print()}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-xs rounded-xl transition-all cursor-pointer shadow-2xs"
+          >
+            <Printer className="w-3.5 h-3.5" /> Print Order Register
+          </button>
+        }
+      />
 
       {/* Main Table Card */}
       <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">

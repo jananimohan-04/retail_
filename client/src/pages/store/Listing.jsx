@@ -1,9 +1,10 @@
 /* Store listing — mirrors legacy vListing: filters/sort/search semantics. */
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { ShoppingBag } from 'lucide-react';
 import { api } from '../../api';
 import { useAuth } from '../../auth';
-import { Skeleton } from '../../components/ui';
+import { Skeleton, PageHero } from '../../components/ui';
 import { ProdCard, RfqModal, addToCart, asList } from './Home';
 
 export default function Listing() {
@@ -61,7 +62,14 @@ export default function Listing() {
 
   return (
     <>
-      <div className="section-head"><h2>Industrial catalog ({ps.length} SKUs)</h2><span className="hint">Search SKU • MPN • brand • compatibility</span></div>
+      <PageHero
+        title={`Industrial Catalog (${ps.length} SKUs)`}
+        subtitle="Search SKU, MPN, industrial brand, technical compatibility, and inventory status."
+        icon={ShoppingBag}
+        badgeText="Industrial Storefront"
+        badgeColor="orange"
+        gradient="from-orange-500 via-amber-500 to-red-500"
+      />
       <div className="card"><div className="card-pad">
         <div className="toolbar">
           <select value={cat} onChange={(e) => setCat(e.target.value)}>

@@ -3,8 +3,9 @@
    POST /api/uploads multipart then POST /api/media), replace, delete,
    reorder, set-primary, visibility. */
 import { useCallback, useEffect, useState } from 'react';
+import { Image as ImageIcon } from 'lucide-react';
 import { api, imgFallback, uploadFiles } from '../../api';
-import { PageHead, Pager, Field, Modal, Confirm, Empty, Skeleton, toast } from '../../components/ui';
+import { PageHero, Pager, Field, Modal, Confirm, Empty, Skeleton, toast } from '../../components/ui';
 import { asRows, fetchCompanyOptions } from './_shared';
 import { MediaUploadModal } from './CompanyDetail';
 
@@ -79,12 +80,19 @@ export default function Media() {
 
   return (
     <>
-      <PageHead eyebrow="CNCFORGE ERP • SUPER ADMIN" title="Product Media" desc="Company-scoped media index — binaries stay in Storage, metadata here."
-        actions={<button className="btn btn-primary btn-sm" onClick={() => {
+      <PageHero
+        title="Product Media Library"
+        subtitle="Multi-tenant industrial CAD captures, product photography, and media asset storage."
+        icon={ImageIcon}
+        badgeText="Digital Assets"
+        badgeColor="amber"
+        gradient="from-amber-500 via-orange-500 to-yellow-500"
+        actions={<button className="btn btn-primary btn-sm bg-amber-600 hover:bg-amber-700 border-none shadow-sm shadow-amber-600/30 text-white" onClick={() => {
           const cid = companyId === 'all' ? '' : companyId;
           setUpProducts(cid ? products : []);
           setUploading(cid || 'pick');
-        }}>+ Upload media</button>} />
+        }}>+ Upload media</button>}
+      />
       <div className="card"><div className="card-pad">
         <div className="toolbar">
           <select value={companyId} onChange={(e) => reset(setCompanyId)(e.target.value)}>

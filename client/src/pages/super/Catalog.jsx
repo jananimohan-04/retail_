@@ -2,8 +2,9 @@
    Data: GET /api/catalog (query: companyId/cat/brand/visible/avail/archived/q/page/limit). */
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { Boxes } from 'lucide-react';
 import { api, fmt, imgFallback } from '../../api';
-import { PageHead, DataTable, Pager, Empty, Skeleton, statusBadge } from '../../components/ui';
+import { PageHero, DataTable, Pager, Empty, Skeleton, statusBadge } from '../../components/ui';
 import { asRows } from './_shared';
 
 const LIMIT = 8;
@@ -32,7 +33,14 @@ export default function Catalog() {
 
   return (
     <>
-      <PageHead title="Global Catalog" />
+      <PageHero
+        icon={Boxes}
+        title="Global Master Catalog"
+        subtitle="Centralized industrial tooling inventory and catalog items spanning all registered companies and suppliers."
+        badgeText="Master Inventory"
+        badgeColor="amber"
+        gradient="from-amber-500 via-orange-500 to-yellow-600"
+      />
       <div className="card"><div className="card-pad">
         {loading ? <Skeleton h={220} /> : err ? <Empty title={'⚠️ ' + err} /> : (
           <>

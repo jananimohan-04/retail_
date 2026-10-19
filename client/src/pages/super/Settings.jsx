@@ -1,7 +1,8 @@
 /* /super/settings — global defaults form + per-company overrides (read-only). */
 import { useEffect, useState } from 'react';
+import { Sliders } from 'lucide-react';
 import { api } from '../../api';
-import { PageHead, Field, DataTable, Empty, Skeleton, toast } from '../../components/ui';
+import { PageHero, Field, DataTable, Empty, Skeleton, toast } from '../../components/ui';
 
 export default function Settings() {
   const [g, setG] = useState(null);
@@ -29,9 +30,15 @@ export default function Settings() {
 
   return (
     <div>
-      <PageHead eyebrow="CNCFORGE ERP • SUPER ADMIN • PLATFORM" title="Global Store Settings"
-        desc="Global defaults. Company-specific values override these and are never silently replaced."
-        actions={[<button key="s" className="btn btn-primary btn-sm" disabled={busy || !g} onClick={save}>Publish</button>]} />
+      <PageHero
+        title="Global Store Settings"
+        subtitle="Platform defaults, default currency, GST configuration, and multi-tenant override policies."
+        icon={Sliders}
+        badgeText="Platform Config"
+        badgeColor="rose"
+        gradient="from-rose-500 via-pink-600 to-rose-700"
+        actions={[<button key="s" className="btn btn-primary btn-sm bg-rose-600 hover:bg-rose-700 border-none shadow-sm shadow-rose-600/30 text-white" disabled={busy || !g} onClick={save}>Publish Settings</button>]}
+      />
       {err ? <Empty icon="⚠️" title="Could not load settings" sub={err} />
         : !g ? <Skeleton h={220} />
         : (

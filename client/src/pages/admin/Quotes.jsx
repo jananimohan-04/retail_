@@ -6,7 +6,7 @@ import {
   Send, Calendar, User, IndianRupee, Loader2 
 } from 'lucide-react';
 import { api, fmt } from '../../api';
-import { statusBadge, Modal, Empty, Skeleton, Pager, toast } from '../../components/ui';
+import { statusBadge, Modal, Empty, Skeleton, Pager, toast, PageHero } from '../../components/ui';
 
 const STATUSES = ['all', 'Pending', 'Quoted', 'Accepted', 'Rejected', 'Cancelled'];
 
@@ -74,17 +74,14 @@ export default function Quotes() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between gap-4 flex-wrap pb-2 border-b border-slate-200">
-        <div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-            <FileText className="w-6 h-6 text-blue-600" /> Quotation Requests (RFQs)
-          </h1>
-          <p className="text-xs text-slate-500 mt-0.5">
-            {data.total} requests • Industrial technical quotes & custom pricing pipeline
-          </p>
-        </div>
-      </div>
+      <PageHero
+        title="Quotation Requests (RFQs)"
+        subtitle={`${data.total} active requests • Technical specifications, custom pricing & negotiations.`}
+        icon={FileText}
+        badgeText="Commercial RFQs"
+        badgeColor="purple"
+        gradient="from-violet-600 via-purple-600 to-indigo-600"
+      />
 
       {/* Main Table Card */}
       <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">

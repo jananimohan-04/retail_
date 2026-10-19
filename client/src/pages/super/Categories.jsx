@@ -3,8 +3,9 @@
    error display, assign-to-company, reorder) + company-scoped section per company. */
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { FolderTree } from 'lucide-react';
 import { api } from '../../api';
-import { PageHead, DataTable, Field, Modal, Empty, Skeleton, statusBadge, toast } from '../../components/ui';
+import { PageHero, DataTable, Field, Modal, Empty, Skeleton, statusBadge, toast } from '../../components/ui';
 import { asRows, fetchCompanyOptions } from './_shared';
 
 export default function Categories() {
@@ -49,9 +50,14 @@ export default function Categories() {
 
   return (
     <>
-      <PageHead
-        eyebrow="CNCFORGE ERP • SUPER ADMIN" title={`Categories (${cats.length})`} desc="Global CNC catalog taxonomy plus company-scoped categories."
-        actions={<button className="btn btn-primary btn-sm" onClick={() => setCreating('global')}>+ New category</button>}
+      <PageHero
+        title={`Master Categories (${cats.length})`}
+        subtitle="Global taxonomy classifications, SKU aggregations, and multi-tenant catalog assignments."
+        icon={FolderTree}
+        badgeText="Catalog Taxonomy"
+        badgeColor="amber"
+        gradient="from-amber-500 via-orange-500 to-yellow-500"
+        actions={<button className="btn btn-primary btn-sm bg-amber-600 hover:bg-amber-700 border-none shadow-sm shadow-amber-600/30 text-white" onClick={() => setCreating('global')}>+ New category</button>}
       />
       <div className="card"><div className="card-pad">
         <div className="cat-row" style={{ flexWrap: 'wrap' }}>

@@ -1,7 +1,6 @@
-/* /super/quotes — all-companies RFQ table + respond modal. */
-import { useCallback, useEffect, useState } from 'react';
+import { FileText } from 'lucide-react';
 import { api, fmt } from '../../api';
-import { PageHead, DataTable, Field, statusBadge, Modal, Empty, Skeleton, Pager, toast } from '../../components/ui';
+import { PageHero, DataTable, Field, statusBadge, Modal, Empty, Skeleton, Pager, toast } from '../../components/ui';
 
 const STATUSES = ['Pending', 'Quoted', 'Accepted', 'Rejected', 'Cancelled'];
 
@@ -58,8 +57,14 @@ export default function Quotes() {
 
   return (
     <div>
-      <PageHead eyebrow="CNCFORGE ERP • SUPER ADMIN • COMMERCE" title="Quotation Requests"
-        desc="Respond maps to the ERP quotation workflow; no stock is reserved by an RFQ." />
+      <PageHero
+        icon={FileText}
+        title="RFQ Commercial Quotations"
+        subtitle="Review, analyze, and respond to custom pricing quotation inquiries submitted by industrial buyers."
+        badgeText="RFQ Commerce"
+        badgeColor="purple"
+        gradient="from-violet-600 via-purple-600 to-pink-600"
+      />
       <div className="card"><div className="card-pad">
         <div className="toolbar">
           <select value={company} onChange={(e) => { setCompany(e.target.value); refilter(status, e.target.value); }} aria-label="Company filter">

@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { api } from '../../api';
 import { useAuth } from '../../auth';
-import { Skeleton, toast } from '../../components/ui';
+import { Skeleton, toast, PageHero } from '../../components/ui';
 
 export default function Settings() {
   const { me } = useAuth();
@@ -75,26 +75,25 @@ export default function Settings() {
 
   return (
     <div className="space-y-6 w-full">
-      {/* Header */}
-      <div className="flex items-center justify-between gap-4 flex-wrap pb-2 border-b border-slate-200">
-        <div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-            <SettingsIcon className="w-6 h-6 text-blue-600" /> Storefront & Operational Settings
-          </h1>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Configured for <b className="text-slate-800">{titlePrefix}</b> commercial storefront
-          </p>
-        </div>
-        <button 
-          type="button" 
-          disabled={busy} 
-          onClick={publish}
-          className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold text-xs rounded-xl transition-all shadow-sm cursor-pointer"
-        >
-          {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-          {busy ? 'Publishing…' : 'Publish Settings'}
-        </button>
-      </div>
+      <PageHero
+        title="Storefront & Operational Settings"
+        subtitle={`Configured for ${titlePrefix} commercial storefront.`}
+        icon={SettingsIcon}
+        badgeText="Company Config"
+        badgeColor="rose"
+        gradient="from-rose-500 via-pink-600 to-rose-700"
+        actions={
+          <button 
+            type="button" 
+            disabled={busy} 
+            onClick={publish}
+            className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white font-bold text-xs rounded-xl transition-all shadow-sm shadow-rose-600/30 cursor-pointer"
+          >
+            {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+            {busy ? 'Publishing…' : 'Publish Settings'}
+          </button>
+        }
+      />
 
       {/* Main Settings Card */}
       <div className="bg-white rounded-2xl border border-slate-200/80 p-6 sm:p-8 shadow-xs space-y-6">

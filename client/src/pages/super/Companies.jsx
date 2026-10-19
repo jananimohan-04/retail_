@@ -5,8 +5,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../../api';
+import { Building2 } from 'lucide-react';
 import {
-  PageHead, Kpi, DataTable, Tabs, Modal, Field, Pager, Empty, Skeleton, statusBadge, toast
+  PageHead, PageHero, Kpi, DataTable, Tabs, Modal, Field, Pager, Empty, Skeleton, statusBadge, toast
 } from '../../components/ui';
 import { CompanyFormFields, emptyCompany, companyFromDetail, validateCompany, companyPayload } from './CompanyForm';
 import { asRows, csvDownload, fetchCompanyOptions, UserModal, UserView, RoleButton, SuspendConfirm, toggleUserActive } from './_shared';
@@ -173,8 +174,13 @@ export default function Companies({ tab: tabProp }) {
 
   return (
     <>
-      <PageHead
-        title="Company Management"
+      <PageHero
+        title="Company Hub"
+        subtitle="Manage registered enterprises, tenant administrators, user accounts, and tier permissions."
+        icon={Building2}
+        badgeText="Multi-Tenant Hub"
+        badgeColor="sky"
+        gradient="from-sky-500 via-cyan-500 to-blue-600"
         actions={<>
           <Tabs compact className="mb-0" tabs={MG_TABS} active={tab} onTab={(k) => goTab(k)} />
           <div className="h-6 w-px bg-slate-200 hidden sm:block" />
@@ -191,22 +197,22 @@ export default function Companies({ tab: tabProp }) {
               <button className="btn btn-ghost btn-sm" onClick={() => setUserModal({ preset: { role: 'company_admin' } })}>
                 + Invite Admin
               </button>
-              <button className="btn btn-primary btn-sm" onClick={() => setUserModal({ preset: { role: 'sales_regional_partner' } })}>
+              <button className="btn btn-primary btn-sm bg-sky-600 hover:bg-sky-700 border-none shadow-sm shadow-sky-600/30 text-white" onClick={() => setUserModal({ preset: { role: 'sales_regional_partner' } })}>
                 + Add User
               </button>
             </>
           ) : tab === 'roles' ? (
             <>
-              <button className="btn btn-primary btn-sm" onClick={() => setAddRoleModal(true)} title="Create new role">
+              <button className="btn btn-primary btn-sm bg-sky-600 hover:bg-sky-700 border-none shadow-sm shadow-sky-600/30 text-white" onClick={() => setAddRoleModal(true)} title="Create new role">
                 + Add Role
               </button>
             </>
           ) : (
             <>
-              <button className="btn btn-primary btn-sm" onClick={() => setUserModal({ preset: { role: 'company_admin' } })}>
+              <button className="btn btn-ghost btn-sm" onClick={() => setUserModal({ preset: { role: 'company_admin' } })}>
                 + Invite Admin
               </button>
-              <button className="btn btn-primary btn-sm" onClick={() => setCoModal({ id: '' })}>
+              <button className="btn btn-primary btn-sm bg-sky-600 hover:bg-sky-700 border-none shadow-sm shadow-sky-600/30 text-white" onClick={() => setCoModal({ id: '' })}>
                 + Create Company
               </button>
             </>
@@ -215,10 +221,10 @@ export default function Companies({ tab: tabProp }) {
       />
       {statsErr && <Empty icon="⚠️" title={'⚠️ ' + statsErr} />}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 my-1.5">
-        <Kpi small onClick={() => mgCard('all')} value={s.companies ?? '—'} label="Total companies" sub={`${s.activeCompanies ?? 0} act · ${s.suspendedCompanies ?? 0} susp`} grad="linear-gradient(135deg,#172554,#2563EB)" />
-        <Kpi small onClick={() => mgCard('users')} value={stats ? totalUsers : '—'} label="Company users" sub={`${s.admins ?? 0} admins · ${s.salesUsers ?? 0} sales`} grad="linear-gradient(135deg,#9A3412,#FF6500)" />
-        <Kpi small onClick={() => mgCard('products')} value={s.products ?? '—'} label="Products" sub="across companies" grad="linear-gradient(135deg,#0F766E,#0EA5E9)" />
-        <Kpi small onClick={() => mgCard('orders')} value={s.orders ?? '—'} label="Orders" sub="across companies" grad="linear-gradient(135deg,#14532D,#10B981)" />
+        <Kpi small onClick={() => mgCard('all')} value={s.companies ?? '—'} label="Total companies" sub={`${s.activeCompanies ?? 0} act · ${s.suspendedCompanies ?? 0} susp`} grad="linear-gradient(135deg,#0284c7,#0369a1)" />
+        <Kpi small onClick={() => mgCard('users')} value={stats ? totalUsers : '—'} label="Company users" sub={`${s.admins ?? 0} admins · ${s.salesUsers ?? 0} sales`} grad="linear-gradient(135deg,#0891b2,#0e7490)" />
+        <Kpi small onClick={() => mgCard('products')} value={s.products ?? '—'} label="Products" sub="across companies" grad="linear-gradient(135deg,#4f46e5,#4338ca)" />
+        <Kpi small onClick={() => mgCard('orders')} value={s.orders ?? '—'} label="Orders" sub="across companies" grad="linear-gradient(135deg,#7c3aed,#6d28d9)" />
       </div>
       <div className="card">
         <div className="card-pad">

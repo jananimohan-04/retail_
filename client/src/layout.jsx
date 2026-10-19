@@ -14,7 +14,12 @@ import { getCart } from './api';
 
 import { MENU_CATALOG, ICON_MAP, getPageById } from './menuCatalog';
 
-function sideLink(to, label, IconComponent, badge = null, onClick = null, mini = false) {
+function sideLink(to, label, IconComponent, badge = null, onClick = null, mini = false, theme = null) {
+  const activeClass = theme?.activeLink || 'bg-blue-50 text-blue-700 font-bold border-blue-200/60 shadow-xs';
+  const indicatorColor = theme?.indicator || 'bg-blue-600';
+  const activeIconColor = theme?.activeIcon || 'text-blue-600';
+  const badgeClass = theme?.badge || 'bg-blue-600 text-white';
+
   return (
     <NavLink
       key={to}
@@ -22,10 +27,10 @@ function sideLink(to, label, IconComponent, badge = null, onClick = null, mini =
       onClick={onClick}
       title={label}
       className={({ isActive }) => `
-        group relative flex items-center ${mini ? 'justify-center p-2.5 w-10 h-10 mx-auto' : 'gap-3 px-3.5 py-2.5'} rounded-xl text-xs font-semibold transition-all duration-200
+        group relative flex items-center ${mini ? 'justify-center p-2.5 w-10 h-10 mx-auto' : 'gap-3 px-3 py-2.5'} rounded-xl text-xs font-semibold transition-all duration-200
         ${isActive 
-          ? 'bg-blue-50 text-blue-700 font-bold border border-blue-200/60 shadow-xs' 
-          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80'}
+          ? `${activeClass} font-bold border` 
+          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/90'}
       `}
     >
       {({ isActive }) => (
@@ -33,20 +38,24 @@ function sideLink(to, label, IconComponent, badge = null, onClick = null, mini =
           {isActive && (
             <motion.span
               layoutId="activeIndicator"
-              className="absolute left-0 top-2 bottom-2 w-1 bg-orange-500 rounded-r-full"
-              transition={{ type: 'spring', stiffness: 350, damping: 30 }}
+              className={`absolute left-0 top-2 bottom-2 w-1.5 rounded-r-full shadow-xs ${indicatorColor}`}
+              transition={{ type: 'spring', stiffness: 380, damping: 30 }}
             />
           )}
-          <span className={`transition-colors ${isActive ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-600'}`}>
+          <span className={`p-1 rounded-lg transition-colors ${
+            isActive 
+              ? `${activeIconColor} bg-white/80 shadow-2xs` 
+              : 'text-slate-400 group-hover:text-slate-700 group-hover:bg-slate-200/60'
+          }`}>
             {IconComponent && <IconComponent className="w-4 h-4 flex-shrink-0" />}
           </span>
-          {!mini && <span className="truncate flex-1">{label}</span>}
+          {!mini && <span className="truncate flex-1 tracking-tight">{label}</span>}
           {!mini && badge ? (
-            <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold tracking-wide ${isActive ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-700'}`}>
+            <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold tracking-wide ${isActive ? badgeClass : 'bg-slate-200 text-slate-700'}`}>
               {badge}
             </span>
           ) : mini && badge ? (
-            <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-orange-500" />
+            <span className={`absolute top-1 right-1 w-2.5 h-2.5 rounded-full ${indicatorColor} ring-2 ring-white`} />
           ) : null}
         </>
       )}
@@ -85,15 +94,18 @@ export function Sidebar({ counts, onItemClick, mini = false }) {
           {idx > 0 && mini && <div className="w-8 border-t border-slate-100 my-1 mx-auto" />}
           <div>
             {!mini && (
-              <div className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-3.5 mb-1.5 truncate">
-                {role === 'company_admin' && cat.id === 'operations' ? `${companyTitle} • ${cat.label}` : cat.label}
+              <div className="flex items-center gap-1.5 px-3.5 mb-1.5">
+                <span className={`w-1.5 h-1.5 rounded-full ${cat.dotClass || 'bg-slate-400'}`} />
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 truncate">
+                  {role === 'company_admin' && cat.id === 'operations' ? `${companyTitle} • ${cat.label}` : cat.label}
+                </span>
               </div>
             )}
             <div className={mini ? 'flex flex-col gap-1 items-center' : 'space-y-0.5'}>
               {cat.items.map(item => {
                 const IconComp = ICON_MAP[item.icon] || Boxes;
                 const badge = item.badgeKey ? (counts?.[item.badgeKey] || '') : null;
-                return sideLink(item.path, item.label, IconComp, badge, onItemClick, mini);
+                return sideLink(item.path, item.label, IconComp, badge, onItemClick, mini, item.theme);
               })}
             </div>
           </div>
@@ -273,39 +285,39 @@ export const Topbar = forwardRef(function Topbar({ onMobileToggle, sidebarOpen, 
               <span className="text-[10px] uppercase font-extrabold text-blue-600 tracking-wider">({roleLabel})</span>
             </Link>
           ) : (
-            <div className="hidden xl:flex items-center gap-1 p-1 bg-slate-100 rounded-full border border-slate-200/80 text-[11px] font-bold flex-wrap">
+            <div className="hidden xl:flex items-center gap-1 p-1 bg-slate-100/90 rounded-full border border-slate-200/80 text-[11px] font-bold flex-wrap shadow-2xs">
               <button
                 type="button"
                 onClick={() => loginAs('super_admin')}
-                className={`px-2 py-1 rounded-full transition-all cursor-pointer ${me?.role === 'super_admin' ? 'bg-slate-900 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
+                className={`px-2.5 py-1 rounded-full transition-all cursor-pointer ${me?.role === 'super_admin' ? 'bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white shadow-xs shadow-indigo-950/40 ring-1 ring-white/20' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'}`}
               >
                 Super
               </button>
               <button
                 type="button"
                 onClick={() => loginAs('company_admin')}
-                className={`px-2 py-1 rounded-full transition-all cursor-pointer ${me?.role === 'company_admin' ? 'bg-slate-900 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
+                className={`px-2.5 py-1 rounded-full transition-all cursor-pointer ${me?.role === 'company_admin' ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-xs shadow-blue-500/30' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'}`}
               >
                 Admin
               </button>
               <button
                 type="button"
                 onClick={() => loginAs('content_writer')}
-                className={`px-2 py-1 rounded-full transition-all cursor-pointer ${me?.role === 'content_writer' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
+                className={`px-2.5 py-1 rounded-full transition-all cursor-pointer ${me?.role === 'content_writer' ? 'bg-gradient-to-r from-fuchsia-600 to-pink-600 text-white shadow-xs shadow-fuchsia-500/30' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'}`}
               >
                 Content
               </button>
               <button
                 type="button"
                 onClick={() => loginAs('finance')}
-                className={`px-2 py-1 rounded-full transition-all cursor-pointer ${me?.role === 'finance' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
+                className={`px-2.5 py-1 rounded-full transition-all cursor-pointer ${me?.role === 'finance' ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-xs shadow-emerald-500/30' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'}`}
               >
                 Finance
               </button>
               <button
                 type="button"
                 onClick={() => loginAs('sales_regional_partner')}
-                className={`px-2 py-1 rounded-full transition-all cursor-pointer ${me?.role === 'sales_regional_partner' ? 'bg-emerald-600 text-white shadow-xs' : 'text-emerald-700 hover:bg-emerald-50'}`}
+                className={`px-2.5 py-1 rounded-full transition-all cursor-pointer ${me?.role === 'sales_regional_partner' ? 'bg-gradient-to-r from-teal-600 to-cyan-600 text-white shadow-xs shadow-teal-500/30' : 'text-teal-700 hover:bg-teal-50'}`}
                 title="Regional Partner (+10% Pricing)"
               >
                 Regional (+10%)
@@ -313,7 +325,7 @@ export const Topbar = forwardRef(function Topbar({ onMobileToggle, sidebarOpen, 
               <button
                 type="button"
                 onClick={() => loginAs('sales_channel_partner')}
-                className={`px-2 py-1 rounded-full transition-all cursor-pointer ${me?.role === 'sales_channel_partner' ? 'bg-purple-600 text-white shadow-xs' : 'text-purple-700 hover:bg-purple-50'}`}
+                className={`px-2.5 py-1 rounded-full transition-all cursor-pointer ${me?.role === 'sales_channel_partner' ? 'bg-gradient-to-r from-purple-600 to-violet-600 text-white shadow-xs shadow-purple-500/30' : 'text-purple-700 hover:bg-purple-50'}`}
                 title="Channel Partner (+15% Pricing)"
               >
                 Channel (+15%)
@@ -321,7 +333,7 @@ export const Topbar = forwardRef(function Topbar({ onMobileToggle, sidebarOpen, 
               <button
                 type="button"
                 onClick={() => loginAs('sales_referral_partner')}
-                className={`px-2 py-1 rounded-full transition-all cursor-pointer ${me?.role === 'sales_referral_partner' ? 'bg-teal-600 text-white shadow-xs' : 'text-teal-700 hover:bg-teal-50'}`}
+                className={`px-2.5 py-1 rounded-full transition-all cursor-pointer ${me?.role === 'sales_referral_partner' ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-xs shadow-cyan-500/30' : 'text-cyan-700 hover:bg-cyan-50'}`}
                 title="Referral Partner (+5% Pricing)"
               >
                 Referral (+5%)
@@ -329,7 +341,7 @@ export const Topbar = forwardRef(function Topbar({ onMobileToggle, sidebarOpen, 
               <button
                 type="button"
                 onClick={() => loginAs('sales_user')}
-                className={`px-2 py-1 rounded-full transition-all cursor-pointer ${me?.role === 'sales_user' ? 'bg-slate-900 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
+                className={`px-2.5 py-1 rounded-full transition-all cursor-pointer ${me?.role === 'sales_user' ? 'bg-gradient-to-r from-orange-600 to-amber-600 text-white shadow-xs shadow-orange-500/30' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'}`}
                 title="Direct Sales (Base Price)"
               >
                 Direct Sales
@@ -434,13 +446,13 @@ export function Shell({ counts, noSide, children }) {
           </aside>
         )}
 
-        <div className="flex-1 min-w-0 flex flex-col justify-between w-full">
+        <div className="flex-1 min-w-0 flex flex-col justify-between w-full bg-gradient-to-b from-slate-50/50 via-white to-slate-50/70">
           <main className="w-full flex-1 p-4 sm:p-6 lg:p-6">
             <motion.div
               key={location.pathname}
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.18, ease: 'easeOut' }}
+              initial={{ opacity: 0, y: 8, scale: 0.998 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
               className="w-full"
             >
               {children}

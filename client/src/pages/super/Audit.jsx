@@ -1,7 +1,8 @@
 /* /super/audit — administrative audit trail with filters + pagination. */
 import { useCallback, useEffect, useState } from 'react';
+import { ShieldCheck } from 'lucide-react';
 import { api } from '../../api';
-import { PageHead, DataTable, Empty, Skeleton, Pager } from '../../components/ui';
+import { PageHero, DataTable, Empty, Skeleton, Pager } from '../../components/ui';
 
 export default function Audit() {
   const [rows, setRows] = useState(null);
@@ -42,8 +43,14 @@ export default function Audit() {
 
   return (
     <div>
-      <PageHead eyebrow="CNCFORGE ERP • SUPER ADMIN • PLATFORM" title="Audit Logs"
-        desc="Acting user, action, entity, company and timestamp. No secrets are logged." />
+      <PageHero
+        title="Audit Logs & Compliance Trail"
+        subtitle="Acting security principal, action triggers, entity IDs, tenant scope, and immutable audit timestamps."
+        icon={ShieldCheck}
+        badgeText="Governance & Security"
+        badgeColor="rose"
+        gradient="from-rose-500 via-pink-600 to-rose-700"
+      />
       <div className="card"><div className="card-pad">
         <div className="toolbar">
           <input placeholder="🔍 Search actor, summary, entity…" value={q} onChange={(e) => { setQ(e.target.value); refilter(company, action, e.target.value); }} aria-label="Search audit" />

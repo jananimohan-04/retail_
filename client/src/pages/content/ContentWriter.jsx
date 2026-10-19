@@ -4,10 +4,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api, uploadFiles, imgFallback } from '../../api';
-import { PageHead, Empty, Skeleton, Pager, Field, Modal, Confirm, toast } from '../../components/ui';
+import { PageHero, PageHead, Empty, Skeleton, Pager, Field, Modal, Confirm, toast } from '../../components/ui';
 import {
   ArrowLeft, CheckCircle2, CircleAlert, FileText, Film, ImageIcon,
-  Loader2, MonitorPlay, Package, Plus, Save, Send, Trash2, Upload
+  Loader2, MonitorPlay, Package, Plus, Save, Send, Trash2, Upload, PenLine
 } from 'lucide-react';
 
 /* ---------------------------------------------------------------- stage chips */
@@ -108,11 +108,14 @@ function ContentQueue() {
 
   return (
     <>
-      <PageHead
-        eyebrow="Publishing Workflow · Step 1 of 2"
-        title="Content Writer"
-        desc="Products received automatically from ERP Inventory wait here. Write the sales copy and attach media, then submit to Finance for pricing — the listing stays hidden from Salespeople until Finance approves it."
-        actions={<Link className="btn btn-ghost btn-sm" to="/finance">Finance queue →</Link>}
+      <PageHero
+        icon={PenLine}
+        title="Content Writer Workspace"
+        subtitle="Prepare marketing copy, technical specifications, CAD sheets, and multimedia assets before submission to Finance review."
+        badgeText="Publishing Step 1"
+        badgeColor="fuchsia"
+        gradient="from-fuchsia-600 via-pink-600 to-purple-600"
+        actions={<Link className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors" to="/finance">Finance queue →</Link>}
       />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">

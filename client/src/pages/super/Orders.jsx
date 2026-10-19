@@ -1,8 +1,8 @@
 /* /super/orders — all-companies order table (previously a dead menu rendering home). */
 import { useCallback, useEffect, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Receipt } from 'lucide-react';
 import { api, fmt } from '../../api';
-import { PageHead, DataTable, statusBadge, Empty, Skeleton, Pager, toast } from '../../components/ui';
+import { PageHero, DataTable, statusBadge, Empty, Skeleton, Pager, toast } from '../../components/ui';
 
 const STATUSES = ['Pending', 'Confirmed', 'Processing', 'Ready for Dispatch', 'Shipped', 'Delivered', 'Cancelled'];
 
@@ -45,8 +45,19 @@ export default function Orders() {
 
   return (
     <div>
-      <PageHead eyebrow="CNCFORGE ERP • SUPER ADMIN • COMMERCE" title="All Orders"
-        actions={[<button key="p" className="btn btn-ghost btn-sm" onClick={() => window.print()}>🖨️ Print</button>]} />
+      <PageHero
+        icon={Receipt}
+        title="Platform Orders Fulfillment"
+        subtitle="Track, process, and inspect customer procurement purchase orders across all registered company storefronts."
+        badgeText="Commerce Hub"
+        badgeColor="purple"
+        gradient="from-purple-600 via-violet-600 to-indigo-600"
+        actions={
+          <button className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer" onClick={() => window.print()}>
+            🖨️ Print Report
+          </button>
+        }
+      />
       <div className="card"><div className="card-pad">
         <div className="toolbar">
           <input placeholder="🔍 Search order / company / PO…" value={q} onChange={(e) => set('q', e.target.value)} aria-label="Search orders" />

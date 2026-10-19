@@ -1,8 +1,9 @@
 /* Platform Dashboard — route /super/dashboard. All metrics from GET /api/stats/platform. */
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { LayoutDashboard } from 'lucide-react';
 import { api, fmt } from '../../api';
-import { PageHead, Kpi, DataTable, Bars, Empty, Skeleton, statusBadge } from '../../components/ui';
+import { PageHero, PageHead, Kpi, DataTable, Bars, Empty, Skeleton, statusBadge } from '../../components/ui';
 
 const ST_COLORS = {
   Pending: '#D97706', Confirmed: '#2563EB', Processing: '#7C3AED', 'Ready for Dispatch': '#C026D3',
@@ -23,16 +24,24 @@ export default function Dashboard() {
 
   return (
     <>
-      <div className="section-head">
-        <div>
-          <p className="hint" style={{ margin: 0 }}>CNCFORGE ERP • SUPER ADMIN</p>
-          <h2 style={{ fontSize: 22 }}>Platform Dashboard</h2>
-        </div>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <Link className="btn btn-ghost btn-sm" to="/super/audit">Audit trail</Link>
-          <Link className="btn btn-primary btn-sm" to="/super/companies/new">+ New company</Link>
-        </div>
-      </div>
+      <PageHero
+        icon={LayoutDashboard}
+        title="Platform Executive Dashboard"
+        subtitle="Real-time multi-tenant health, cross-company operations, order pipeline status, and manufacturing fulfillment metrics."
+        badgeText="Platform Core"
+        badgeColor="indigo"
+        gradient="from-indigo-600 via-blue-600 to-cyan-500"
+        actions={
+          <>
+            <Link className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors" to="/super/audit">
+              Audit Trail
+            </Link>
+            <Link className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-xs shadow-blue-500/30 transition-all" to="/super/companies/new">
+              + New Company
+            </Link>
+          </>
+        }
+      />
       <div className="stat-grid">
         <Kpi to="#/super/companies?tab=companies" value={s.companies} label="Total companies" sub={`${s.activeCompanies} active • ${s.suspendedCompanies} suspended`} grad="linear-gradient(135deg,#172554,#2563EB)" />
         <Kpi to="#/super/companies?tab=admins" value={s.admins} label="Company admins" sub="across all companies" grad="linear-gradient(135deg,#6D28D9,#7C3AED)" />

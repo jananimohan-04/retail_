@@ -1,8 +1,9 @@
 /* Company catalog — mirrors legacy vProducts + toggleVis. Server-scoped to own company. */
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { Boxes } from 'lucide-react';
 import { api, fmt, imgFallback } from '../../api';
-import { PageHead, DataTable, Empty, Skeleton, Pager, Confirm, toast } from '../../components/ui';
+import { PageHero, DataTable, Empty, Skeleton, Pager, Confirm, toast } from '../../components/ui';
 
 function norm(d) {
   if (!d) return { rows: [], total: 0, page: 1, limit: 8 };
@@ -43,9 +44,19 @@ export default function Products() {
 
   return (
     <>
-      <PageHead
-        title={'Industrial catalog (' + data.total + ' SKUs)'}
-        actions={<><Link className="btn btn-ghost btn-sm" to="/admin/media">Media library</Link> <Link className="btn btn-primary btn-sm" to="/admin/products/new">+ Add product</Link></>}
+      <PageHero
+        title={'Industrial Catalog (' + data.total + ' SKUs)'}
+        subtitle="Catalog inventory, pricing, stock levels, and visibility status."
+        icon={Boxes}
+        badgeText="Inventory Management"
+        badgeColor="emerald"
+        gradient="from-emerald-500 via-teal-600 to-green-600"
+        actions={
+          <>
+            <Link className="btn btn-ghost btn-sm" to="/admin/media">Media library</Link>
+            <Link className="btn btn-primary btn-sm bg-emerald-600 hover:bg-emerald-700 border-none shadow-sm shadow-emerald-600/30 text-white" to="/admin/products/new">+ Add product</Link>
+          </>
+        }
       />
       <div className="card"><div className="card-pad">
         <div className="toolbar"><input placeholder="Search name, SKU, brand, MPN…" value={q} onChange={(e) => setQ(e.target.value)} /></div>

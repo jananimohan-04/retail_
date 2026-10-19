@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { api } from '../../api';
 import { useAuth } from '../../auth';
-import { statusBadge, Modal, Empty, Skeleton, toast } from '../../components/ui';
+import { statusBadge, Modal, Empty, Skeleton, toast, PageHero } from '../../components/ui';
 
 export default function Users() {
   const { me } = useAuth();
@@ -89,22 +89,23 @@ export default function Users() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between gap-4 flex-wrap pb-2 border-b border-slate-200">
-        <div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-            <UsersIcon className="w-6 h-6 text-blue-600" /> Authorized Sales Users ({users.length})
-          </h1>
-          <p className="text-xs text-slate-500 mt-0.5">Manage team access permissions and sales order ownership</p>
-        </div>
-        <button 
-          type="button" 
-          onClick={() => { setMErr(''); setShow(true); }}
-          className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl transition-all shadow-sm cursor-pointer"
-        >
-          <Plus className="w-3.5 h-3.5" /> Invite Sales User
-        </button>
-      </div>
+      <PageHero
+        title={`Authorized Sales Users (${users.length})`}
+        subtitle="Manage internal sales team members, tier assignments, and commercial order ownership."
+        icon={UsersIcon}
+        badgeText="Team Access"
+        badgeColor="sky"
+        gradient="from-sky-500 via-cyan-500 to-blue-600"
+        actions={
+          <button 
+            type="button" 
+            onClick={() => { setMErr(''); setShow(true); }}
+            className="inline-flex items-center gap-1.5 px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs rounded-xl transition-all shadow-sm shadow-sky-600/30 cursor-pointer"
+          >
+            <Plus className="w-3.5 h-3.5" /> Invite Sales User
+          </button>
+        }
+      />
 
       {/* Main Table Card */}
       <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">

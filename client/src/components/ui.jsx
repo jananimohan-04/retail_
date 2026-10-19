@@ -55,31 +55,32 @@ export function ToastHost() {
 
 /* ---------- Status Badges ---------- */
 const STATUS_STYLES = {
-  Pending: { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200/80', dot: 'bg-amber-500' },
-  Confirmed: { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200/80', dot: 'bg-blue-500' },
-  Processing: { bg: 'bg-indigo-50', text: 'text-indigo-700', border: 'border-indigo-200/80', dot: 'bg-indigo-500' },
-  'Ready for Dispatch': { bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200/80', dot: 'bg-purple-500' },
-  Shipped: { bg: 'bg-cyan-50', text: 'text-cyan-700', border: 'border-cyan-200/80', dot: 'bg-cyan-500' },
-  Delivered: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200/80', dot: 'bg-emerald-500' },
-  Cancelled: { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200/80', dot: 'bg-red-500' },
-  Quoted: { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200/80', dot: 'bg-blue-500' },
-  Accepted: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200/80', dot: 'bg-emerald-500' },
-  Rejected: { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200/80', dot: 'bg-red-500' },
-  active: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200/80', dot: 'bg-emerald-500' },
-  suspended: { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200/80', dot: 'bg-red-500' }
+  Pending: { bg: 'bg-amber-50/90', text: 'text-amber-800', border: 'border-amber-300/80', dot: 'bg-amber-500 shadow-amber-500/50', glow: 'shadow-xs shadow-amber-200/50' },
+  Confirmed: { bg: 'bg-blue-50/90', text: 'text-blue-800', border: 'border-blue-300/80', dot: 'bg-blue-500 shadow-blue-500/50', glow: 'shadow-xs shadow-blue-200/50' },
+  Processing: { bg: 'bg-indigo-50/90', text: 'text-indigo-800', border: 'border-indigo-300/80', dot: 'bg-indigo-500 shadow-indigo-500/50', glow: 'shadow-xs shadow-indigo-200/50' },
+  'Ready for Dispatch': { bg: 'bg-purple-50/90', text: 'text-purple-800', border: 'border-purple-300/80', dot: 'bg-purple-500 shadow-purple-500/50', glow: 'shadow-xs shadow-purple-200/50' },
+  Shipped: { bg: 'bg-cyan-50/90', text: 'text-cyan-800', border: 'border-cyan-300/80', dot: 'bg-cyan-500 shadow-cyan-500/50', glow: 'shadow-xs shadow-cyan-200/50' },
+  Delivered: { bg: 'bg-emerald-50/90', text: 'text-emerald-800', border: 'border-emerald-300/80', dot: 'bg-emerald-500 shadow-emerald-500/50', glow: 'shadow-xs shadow-emerald-200/50' },
+  Cancelled: { bg: 'bg-rose-50/90', text: 'text-rose-800', border: 'border-rose-300/80', dot: 'bg-rose-500 shadow-rose-500/50', glow: 'shadow-xs shadow-rose-200/50' },
+  Quoted: { bg: 'bg-sky-50/90', text: 'text-sky-800', border: 'border-sky-300/80', dot: 'bg-sky-500 shadow-sky-500/50', glow: 'shadow-xs shadow-sky-200/50' },
+  Accepted: { bg: 'bg-teal-50/90', text: 'text-teal-800', border: 'border-teal-300/80', dot: 'bg-teal-500 shadow-teal-500/50', glow: 'shadow-xs shadow-teal-200/50' },
+  Rejected: { bg: 'bg-red-50/90', text: 'text-red-800', border: 'border-red-300/80', dot: 'bg-red-500 shadow-red-500/50', glow: 'shadow-xs shadow-red-200/50' },
+  active: { bg: 'bg-emerald-50/90', text: 'text-emerald-800', border: 'border-emerald-300/80', dot: 'bg-emerald-500 shadow-emerald-500/50', glow: 'shadow-xs shadow-emerald-200/50' },
+  suspended: { bg: 'bg-rose-50/90', text: 'text-rose-800', border: 'border-rose-300/80', dot: 'bg-rose-500 shadow-rose-500/50', glow: 'shadow-xs shadow-rose-200/50' }
 };
 
 export function StatusBadge({ status }) {
   const conf = STATUS_STYLES[status] || {
-    bg: 'bg-slate-100',
+    bg: 'bg-slate-50',
     text: 'text-slate-700',
     border: 'border-slate-200',
-    dot: 'bg-slate-400'
+    dot: 'bg-slate-400',
+    glow: ''
   };
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border tracking-wide uppercase ${conf.bg} ${conf.text} ${conf.border}`}
+      className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold border tracking-wide uppercase transition-all ${conf.bg} ${conf.text} ${conf.border} ${conf.glow}`}
     >
       <span className={`w-1.5 h-1.5 rounded-full ${conf.dot} ${status === 'Pending' ? 'animate-pulse' : ''}`} />
       <span>{status}</span>
@@ -89,6 +90,72 @@ export function StatusBadge({ status }) {
 
 export function statusBadge(status) {
   return <StatusBadge status={status} />;
+}
+
+/* ---------- Themed Page Hero / Header Banner ---------- */
+export function PageHero({
+  icon: IconComponent,
+  title,
+  subtitle,
+  badgeText,
+  badgeColor = 'blue',
+  gradient = 'from-blue-600 to-indigo-600',
+  actions
+}) {
+  const BADGE_COLORS = {
+    blue: 'bg-blue-50 text-blue-700 border-blue-200',
+    indigo: 'bg-indigo-50 text-indigo-700 border-indigo-200',
+    sky: 'bg-sky-50 text-sky-700 border-sky-200',
+    amber: 'bg-amber-50 text-amber-800 border-amber-200',
+    emerald: 'bg-emerald-50 text-emerald-800 border-emerald-200',
+    purple: 'bg-purple-50 text-purple-800 border-purple-200',
+    rose: 'bg-rose-50 text-rose-800 border-rose-200',
+    fuchsia: 'bg-fuchsia-50 text-fuchsia-800 border-fuchsia-200',
+    teal: 'bg-teal-50 text-teal-800 border-teal-200',
+    orange: 'bg-orange-50 text-orange-800 border-orange-200'
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.25, ease: 'easeOut' }}
+      className="relative overflow-hidden bg-white rounded-2xl border border-slate-200/90 p-5 sm:p-6 shadow-xs mb-6"
+    >
+      {/* Ambient background glow decoration */}
+      <div className={`absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 rounded-full bg-gradient-to-br ${gradient} opacity-5 blur-3xl pointer-events-none`} />
+      <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-start sm:items-center gap-3.5">
+          {IconComponent && (
+            <div className={`p-3 rounded-2xl bg-gradient-to-br ${gradient} text-white shadow-md shadow-blue-900/10 flex-shrink-0`}>
+              <IconComponent className="w-5 h-5 sm:w-6 sm:h-6" />
+            </div>
+          )}
+          <div>
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">{title}</h1>
+              {badgeText && (
+                <span className={`px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wide border ${BADGE_COLORS[badgeColor] || BADGE_COLORS.blue}`}>
+                  {badgeText}
+                </span>
+              )}
+            </div>
+            {subtitle && (
+              <p className="text-xs sm:text-sm text-slate-500 mt-1 leading-relaxed max-w-3xl">
+                {subtitle}
+              </p>
+            )}
+          </div>
+        </div>
+
+        {actions && (
+          <div className="flex items-center gap-2 flex-wrap self-start md:self-auto">
+            {actions}
+          </div>
+        )}
+      </div>
+    </motion.div>
+  );
 }
 
 /* ---------- Modal Dialog ---------- */

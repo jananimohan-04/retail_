@@ -7,7 +7,7 @@ import {
   Eye, Boxes, Sparkles 
 } from 'lucide-react';
 import { api, imgFallback } from '../../api';
-import { Empty, Skeleton } from '../../components/ui';
+import { Empty, Skeleton, PageHero } from '../../components/ui';
 
 export default function Media() {
   const [prods, setProds] = useState(null);
@@ -36,21 +36,22 @@ export default function Media() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between gap-4 flex-wrap pb-2 border-b border-slate-200">
-        <div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-            <ImageIcon className="w-6 h-6 text-blue-600" /> Catalog Media Library ({cells.length})
-          </h1>
-          <p className="text-xs text-slate-500 mt-0.5">High-definition industrial product photography and CAD captures</p>
-        </div>
-        <Link 
-          to="/admin/products/new"
-          className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl transition-all shadow-sm cursor-pointer"
-        >
-          <Plus className="w-3.5 h-3.5" /> Upload Media via Product
-        </Link>
-      </div>
+      <PageHero
+        title={`Catalog Media Library (${cells.length})`}
+        subtitle="High-definition industrial product photography, video demonstrations, and CAD captures."
+        icon={ImageIcon}
+        badgeText="Digital Assets"
+        badgeColor="amber"
+        gradient="from-amber-500 via-orange-500 to-yellow-500"
+        actions={
+          <Link 
+            to="/admin/products/new"
+            className="inline-flex items-center gap-1.5 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl transition-all shadow-sm shadow-amber-600/30 cursor-pointer"
+          >
+            <Plus className="w-3.5 h-3.5" /> Upload Media via Product
+          </Link>
+        }
+      />
 
       {/* Media Grid */}
       <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">

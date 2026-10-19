@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { api } from '../../api';
 import { useAuth } from '../../auth';
-import { Modal, Empty, Skeleton, toast } from '../../components/ui';
+import { Modal, Empty, Skeleton, toast, PageHero } from '../../components/ui';
 
 export default function Categories() {
   const { me } = useAuth();
@@ -87,22 +87,23 @@ export default function Categories() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between gap-4 flex-wrap pb-2 border-b border-slate-200">
-        <div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-            <FolderTree className="w-6 h-6 text-blue-600" /> Catalog Taxonomies ({cats.length})
-          </h1>
-          <p className="text-xs text-slate-500 mt-0.5">Custom category classifications & SKU counts for your company</p>
-        </div>
-        <button 
-          type="button" 
-          onClick={openAdd}
-          className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl transition-all shadow-sm cursor-pointer"
-        >
-          <Plus className="w-3.5 h-3.5" /> New Category
-        </button>
-      </div>
+      <PageHero
+        title={`Catalog Taxonomies (${cats.length})`}
+        subtitle="Custom category classifications and SKU distributions for your enterprise catalog."
+        icon={FolderTree}
+        badgeText="Taxonomy"
+        badgeColor="amber"
+        gradient="from-amber-500 via-orange-500 to-yellow-500"
+        actions={
+          <button 
+            type="button" 
+            onClick={openAdd}
+            className="inline-flex items-center gap-1.5 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl transition-all shadow-sm shadow-amber-600/30 cursor-pointer"
+          >
+            <Plus className="w-3.5 h-3.5" /> New Category
+          </button>
+        }
+      />
 
       {/* Category Pills Strip */}
       <div className="flex items-center gap-2 overflow-x-auto pb-2">
