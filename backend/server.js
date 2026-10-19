@@ -165,6 +165,8 @@ function defaultRoles() {
   ];
 }
 
+const PARTNER_ROLE_IDS = ['sales_user', 'sales_partner', 'sales_regional_partner', 'sales_channel_partner', 'sales_referral_partner'];
+
 function ensureRolePermissions() {
   if (!Array.isArray(db.roles)) db.roles = defaultRoles();
   db.roles.forEach(r => {
@@ -175,6 +177,17 @@ function ensureRolePermissions() {
       r.menuPermissions.push('super_access');
     }
   });
+
+  // Keep partner role permissions in sync across all sales partner sub-tiers
+  const canonicalPartner = db.roles.find(r => r.id === 'sales_user') || db.roles.find(r => PARTNER_ROLE_IDS.includes(r.id));
+  if (canonicalPartner && Array.isArray(canonicalPartner.menuPermissions)) {
+    db.roles.forEach(r => {
+      if (PARTNER_ROLE_IDS.includes(r.id) || (r.id && r.id.startsWith('sales_')) || r.category === 'sales_partner') {
+        r.menuPermissions = [...canonicalPartner.menuPermissions];
+      }
+    });
+  }
+
   if (Array.isArray(db.users)) {
     db.users.forEach(u => {
       if (!u.menuOverrides || typeof u.menuOverrides !== 'object') {
@@ -189,7 +202,12 @@ function getEffectivePermissionsForUser(uOrCtx) {
   const email = (uOrCtx.email || '').toLowerCase();
   const u = email ? (db.users || []).find(x => (x.email || '').toLowerCase() === email) : (uOrCtx.id ? (db.users || []).find(x => x.id === uOrCtx.id) : null);
   const roleId = (u && u.role) || uOrCtx.role || 'sales_user';
-  const roleObj = (db.roles || []).find(r => r.id === roleId);
+  
+  const isPartner = PARTNER_ROLE_IDS.includes(roleId) || (typeof roleId === 'string' && roleId.startsWith('sales_'));
+  let roleObj = (db.roles || []).find(r => r.id === roleId);
+  if ((!roleObj || !Array.isArray(roleObj.menuPermissions) || roleObj.menuPermissions.length === 0) && isPartner) {
+    roleObj = (db.roles || []).find(r => r.id === 'sales_user') || (db.roles || []).find(r => PARTNER_ROLE_IDS.includes(r.id));
+  }
 
   // 1. Base role permissions
   const rolePerms = new Set(roleObj && Array.isArray(roleObj.menuPermissions) && roleObj.menuPermissions.length > 0
@@ -690,20 +708,49 @@ app.get('/api/permissions/catalog', (req, res) => {
   ok(res, MENU_CATALOG);
 });
 
-// 2. Get all roles with configured permissions
+// 2. Get all roles with configured permissions (consolidated, no duplicates)
 app.get('/api/permissions/roles', (req, res) => {
   if (!isAdmin(req)) return res.status(403).json({ error: 'admin only' });
   ensureRolePermissions();
-  const list = (db.roles || []).map(r => ({
-    id: r.id,
-    name: r.name,
-    category: r.category,
-    isSystem: !!r.isSystem,
-    markupPct: r.markupPct,
-    menuPermissions: r.menuPermissions || defaultPermissionsForRole(r.id),
-    userCount: (db.users || []).filter(u => u.role === r.id).length
-  }));
-  ok(res, list);
+
+  const canonicalPartner = (db.roles || []).find(r => r.id === 'sales_user') || (db.roles || []).find(r => PARTNER_ROLE_IDS.includes(r.id));
+  const partnerPerms = canonicalPartner?.menuPermissions || defaultPermissionsForRole('sales_user');
+  const totalPartnerUsers = (db.users || []).filter(u => PARTNER_ROLE_IDS.includes(u.role) || (u.role && u.role.startsWith('sales_'))).length;
+
+  const result = [];
+  let partnerAdded = false;
+
+  (db.roles || []).forEach(r => {
+    const isPartner = PARTNER_ROLE_IDS.includes(r.id) || (r.category === 'sales_partner' && r.isSystem);
+    if (isPartner) {
+      if (!partnerAdded) {
+        result.push({
+          id: 'sales_user',
+          name: 'Sales Partner',
+          category: 'sales_partner',
+          isSystem: true,
+          markupPct: 0,
+          menuPermissions: partnerPerms,
+          userCount: totalPartnerUsers,
+          description: 'Role permissions template for all Sales Partners (Regional, Channel, Referral, and Direct Sales).'
+        });
+        partnerAdded = true;
+      }
+    } else {
+      result.push({
+        id: r.id,
+        name: r.name,
+        category: r.category,
+        isSystem: !!r.isSystem,
+        markupPct: r.markupPct,
+        menuPermissions: r.menuPermissions || defaultPermissionsForRole(r.id),
+        userCount: (db.users || []).filter(u => u.role === r.id).length,
+        description: r.description
+      });
+    }
+  });
+
+  ok(res, result);
 });
 
 // 3. Update role default menu permissions
@@ -712,9 +759,9 @@ app.patch('/api/permissions/roles/:id', (req, res) => {
     return res.status(403).json({ error: 'Only Super Admin can configure role menu permissions' });
   }
   ensureRolePermissions();
-  const role = (db.roles || []).find(r => r.id === req.params.id);
-  if (!role) return res.status(404).json({ error: 'Role not found' });
-  
+
+  const isPartnerTarget = PARTNER_ROLE_IDS.includes(req.params.id) || req.params.id.startsWith('sales_');
+
   const { menuPermissions } = req.body;
   if (!Array.isArray(menuPermissions)) {
     return res.status(400).json({ error: 'menuPermissions must be an array of page IDs' });
@@ -722,13 +769,37 @@ app.patch('/api/permissions/roles/:id', (req, res) => {
 
   // Precedence safeguard: super_admin role must ALWAYS retain super_access
   const finalPerms = [...new Set(menuPermissions)];
-  if (role.id === 'super_admin' && !finalPerms.includes('super_access')) {
+  if (req.params.id === 'super_admin' && !finalPerms.includes('super_access')) {
     finalPerms.push('super_access');
   }
 
+  const now = new Date().toISOString();
+
+  if (isPartnerTarget) {
+    (db.roles || []).forEach(r => {
+      if (PARTNER_ROLE_IDS.includes(r.id) || (r.id && r.id.startsWith('sales_')) || r.category === 'sales_partner') {
+        r.menuPermissions = [...finalPerms];
+        r.updatedAt = now;
+      }
+    });
+    save();
+    audit(req, 'permissions.role_update', 'role', 'sales_user', req.companyId,
+      `Updated role permissions for "Sales Partner" (applied to all partner roles): ${finalPerms.length} pages enabled`);
+
+    return ok(res, {
+      role: 'sales_user',
+      name: 'Sales Partner',
+      menuPermissions: finalPerms,
+      updatedAt: now
+    });
+  }
+
+  const role = (db.roles || []).find(r => r.id === req.params.id);
+  if (!role) return res.status(404).json({ error: 'Role not found' });
+
   const prevCount = (role.menuPermissions || []).length;
   role.menuPermissions = finalPerms;
-  role.updatedAt = new Date().toISOString();
+  role.updatedAt = now;
   save();
 
   audit(req, 'permissions.role_update', 'role', role.id, req.companyId,

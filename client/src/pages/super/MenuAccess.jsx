@@ -12,6 +12,20 @@ import { useCompany } from '../../companyContext';
 import { toast } from '../../components/ui';
 import { MENU_CATALOG, ICON_MAP, getAllPageIds } from '../../menuCatalog';
 
+const ROLE_LABELS = {
+  super_admin: 'Super Admin',
+  company_admin: 'Company Admin',
+  sales_user: 'Sales Partner',
+  sales_partner: 'Sales Partner',
+  sales_regional_partner: 'Regional Partner (+10%)',
+  sales_channel_partner: 'Channel Partner (+15%)',
+  sales_referral_partner: 'Referral Partner (+5%)',
+  content_writer: 'Content Writer',
+  finance: 'Finance / Accounts'
+};
+
+const isPartnerRole = (r) => r === 'sales_user' || r === 'sales_partner' || (typeof r === 'string' && r.startsWith('sales_'));
+
 export default function MenuAccess() {
   const { me, refreshPermissions } = useAuth();
   const { activeCompany, activeCompanyObj, setActiveCompany } = useCompany();
@@ -53,6 +67,11 @@ export default function MenuAccess() {
       const rPermsMap = {};
       (rRoles || []).forEach(r => {
         rPermsMap[r.id] = Array.isArray(r.menuPermissions) ? [...r.menuPermissions] : [];
+      });
+      // Synchronize partner aliases
+      const partnerPerms = rPermsMap['sales_user'] || rPermsMap['sales_partner'] || [];
+      ['sales_user', 'sales_partner', 'sales_regional_partner', 'sales_channel_partner', 'sales_referral_partner'].forEach(pid => {
+        rPermsMap[pid] = [...partnerPerms];
       });
       setRolePermissions(rPermsMap);
 
@@ -194,7 +213,16 @@ export default function MenuAccess() {
       await api.patch(`/api/permissions/roles/${selectedRoleId}`, {
         menuPermissions: curRolePerms
       });
-      toast(`Permissions for "${activeRole?.name}" saved successfully!`, '✅');
+      toast(`Permissions for "${activeRole?.name}" saved successfully and applied to all users!`, '✅');
+      if (selectedRoleId === 'sales_user' || selectedRoleId === 'sales_partner' || selectedRoleId.startsWith('sales_')) {
+        setRolePermissions(prev => {
+          const next = { ...prev };
+          ['sales_user', 'sales_partner', 'sales_regional_partner', 'sales_channel_partner', 'sales_referral_partner'].forEach(pid => {
+            next[pid] = [...curRolePerms];
+          });
+          return next;
+        });
+      }
       // Refresh session permissions in case current user shares this role
       await refreshPermissions();
     } catch (err) {
@@ -208,8 +236,10 @@ export default function MenuAccess() {
      USER OVERRIDES HANDLERS
      ========================================================================= */
   const activeUser = users.find(u => u.id === selectedUserId) || users[0];
-  const userBaseRoleObj = roles.find(r => r.id === (activeUser && activeUser.role));
-  const userRoleDefaults = rolePermissions[activeUser?.role] || [];
+  const userBaseRoleObj = roles.find(r => r.id === (activeUser && activeUser.role))
+    || (isPartnerRole(activeUser?.role) ? roles.find(r => isPartnerRole(r.id)) : null);
+  const userRoleDefaults = rolePermissions[activeUser?.role]
+    || (isPartnerRole(activeUser?.role) ? (rolePermissions['sales_user'] || rolePermissions['sales_partner'] || []) : []);
 
   const getUserPageState = (pageId) => {
     if (userOverrides[pageId] === 'allow') return 'allow';
@@ -407,7 +437,7 @@ export default function MenuAccess() {
               <span className="text-xs font-extrabold uppercase tracking-widest text-slate-400">Select Role to Configure</span>
               <span className="text-[11px] font-semibold text-slate-500">{roles.length} Roles available</span>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
               {roles.map(r => {
                 const isSel = r.id === selectedRoleId;
                 const permsCount = (rolePermissions[r.id] || []).length;
@@ -453,7 +483,9 @@ export default function MenuAccess() {
                   </span>
                 </h3>
                 <p className="text-[11px] text-slate-500">
-                  Changes made here apply to all users assigned the <span className="font-semibold text-slate-700">{activeRole?.name}</span> role unless overridden.
+                  {activeRole?.id === 'sales_user' || activeRole?.category === 'sales_partner'
+                    ? 'Changes made here apply to all Partner users (Regional, Channel, Referral, Direct Sales) unless specifically overridden in User Overrides.'
+                    : `Changes made here apply to all users assigned the ${activeRole?.name} role unless overridden.`}
                 </p>
               </div>
             </div>
@@ -727,7 +759,7 @@ export default function MenuAccess() {
                       <p className="text-[10px] text-slate-500 truncate">{u.email}</p>
                       <div className="flex items-center gap-1.5 mt-1">
                         <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-slate-200 text-slate-700">
-                          {u.role}
+                          {ROLE_LABELS[u.role] || u.role}
                         </span>
                         {overridesCount > 0 ? (
                           <span className="text-[9px] font-extrabold text-amber-700 bg-amber-100 px-1.5 py-0.2 rounded">
@@ -756,7 +788,7 @@ export default function MenuAccess() {
                     <span>{activeUser.name}</span>
                     <span className="text-slate-400 text-xs">({activeUser.email})</span>
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-slate-100 text-slate-700">
-                      Base: {userBaseRoleObj?.name || activeUser.role}
+                      Base: {userBaseRoleObj?.name || 'Sales Partner'} {activeUser?.role && activeUser.role !== 'sales_user' && activeUser.role !== 'sales_partner' && ROLE_LABELS[activeUser.role] ? `(${ROLE_LABELS[activeUser.role]})` : ''}
                     </span>
                   </h3>
                   <p className="text-[11px] text-slate-500">
