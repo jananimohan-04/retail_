@@ -74,7 +74,7 @@ export default function Settings() {
   const titlePrefix = coName || (me && me.companyId) || 'Company';
 
   return (
-    <div className="space-y-6 w-full max-w-6xl mx-auto">
+    <div className="space-y-6 w-full">
       {/* Header */}
       <div className="flex items-center justify-between gap-4 flex-wrap pb-2 border-b border-slate-200">
         <div>

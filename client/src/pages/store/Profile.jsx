@@ -42,7 +42,7 @@ export default function Profile() {
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2 }}
-      className="space-y-6 w-full max-w-5xl mx-auto"
+      className="space-y-6 w-full"
     >
       {/* Header */}
       <div className="pb-2 border-b border-slate-200">

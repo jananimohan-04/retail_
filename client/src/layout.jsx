@@ -1,6 +1,6 @@
 /* Global shell — modern responsive layout with Lucide icons & Framer Motion animations */
 import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, forwardRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   LayoutDashboard, Building2, Boxes, FolderTree, Image as ImageIcon, 
@@ -59,7 +59,7 @@ export function Sidebar({ counts, onItemClick, mini = false }) {
 
   if (role === 'super_admin') {
     return (
-      <aside className={`w-full flex flex-col ${mini ? 'gap-1.5 py-1 items-center' : 'gap-5 py-2'}`}>
+      <div className={`w-full flex flex-col ${mini ? 'gap-1.5 py-1 items-center' : 'gap-5 py-2'}`}>
         <div>
           {!mini && <div className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-3.5 mb-1.5">OVERVIEW</div>}
           {sideLink('/super/dashboard', 'Platform Dashboard', LayoutDashboard, null, onItemClick, mini)}
@@ -99,13 +99,13 @@ export function Sidebar({ counts, onItemClick, mini = false }) {
           {!mini && <div className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-3.5 mb-1.5">STOREFRONT</div>}
           {sideLink('/store/home', 'View Storefront', Store, null, onItemClick, mini)}
         </div>
-      </aside>
+      </div>
     );
   }
 
   if (role === 'company_admin') {
     return (
-      <aside className={`w-full flex flex-col ${mini ? 'gap-1.5 py-1 items-center' : 'gap-5 py-2'}`}>
+      <div className={`w-full flex flex-col ${mini ? 'gap-1.5 py-1 items-center' : 'gap-5 py-2'}`}>
         <div className={mini ? 'flex flex-col gap-1' : ''}>
           {!mini && (
             <div className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-3.5 mb-1.5">
@@ -132,13 +132,13 @@ export function Sidebar({ counts, onItemClick, mini = false }) {
           {!mini && <div className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-3.5 mb-1.5">STOREFRONT</div>}
           {sideLink('/store/home', 'Live Store', Store, null, onItemClick, mini)}
         </div>
-      </aside>
+      </div>
     );
   }
 
   if (role === 'content_writer') {
     return (
-      <aside className={`w-full flex flex-col ${mini ? 'gap-1.5 py-1 items-center' : 'gap-5 py-2'}`}>
+      <div className={`w-full flex flex-col ${mini ? 'gap-1.5 py-1 items-center' : 'gap-5 py-2'}`}>
         <div>
           {!mini && (
             <div className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-3.5 mb-1.5">
@@ -156,13 +156,13 @@ export function Sidebar({ counts, onItemClick, mini = false }) {
             </p>
           </div>
         )}
-      </aside>
+      </div>
     );
   }
 
   if (role === 'finance') {
     return (
-      <aside className={`w-full flex flex-col ${mini ? 'gap-1.5 py-1 items-center' : 'gap-5 py-2'}`}>
+      <div className={`w-full flex flex-col ${mini ? 'gap-1.5 py-1 items-center' : 'gap-5 py-2'}`}>
         <div>
           {!mini && (
             <div className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-3.5 mb-1.5">
@@ -180,12 +180,12 @@ export function Sidebar({ counts, onItemClick, mini = false }) {
             </p>
           </div>
         )}
-      </aside>
+      </div>
     );
   }
 
   return (
-    <aside className={`w-full flex flex-col ${mini ? 'gap-1.5 py-1 items-center' : 'gap-5 py-2'}`}>
+    <div className={`w-full flex flex-col ${mini ? 'gap-1.5 py-1 items-center' : 'gap-5 py-2'}`}>
       <div className={mini ? 'flex flex-col gap-1' : ''}>
         {!mini && <div className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 px-3.5 mb-1.5">INDUSTRIAL STORE</div>}
         {sideLink('/store/home', 'Home', Home, null, onItemClick, mini)}
@@ -216,11 +216,11 @@ export function Sidebar({ counts, onItemClick, mini = false }) {
           ))}
         </div>
       </div>
-    </aside>
+    </div>
   );
 }
 
-export function Topbar({ onMobileToggle, sidebarOpen, onToggleSidebar, noSide }) {
+export const Topbar = forwardRef(function Topbar({ onMobileToggle, sidebarOpen, onToggleSidebar, noSide }, ref) {
   const { me, loginAs, logout } = useAuth();
   const [q, setQ] = useState('');
   const nav = useNavigate();
@@ -255,8 +255,8 @@ export function Topbar({ onMobileToggle, sidebarOpen, onToggleSidebar, noSide })
   const roleLabel = me?.salesTier ? `${me.salesTier} (+${me.markupPct || 0}%)` : (ROLE_LABELS[me?.role] || 'Sales');
 
   return (
-    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-xs w-full">
-      <div className="bg-slate-900 text-slate-300 text-[11px] font-medium py-1.5 px-4 sm:px-8 border-b border-slate-800 flex items-center justify-between w-full">
+    <header ref={ref} className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-xs w-full">
+      <div className="bg-slate-900 text-slate-300 text-[11px] font-medium py-1.5 px-4 sm:px-6 border-b border-slate-800 flex items-center justify-between w-full">
         <div className="flex items-center gap-2 truncate">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
           <span className="font-bold text-white">ARGUSCNC ERP</span>
@@ -277,7 +277,7 @@ export function Topbar({ onMobileToggle, sidebarOpen, onToggleSidebar, noSide })
         </div>
       </div>
 
-      <div className="w-full px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+      <div className="w-full px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <button
             type="button"
@@ -439,17 +439,19 @@ export function Topbar({ onMobileToggle, sidebarOpen, onToggleSidebar, noSide })
       </div>
     </header>
   );
-}
+});
 
 export function Shell({ counts, noSide, children }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(() => {
     try {
       const saved = localStorage.getItem('cncforge_sidebar_open');
-      return saved !== null ? saved === 'true' : false; // Default to Full View Page
-    } catch { return false; }
+      return saved !== null ? saved === 'true' : true;
+    } catch { return true; }
   });
   const location = useLocation();
+  const headerRef = useRef(null);
+  const [headerH, setHeaderH] = useState(93);
 
   const toggleSidebar = () => {
     setSidebarOpen((prev) => {
@@ -463,41 +465,65 @@ export function Shell({ counts, noSide, children }) {
     setMobileOpen(false);
   }, [location.pathname]);
 
+  useEffect(() => {
+    if (!headerRef.current) return;
+    const update = () => {
+      if (headerRef.current) setHeaderH(headerRef.current.offsetHeight);
+    };
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(headerRef.current);
+    return () => ro.disconnect();
+  }, []);
+
   return (
     <div className="min-h-screen flex flex-col bg-slate-50/60 text-slate-900 font-sans w-full">
       <Topbar 
+        ref={headerRef}
         onMobileToggle={() => setMobileOpen(true)} 
         sidebarOpen={sidebarOpen}
         onToggleSidebar={toggleSidebar}
         noSide={noSide}
       />
 
-      <div className={`w-full px-3 sm:px-5 lg:px-6 py-5 flex-1 transition-all duration-200 ${
-        noSide 
-          ? 'w-full' 
-          : sidebarOpen
-          ? 'grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-6 items-start' 
-          : 'grid grid-cols-1 lg:grid-cols-[56px_1fr] gap-4 items-start'
-      }`}>
+      <div className="flex-1 flex w-full min-h-0 items-stretch">
         {!noSide && (
-          <div className={`hidden lg:block sticky top-20 bg-white rounded-2xl border border-slate-200/80 shadow-xs max-h-[calc(100vh-6rem)] overflow-y-auto transition-all duration-200 ${
-            sidebarOpen ? 'w-full p-3' : 'w-14 p-1.5 items-center'
-          }`}>
+          <aside 
+            style={{ top: `${headerH}px`, height: `calc(100vh - ${headerH}px)` }}
+            className={`hidden lg:flex flex-col flex-shrink-0 bg-white border-r border-slate-200/80 sticky self-start overflow-y-auto transition-all duration-200 z-30 ${
+              sidebarOpen ? 'w-64 p-3' : 'w-14 p-1.5 items-center'
+            }`}
+          >
             <Sidebar counts={counts} mini={!sidebarOpen} />
-          </div>
+          </aside>
         )}
 
-        <main className="w-full min-w-0 flex-1">
-          <motion.div
-            key={location.pathname}
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.18, ease: 'easeOut' }}
-            className="w-full"
-          >
-            {children}
-          </motion.div>
-        </main>
+        <div className="flex-1 min-w-0 flex flex-col justify-between w-full">
+          <main className="w-full flex-1 p-4 sm:p-6 lg:p-6">
+            <motion.div
+              key={location.pathname}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.18, ease: 'easeOut' }}
+              className="w-full"
+            >
+              {children}
+            </motion.div>
+          </main>
+
+          <footer className="border-t border-slate-200 bg-white py-5 text-xs text-slate-500 w-full mt-auto">
+            <div className="w-full px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
+              <div>
+                <span className="font-bold text-slate-800">ARGUSCNC ERP Industrial Procurement</span> • Connected B2B Factory Platform
+              </div>
+              <div className="flex items-center gap-4 text-slate-400 font-medium">
+                <span>Multi-Tenant Architecture</span>
+                <span>•</span>
+                <span>Encrypted Cloud Storage</span>
+              </div>
+            </div>
+          </footer>
+        </div>
       </div>
 
       <AnimatePresence>
@@ -532,19 +558,6 @@ export function Shell({ counts, noSide, children }) {
           </div>
         )}
       </AnimatePresence>
-
-      <footer className="border-t border-slate-200 bg-white py-6 mt-12 text-xs text-slate-500 w-full">
-        <div className="w-full px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
-          <div>
-            <span className="font-bold text-slate-800">ARGUSCNC ERP Industrial Procurement</span> • Connected B2B Factory Platform
-          </div>
-          <div className="flex items-center gap-4 text-slate-400 font-medium">
-            <span>Multi-Tenant Architecture</span>
-            <span>•</span>
-            <span>Encrypted Cloud Storage</span>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }
