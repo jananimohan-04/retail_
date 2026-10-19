@@ -1833,7 +1833,7 @@ app.post('/api/workflow/:id/return', scopeCompany, (req, res) => {
    ========================================================================== */
 
 const ERP_INTEGRATION_KEY = process.env.ERP_INTEGRATION_KEY || 'erp_sec_c4f8d9b1a03e7f22589e6d4c';
-const ERP_API_BASE_URL = process.env.ERP_API_BASE_URL || 'http://localhost:5173';
+const ERP_API_BASE_URL = process.env.ERP_API_BASE_URL || (process.env.NODE_ENV === 'production' ? 'https://arguscnc.com' : 'http://localhost:5173');
 
 // Idempotency cache (key -> { data, ts })
 const erpIdempotencyCache = new Map();
@@ -2056,8 +2056,8 @@ async function triggerErpOrderDeduction(order, lines) {
   order.erp_deducted = false;
   order.erp_items = erpLines;
 
-  const erpBase = process.env.ERP_API_BASE_URL || 'http://localhost:5173';
-  const erpKey = process.env.ERP_INTEGRATION_KEY || 'erp_sec_c4f8d9b1a03e7f22589e6d4c';
+  const erpBase = ERP_API_BASE_URL;
+  const erpKey = ERP_INTEGRATION_KEY;
 
   try {
     const resp = await fetch(`${erpBase}/api/retail-sync/order-deduct`, {

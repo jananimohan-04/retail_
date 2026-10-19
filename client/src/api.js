@@ -35,8 +35,18 @@ function headers() {
   };
 }
 
+export const API_BASE = (typeof import.meta !== 'undefined' && import.meta.env && (import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || '')) .toString().replace(/\/$/, '');
+
+function resolveUrl(u) {
+  if (!u) return u;
+  if (/^https?:\/\//i.test(u)) return u;
+  if (API_BASE && u.startsWith('/')) return `${API_BASE}${u}`;
+  return u;
+}
+
 async function req(method, url, body) {
-  const r = await fetch(url, { method, headers: headers(), body: body ? JSON.stringify(body) : undefined });
+  const fullUrl = resolveUrl(url);
+  const r = await fetch(fullUrl, { method, headers: headers(), body: body ? JSON.stringify(body) : undefined });
   const j = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error((j && j.error) || ('HTTP ' + r.status));
   return j.data;
@@ -56,7 +66,8 @@ export async function uploadFiles(files) {
   const cid = s.role === 'super_admin' ? (s.companyId || '') : (s.companyId || 'C-ARGUS');
   const fd = new FormData();
   [...files].forEach((f) => fd.append('files', f));
-  const r = await fetch('/api/uploads', {
+  const fullUrl = resolveUrl('/api/uploads');
+  const r = await fetch(fullUrl, {
     method: 'POST',
     headers: {
       'x-role': s.role || 'sales_user',

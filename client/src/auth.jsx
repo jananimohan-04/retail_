@@ -1,7 +1,9 @@
 /* Auth — mirrors legacy js/auth.js + loginAs behavior exactly. */
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { getSession, setSession, setGoogleToken, googleToken, api } from './api';
+import { getSession, setSession, setGoogleToken, googleToken, api, API_BASE } from './api';
+
+const apiUrl = (p) => (API_BASE ? `${API_BASE}${p}` : p);
 
 const AuthCtx = createContext(null);
 export const useAuth = () => useContext(AuthCtx);
@@ -29,7 +31,7 @@ export function AuthProvider({ children }) {
       if (!cur) return;
       const t = googleToken();
       const cid = cur.role === 'super_admin' ? (cur.companyId || '') : (cur.companyId || 'C-ARGUS');
-      const r = await fetch('/api/me', {
+      const r = await fetch(apiUrl('/api/me'), {
         headers: {
           'Content-Type': 'application/json',
           'x-role': cur.role || 'sales_user',
@@ -60,7 +62,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   const resolveMe = useCallback(async (token) => {
-    const r = await fetch('/api/me', { headers: { Authorization: 'Bearer ' + (token || '') } });
+    const r = await fetch(apiUrl('/api/me'), { headers: { Authorization: 'Bearer ' + (token || '') } });
     const j = await r.json().catch(() => ({}));
     const u = (j && j.data) || {};
     if (!u.role) throw new Error('no role');
@@ -85,7 +87,7 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     (async () => {
       try {
-        const r = await fetch('/api/config');
+        const r = await fetch(apiUrl('/api/config'));
         const j = await r.json();
         const cfg = (j && j.data) || {};
         if (cfg.googleEnabled && cfg.supabaseUrl && cfg.publishableKey) {
@@ -120,7 +122,7 @@ export function AuthProvider({ children }) {
     setSession(s);
     setMe(s);
     try {
-      const res = await fetch('/api/me', {
+      const res = await fetch(apiUrl('/api/me'), {
         headers: {
           'x-role': s.role,
           'x-company-id': s.role === 'super_admin' ? '' : (s.companyId || 'C-ARGUS'),
