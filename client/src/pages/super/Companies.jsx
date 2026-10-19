@@ -170,8 +170,31 @@ export default function Companies({ tab: tabProp }) {
           <div className="h-6 w-px bg-slate-200 hidden sm:block" />
           <button className="btn btn-ghost btn-sm" onClick={mgExport}>⤓ Export</button>
           <button className="btn btn-ghost btn-sm" onClick={refresh}>↻ Refresh</button>
-          <button className="btn btn-primary btn-sm" onClick={() => setUserModal({ preset: { role: 'company_admin' } })}>+ Invite Admin</button>
-          <button className="btn btn-primary btn-sm" onClick={() => setCoModal({ id: '' })}>+ Create Company</button>
+          {tab === 'users' ? (
+            <>
+              <button className="btn btn-ghost btn-sm" onClick={() => setRolesModal(true)} title="Configure partner tiers and markup percentages">
+                🛡️ Manage Roles & Tiers
+              </button>
+              <button className="btn btn-ghost btn-sm" onClick={() => setAddRoleModal(true)} title="Create new role">
+                + Add Role
+              </button>
+              <button className="btn btn-ghost btn-sm" onClick={() => setUserModal({ preset: { role: 'company_admin' } })}>
+                + Invite Admin
+              </button>
+              <button className="btn btn-primary btn-sm" onClick={() => setUserModal({ preset: { role: 'sales_regional_partner' } })}>
+                + Add User
+              </button>
+            </>
+          ) : (
+            <>
+              <button className="btn btn-primary btn-sm" onClick={() => setUserModal({ preset: { role: 'company_admin' } })}>
+                + Invite Admin
+              </button>
+              <button className="btn btn-primary btn-sm" onClick={() => setCoModal({ id: '' })}>
+                + Create Company
+              </button>
+            </>
+          )}
         </>}
       />
       {statsErr && <Empty icon="⚠️" title={'⚠️ ' + statsErr} />}
@@ -204,12 +227,7 @@ export default function Companies({ tab: tabProp }) {
           )}
           {tab === 'users' && (
             <UsersTab
-              q={usrQ} setQ={(x) => { setUsrQ(x); setPage(1); }} co={usrCo} setCo={(x) => { setUsrCo(x); setPage(1); }}
-              role={usrRole} setRole={(x) => { setUsrRole(x); setPage(1); }} st={usrSt} setSt={(x) => { setUsrSt(x); setPage(1); }}
-              cos={cos} data={data} loading={loading} err={err} page={page} setPage={setPage}
-              onAdd={() => setUserModal({ preset: { role: 'sales_regional_partner' } })}
-              onManageRoles={() => setRolesModal(true)}
-              onAddRole={() => setAddRoleModal(true)}
+              data={data} loading={loading} err={err} page={page} setPage={setPage}
               onView={setViewUser}
               onEdit={(id) => setUserModal({ editId: id })} onToggle={(u) => toggleUserActive(u, load)} onRoleChanged={load}
             />
@@ -336,57 +354,11 @@ function AdminsTab({ q, setQ, co, setCo, st, setSt, cos, data, loading, err, pag
 }
 
 /* ---------------- users tab ---------------- */
-function UsersTab({ q, setQ, co, setCo, role, setRole, st, setSt, cos, data, loading, err, page, setPage, onAdd, onManageRoles, onAddRole, onView, onEdit, onToggle, onRoleChanged }) {
-  const [roleOptions, setRoleOptions] = useState([]);
-  useEffect(() => {
-    api.get('/api/roles').then((d) => setRoleOptions(Array.isArray(d) ? d : [])).catch(() => {});
-  }, []);
-
+function UsersTab({ data, loading, err, page, setPage, onView, onEdit, onToggle, onRoleChanged }) {
   if (loading) return <Skeleton h={220} />;
   if (err) return <Empty title={'⚠️ ' + err} />;
   return (
     <>
-      <div className="section-head" style={{ marginTop: 0 }}>
-        <h2 style={{ fontSize: 16 }}>Company Users ({data.total})</h2>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-          <button className="btn btn-ghost btn-sm" onClick={onManageRoles} title="Configure partner tiers and markup percentages">
-            🛡️ Manage Roles & Tiers
-          </button>
-          <button className="btn btn-ghost btn-sm" onClick={onAddRole} title="Create new role">
-            + Add Role
-          </button>
-          <button className="btn btn-primary btn-sm" onClick={onAdd}>
-            + Add User
-          </button>
-        </div>
-      </div>
-      <div className="toolbar">
-        <input placeholder="🔍 Search name, email, company…" value={q} onChange={(e) => setQ(e.target.value)} />
-        <select value={co} onChange={(e) => setCo(e.target.value)}>
-          <option value="all">All companies</option>
-          {cos.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-        </select>
-        <select value={role} onChange={(e) => setRole(e.target.value)}>
-          <option value="all">All roles</option>
-          {roleOptions.map((r) => (
-            <option key={r.id} value={r.id}>{r.name} {r.markupPct ? `(+${r.markupPct}%)` : ''}</option>
-          ))}
-          {!roleOptions.length && (
-            <>
-              <option value="sales_regional_partner">Regional Partner (+10%)</option>
-              <option value="sales_channel_partner">Channel Partner (+15%)</option>
-              <option value="sales_referral_partner">Referral Partner (+5%)</option>
-              <option value="sales_user">Sales User</option>
-              <option value="company_admin">Company Admin</option>
-            </>
-          )}
-        </select>
-        <select value={st} onChange={(e) => setSt(e.target.value)}>
-          <option value="all">All statuses</option>
-          <option value="true">Active</option>
-          <option value="false">Inactive</option>
-        </select>
-      </div>
       <DataTable
         rowKey={(r) => r.id}
         empty="No users match."
