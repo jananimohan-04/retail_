@@ -309,18 +309,6 @@ function AdminsTab({ q, setQ, co, setCo, st, setSt, cos, data, loading, err, pag
   if (err) return <Empty title={'⚠️ ' + err} />;
   return (
     <>
-      <div className="toolbar">
-        <input placeholder="🔍 Search name, email, company…" value={q} onChange={(e) => setQ(e.target.value)} />
-        <select value={co} onChange={(e) => setCo(e.target.value)}>
-          <option value="all">All companies</option>
-          {cos.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-        </select>
-        <select value={st} onChange={(e) => setSt(e.target.value)}>
-          <option value="all">All statuses</option>
-          <option value="true">Active</option>
-          <option value="false">Inactive</option>
-        </select>
-      </div>
       <DataTable
         rowKey={(r) => r.id}
         empty="No administrators match."
