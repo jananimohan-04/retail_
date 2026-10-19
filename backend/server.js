@@ -1468,7 +1468,7 @@ app.get('/api/media', scopeCompany, (req, res) => {
 });
 app.post('/api/media', scopeCompany, (req, res) => {
   if (!isWorkflowStaff(req)) return res.status(403).json({ error: 'Your role is not permitted to manage media' });
-  const { productId, type, url, primary, visible, title, alt } = req.body;
+  const { productId, type, url, primary, visible, title, alt, description, desc } = req.body;
   const co = req.companyId || req.body.companyId;
   if (!productId || !url) return res.status(400).json({ error: 'productId and url required' });
   const p = db.products.find(x => x.id === productId && x.companyId === co);
@@ -1477,6 +1477,7 @@ app.post('/api/media', scopeCompany, (req, res) => {
   if (!t) return res.status(400).json({ error: `unsupported media type "${type}" — use image, video, document or youtube` });
   if (t === 'youtube' && !isYouTubeUrl(url)) return res.status(400).json({ error: 'Enter a valid YouTube link (youtube.com/watch?v=… or youtu.be/…)' });
   const siblings = db.product_media.filter(m => m.productId === productId);
+  const descVal = description !== undefined ? description : (desc !== undefined ? desc : (alt || ''));
   const m = {
     id: uid('M-', db.product_media),
     companyId: co,
@@ -1485,7 +1486,8 @@ app.post('/api/media', scopeCompany, (req, res) => {
     type: t,
     url: String(url).slice(0, 2000),
     title: title ? String(title).slice(0, 200) : '',
-    alt: alt ? String(alt).slice(0, 300) : '',
+    alt: alt ? String(alt).slice(0, 300) : (descVal ? String(descVal).slice(0, 300) : ''),
+    description: descVal ? String(descVal).slice(0, 1000) : '',
     primary: (t === 'image' || t === 'video') && primary !== false && siblings.filter(s => s.type === t).length === 0,
     visible: visible !== false,
     sortOrder: siblings.length,
@@ -1505,7 +1507,9 @@ app.patch('/api/media/:id', scopeCompany, (req, res) => {
   const m = (db.product_media || []).find(x => x.id === req.params.id);
   if (!m || !mediaVisible(m, req)) return res.status(404).json({ error: 'not found' });
   if (req.body.primary === true) (db.product_media || []).filter(s => s.productId === m.productId && s.type === m.type).forEach(s => { s.primary = false; });
-  for (const k of ['primary', 'visible', 'sortOrder', 'url', 'title', 'alt']) if (req.body[k] !== undefined) m[k] = req.body[k];
+  for (const k of ['primary', 'visible', 'sortOrder', 'url', 'title', 'alt', 'description']) if (req.body[k] !== undefined) m[k] = req.body[k];
+  if (req.body.desc !== undefined && req.body.description === undefined) m.description = req.body.desc;
+  if (m.description && !m.alt) m.alt = String(m.description).slice(0, 300);
   if (m.primary && m.type === 'image') { const p = db.products.find(x => x.id === m.productId); if (p) p.images = [m.url, ...(p.images || []).filter(u => u !== m.url)]; }
   save();
   audit(req, 'media.update', 'media', m.id, m.companyId, `Updated media ${m.id}`);

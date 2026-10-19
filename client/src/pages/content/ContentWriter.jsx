@@ -7,7 +7,8 @@ import { api, uploadFiles, imgFallback } from '../../api';
 import { PageHero, PageHead, Empty, Skeleton, Pager, Field, Modal, Confirm, toast } from '../../components/ui';
 import {
   ArrowLeft, CheckCircle2, CircleAlert, FileText, Film, ImageIcon,
-  Loader2, MonitorPlay, Package, Plus, Save, Send, Trash2, Upload, PenLine
+  Loader2, MonitorPlay, Package, Plus, Save, Send, Trash2, Upload, PenLine,
+  Star, ExternalLink, Eye
 } from 'lucide-react';
 
 /* ---------------------------------------------------------------- stage chips */
@@ -258,10 +259,15 @@ function ContentEditor({ id }) {
   const [short, setShort] = useState('');
   const [desc, setDesc] = useState('');
   const [specs, setSpecs] = useState([]);
-  const [staged, setStaged] = useState([]);   // { key, file, url, kind, title, alt, status, error }
+  const [staged, setStaged] = useState([]);   // { key, file, url, kind, title, description, alt, status, error }
+  const [mediaEdits, setMediaEdits] = useState({}); // { [mId]: { title, description } }
+  const [mediaFilter, setMediaFilter] = useState('all'); // 'all' | 'image' | 'document' | 'video'
+  const [savingMediaId, setSavingMediaId] = useState(null);
+
   const [ytOpen, setYtOpen] = useState(false);
   const [ytUrl, setYtUrl] = useState('');
   const [ytTitle, setYtTitle] = useState('');
+  const [ytDesc, setYtDesc] = useState('');
   const [preview, setPreview] = useState(false);
   const [confirmSubmit, setConfirmSubmit] = useState(false);
 
@@ -301,11 +307,16 @@ function ContentEditor({ id }) {
         url: URL.createObjectURL(f),
         kind: isPdf ? 'document' : (isVid ? 'video' : 'image'),
         title: isPdf ? f.name.replace(/\.pdf$/i, '') : '',
+        description: '',
         alt: '',
         status: 'ready'
       });
     }
     setStaged((s) => [...s, ...next]);
+  }
+
+  function updateStaged(key, field, val) {
+    setStaged((s) => s.map((x) => (x.key === key ? { ...x, [field]: val } : x)));
   }
 
   function dropStaged(key) {
@@ -316,7 +327,61 @@ function ContentEditor({ id }) {
     });
   }
 
-  /* ---- persist content + any staged uploads ---- */
+  /* ---- local edits on existing media ---- */
+  function handleMediaEdit(mId, field, val) {
+    setMediaEdits((prev) => ({
+      ...prev,
+      [mId]: {
+        ...(prev[mId] || {}),
+        [field]: val
+      }
+    }));
+  }
+
+  function getMediaVal(m, field) {
+    if (mediaEdits[m.id] && mediaEdits[m.id][field] !== undefined) {
+      return mediaEdits[m.id][field];
+    }
+    if (field === 'title') return m.title || '';
+    if (field === 'description') return m.description || m.alt || '';
+    return m[field] || '';
+  }
+
+  async function quickSaveMedia(m) {
+    const edits = mediaEdits[m.id];
+    if (!edits) return;
+    setSavingMediaId(m.id);
+    try {
+      await api.patch('/api/media/' + m.id, {
+        title: edits.title !== undefined ? edits.title : (m.title || ''),
+        description: edits.description !== undefined ? edits.description : (m.description || m.alt || ''),
+        alt: edits.description !== undefined ? edits.description : (m.description || m.alt || '')
+      });
+      toast('Media details saved', '✓');
+      setMediaEdits((prev) => {
+        const next = { ...prev };
+        delete next[m.id];
+        return next;
+      });
+      load();
+    } catch (e) {
+      toast(e.message, '⚠️');
+    } finally {
+      setSavingMediaId(null);
+    }
+  }
+
+  async function setPrimary(m) {
+    try {
+      await api.patch('/api/media/' + m.id, { primary: true });
+      toast('Set as primary image', '⭐');
+      load();
+    } catch (e) {
+      toast(e.message, '⚠️');
+    }
+  }
+
+  /* ---- persist content + staged uploads + modified media ---- */
   async function save({ silent } = {}) {
     setSaving(true);
     try {
@@ -336,13 +401,27 @@ function ContentEditor({ id }) {
             type: fresh[i].kind,
             url: urls[i],
             title: fresh[i].title || '',
-            alt: fresh[i].alt || ''
+            description: fresh[i].description || fresh[i].alt || '',
+            alt: fresh[i].alt || fresh[i].description || ''
           });
           setStaged((s) => s.map((x) => (x.key === fresh[i].key ? { ...x, status: 'done' } : x)));
         }
         setStaged((s) => s.filter((x) => x.status !== 'done'));
         if (!silent) toast('Media uploaded', '📎');
       }
+
+      /* 3. persist any modified titles/descriptions for existing media */
+      const editEntries = Object.entries(mediaEdits);
+      if (editEntries.length) {
+        for (const [mId, edits] of editEntries) {
+          await api.patch('/api/media/' + mId, {
+            ...(edits.title !== undefined ? { title: edits.title } : {}),
+            ...(edits.description !== undefined ? { description: edits.description, alt: edits.description } : {})
+          });
+        }
+        setMediaEdits({});
+      }
+
       load();
       if (!silent) toast('Draft saved (moved to In Progress)', '💾');
     } catch (e) {
@@ -355,8 +434,14 @@ function ContentEditor({ id }) {
     const u = ytUrl.trim();
     if (!ytId(u)) return toast('Enter a valid YouTube link (youtube.com/watch?v=… or youtu.be/…)', '⚠️');
     try {
-      await api.post('/api/media', { productId: id, type: 'youtube', url: u, title: ytTitle.trim() });
-      setYtUrl(''); setYtTitle(''); setYtOpen(false);
+      await api.post('/api/media', {
+        productId: id,
+        type: 'youtube',
+        url: u,
+        title: ytTitle.trim(),
+        description: ytDesc.trim()
+      });
+      setYtUrl(''); setYtTitle(''); setYtDesc(''); setYtOpen(false);
       toast('YouTube video attached', '▶️');
       load();
     } catch (e) { toast(e.message, '⚠️'); }
@@ -384,36 +469,59 @@ function ContentEditor({ id }) {
   const canSave = perm.canEditContent || perm.canStartContent;
   const stagedReady = staged.filter((s) => s.status === 'ready').length;
 
+  /* Filter media items for Col 2 */
+  const stagedFiltered = staged.filter((s) => {
+    if (mediaFilter === 'image') return s.kind === 'image';
+    if (mediaFilter === 'document') return s.kind === 'document';
+    if (mediaFilter === 'video') return s.kind === 'video';
+    return true;
+  });
+
+  const mediaFiltered = media.filter((m) => {
+    if (mediaFilter === 'image') return m.type === 'image';
+    if (mediaFilter === 'document') return m.type === 'document';
+    if (mediaFilter === 'video') return m.type === 'video' || m.type === 'youtube';
+    return true;
+  });
+
+  const stagedImagesCount = staged.filter((s) => s.kind === 'image').length;
+  const stagedDocsCount = staged.filter((s) => s.kind === 'document').length;
+  const stagedVideosCount = staged.filter((s) => s.kind === 'video').length;
+
   return (
-    <>
+    <div className="flex flex-col lg:h-[calc(100vh-76px)] lg:overflow-hidden min-h-0">
       {/* Combined Single-Line Header */}
-      <div className="bg-white rounded-xl border border-slate-200/90 px-4 py-2.5 sm:px-5 sm:py-3 shadow-xs mb-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-2.5 flex-wrap min-w-0">
+      <div className="bg-white rounded-xl border border-slate-200/90 px-3.5 py-2 shadow-2xs mb-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2 flex-shrink-0">
+        <div className="flex items-center gap-2 flex-wrap min-w-0">
+          <Link to="/content" className="p-1 hover:bg-slate-100 rounded-lg text-slate-500 hover:text-slate-900 transition-colors" title="Back to Queue">
+            <ArrowLeft className="w-4 h-4" />
+          </Link>
           <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">
             {`Content Writer · ${p.categoryName || p.category || 'Uncategorised'}`}
           </span>
           <span className="text-slate-300">•</span>
-          <h1 className="text-base sm:text-lg font-black text-slate-900 tracking-tight truncate max-w-xs sm:max-w-md">
+          <h1 className="text-sm sm:text-base font-black text-slate-900 tracking-tight truncate max-w-xs sm:max-w-md">
             {p.name}
           </h1>
           <StageBadge stage={p.workflow_stage} label={p.stageLabel} />
-          <span className="text-[11px] text-slate-500 hidden md:inline">
+          <span className="text-[10.5px] text-slate-500 hidden xl:inline">
             Last updated {fmtDate(p.workflow_updated_at)}
           </span>
         </div>
 
-        <div className="flex items-center gap-2 flex-wrap flex-shrink-0">
-          <Link className="btn btn-ghost btn-sm" to="/content"><ArrowLeft className="w-3.5 h-3.5" /> Queue</Link>
-          <button className="btn btn-ghost btn-sm" type="button" onClick={() => setPreview(true)}>👁 Preview listing</button>
+        <div className="flex items-center gap-1.5 flex-wrap flex-shrink-0">
+          <button className="btn btn-ghost btn-sm text-xs py-1 px-2.5 h-8" type="button" onClick={() => setPreview(true)}>
+            <Eye className="w-3.5 h-3.5" /> Preview listing
+          </button>
           {canSave && (
-            <button className="btn btn-ghost btn-sm border border-slate-200" type="button" disabled={saving || submitting} onClick={() => save()}>
+            <button className="btn btn-ghost btn-sm border border-slate-200 text-xs py-1 px-2.5 h-8" type="button" disabled={saving || submitting} onClick={() => save()}>
               {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
               {saving ? 'Saving…' : 'Save draft'}
             </button>
           )}
           {canSave && (
             <button
-              className="btn btn-primary btn-sm bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs"
+              className="btn btn-primary btn-sm bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs text-xs py-1 px-3 h-8"
               type="button"
               disabled={submitting || saving}
               onClick={() => setConfirmSubmit(true)}
@@ -426,147 +534,343 @@ function ContentEditor({ id }) {
       </div>
 
       {p.workflow_stage === 'returned_for_correction' && p.return_comment && (
-        <div className="rounded-xl bg-red-50 border border-red-200 p-3 text-xs text-red-800 mb-3.5">
+        <div className="rounded-xl bg-red-50 border border-red-200 px-3 py-1.5 text-xs text-red-800 mb-2 flex-shrink-0">
           <b className="font-extrabold">Finance asked for a correction ({p.returned_by || 'Finance'}):</b> {p.return_comment}
         </div>
       )}
 
-      <div className="grid lg:grid-cols-3 gap-5 items-start">
-        {/* ------- main column ------- */}
-        <div className="lg:col-span-2 space-y-5">
-          <section className="rounded-2xl border border-slate-200/80 bg-white p-5">
-            <h3 className="font-extrabold text-slate-900 text-sm mb-1">Sales copy</h3>
-            <p className="text-[11px] text-slate-500 mb-4">Written by you — ERP updates can never overwrite this.</p>
-            <div className="space-y-4">
-              <Field label="Short description" hint="One line shown in listings. Max 400 characters.">
-                <input value={short} maxLength={400} disabled={!canSave} onChange={(e) => setShort(e.target.value)} placeholder="e.g. O10mm 4-flute solid carbide end mill, AlCrN coated" />
-              </Field>
-              <Field label="Sales description" req hint="Shown on the product page. Plain text — no HTML.">
-                <textarea rows={7} value={desc} disabled={!canSave} onChange={(e) => setDesc(e.target.value)} placeholder="Describe what the product does, who it is for, what is included and why it is worth the price…" />
-              </Field>
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-bold text-slate-700">Technical specifications <span className="text-red-500">*</span></span>
+      {/* 3-Column Balanced Dashboard Layout */}
+      <div className="flex-1 min-h-0 grid lg:grid-cols-12 gap-2.5 items-stretch">
+        {/* Column 1: Sales Copy & Technical Specs */}
+        <div className="lg:col-span-4 flex flex-col h-full min-h-0 bg-white rounded-xl border border-slate-200/90 shadow-2xs p-3">
+          <div className="flex items-center justify-between pb-1.5 mb-1.5 border-b border-slate-100 flex-shrink-0">
+            <div>
+              <h3 className="font-extrabold text-slate-900 text-xs">Sales Copy &amp; Specifications</h3>
+              <p className="text-[10px] text-slate-400">Written for catalog &amp; storefront listings</p>
+            </div>
+          </div>
+
+          <div className="flex-shrink-0 mb-2">
+            <label className="block text-[10.5px] font-bold text-slate-700 mb-1">
+              Short description <span className="text-slate-400 font-normal">(one-line summary for listings)</span>
+            </label>
+            <input
+              value={short}
+              maxLength={400}
+              disabled={!canSave}
+              onChange={(e) => setShort(e.target.value)}
+              placeholder="e.g. O10mm 4-flute solid carbide end mill, AlCrN coated"
+              className="w-full text-xs px-2.5 py-1.5 rounded-lg border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-300 focus:outline-none transition-colors"
+            />
+          </div>
+
+          <div className="flex-shrink-0 mb-2">
+            <label className="block text-[10.5px] font-bold text-slate-700 mb-1">
+              Sales description <span className="text-red-500">*</span> <span className="text-slate-400 font-normal">(plain text description)</span>
+            </label>
+            <textarea
+              rows={3}
+              value={desc}
+              disabled={!canSave}
+              onChange={(e) => setDesc(e.target.value)}
+              placeholder="Describe what the product does, workpiece materials, key advantages..."
+              className="w-full text-xs px-2.5 py-1.5 rounded-lg border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-300 focus:outline-none resize-none transition-colors leading-relaxed"
+            />
+          </div>
+
+          <div className="flex-1 min-h-0 flex flex-col border-t border-slate-100 pt-2">
+            <div className="flex items-center justify-between mb-1.5 flex-shrink-0">
+              <span className="text-[11px] font-extrabold text-slate-800 uppercase tracking-wide">
+                Technical Specs ({specs.filter((s) => s.k.trim()).length})
+              </span>
+              {canSave && (
+                <button
+                  type="button"
+                  onClick={() => setSpecs((s) => [...s, { k: '', v: '' }])}
+                  className="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 cursor-pointer"
+                >
+                  <Plus className="w-3 h-3" /> Add spec
+                </button>
+              )}
+            </div>
+            <div className="flex-1 min-h-0 overflow-y-auto space-y-1.5 pr-1">
+              {specs.map((row, i) => (
+                <div key={i} className="flex items-center gap-1.5">
+                  <input
+                    className="flex-1 text-[11px] px-2 py-1 rounded-md border border-slate-200 focus:border-indigo-500 focus:outline-none"
+                    value={row.k}
+                    disabled={!canSave}
+                    placeholder="Specification"
+                    onChange={(e) => setSpecs((s) => s.map((r, j) => (j === i ? { ...r, k: e.target.value } : r)))}
+                  />
+                  <input
+                    className="flex-[1.2] text-[11px] px-2 py-1 rounded-md border border-slate-200 focus:border-indigo-500 focus:outline-none font-mono"
+                    value={row.v}
+                    disabled={!canSave}
+                    placeholder="Value"
+                    onChange={(e) => setSpecs((s) => s.map((r, j) => (j === i ? { ...r, v: e.target.value } : r)))}
+                  />
                   {canSave && (
-                    <button className="btn btn-ghost btn-sm" type="button" onClick={() => setSpecs((s) => [...s, { k: '', v: '' }])}>
-                      <Plus className="w-3.5 h-3.5" /> Add row
+                    <button
+                      className="p-1 text-slate-400 hover:text-red-600 rounded transition-colors cursor-pointer"
+                      type="button"
+                      title="Remove spec"
+                      onClick={() => setSpecs((s) => s.filter((_, j) => j !== i))}
+                    >
+                      <Trash2 className="w-3 h-3" />
                     </button>
                   )}
                 </div>
-                <div className="space-y-2">
-                  {specs.map((row, i) => (
-                    <div key={i} className="flex gap-2">
-                      <input className="flex-1" value={row.k} disabled={!canSave} placeholder="Specification" onChange={(e) => setSpecs((s) => s.map((r, j) => (j === i ? { ...r, k: e.target.value } : r)))} />
-                      <input className="flex-[1.4]" value={row.v} disabled={!canSave} placeholder="Value" onChange={(e) => setSpecs((s) => s.map((r, j) => (j === i ? { ...r, v: e.target.value } : r)))} />
-                      {canSave && (
-                        <button className="btn btn-ghost btn-sm px-2" type="button" title="Remove" onClick={() => setSpecs((s) => s.filter((_, j) => j !== i))}>
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Column 2: Media Center (Pictures, Documents, Videos, YouTube) */}
+        <div className="lg:col-span-5 flex flex-col h-full min-h-0 bg-white rounded-xl border border-slate-200/90 shadow-2xs p-3">
+          <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100 flex-shrink-0">
+            <div>
+              <div className="flex items-center gap-1.5">
+                <h3 className="font-extrabold text-slate-900 text-xs">Media Center</h3>
+                <span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold bg-indigo-50 text-indigo-700">
+                  {media.length + staged.length} assets
+                </span>
               </div>
+              <p className="text-[10px] text-slate-400">Pictures, YouTube videos &amp; PDF datasheets</p>
             </div>
-          </section>
-
-          {/* ------- media ------- */}
-          <section className="rounded-2xl border border-slate-200/80 bg-white p-5">
-            <div className="flex items-center justify-between mb-1">
-              <h3 className="font-extrabold text-slate-900 text-sm">Media</h3>
-              {canSave && (
-                <div className="flex items-center gap-2">
-                  <label className="btn btn-ghost btn-sm cursor-pointer">
-                    <Upload className="w-3.5 h-3.5" /> Upload files
-                    <input type="file" multiple accept="image/*,application/pdf,video/*" className="hidden" onChange={(e) => { stageFiles(e.target.files); e.target.value = ''; }} />
-                  </label>
-                  <button className="btn btn-ghost btn-sm" type="button" onClick={() => setYtOpen(true)}><MonitorPlay className="w-3.5 h-3.5" /> Add YouTube</button>
-                </div>
-              )}
-            </div>
-            <p className="text-[11px] text-slate-500 mb-4">Images, PDF brochures/spec sheets and videos. Files go to secure object storage — only the reference is saved.</p>
-
-            <div className="space-y-4">
-              <MediaGroup title={`Images (${images.length})`} icon={ImageIcon}>
-                {images.map((m) => (
-                  <figure key={m.id} className="relative group w-28">
-                    <img src={m.url} alt={m.alt || m.title || ''} className="w-28 h-28 rounded-xl object-cover border border-slate-200" />
-                    {m.primary && <span className="absolute top-1 left-1 text-[9px] font-extrabold uppercase bg-blue-600 text-white rounded px-1.5 py-0.5">Primary</span>}
-                    {canSave && (
-                      <button type="button" onClick={() => removeMedia(m)} className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity bg-white/95 rounded-lg p-1 text-red-600 hover:bg-red-50 cursor-pointer">
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-                    <figcaption className="text-[10px] text-slate-500 mt-1 truncate" title={m.alt || ''}>{m.alt || 'No description'}</figcaption>
-                  </figure>
-                ))}
-                {staged.filter((s) => s.kind === 'image').map((s) => <StagedTile key={s.key} s={s} onDrop={dropStaged} />)}
-                {!images.length && !staged.some((s) => s.kind === 'image') && <p className="text-xs text-slate-400">No images yet.</p>}
-              </MediaGroup>
-
-              <MediaGroup title={`Documents (${docs.length})`} icon={FileText}>
-                {docs.map((m) => (
-                  <div key={m.id} className="flex items-center gap-2 rounded-xl border border-slate-200 p-2.5 pr-3 w-full">
-                    <FileText className="w-4 h-4 text-red-500 flex-shrink-0" />
-                    <div className="min-w-0 flex-1">
-                      <div className="text-xs font-bold text-slate-900 truncate">{m.title || 'Document'}</div>
-                      <a href={m.url} target="_blank" rel="noreferrer" className="text-[11px] text-blue-600 hover:underline truncate block">Open / download</a>
-                    </div>
-                    {canSave && <button type="button" onClick={() => removeMedia(m)} className="text-slate-400 hover:text-red-600 cursor-pointer"><Trash2 className="w-3.5 h-3.5" /></button>}
-                  </div>
-                ))}
-                {staged.filter((s) => s.kind === 'document').map((s) => <StagedTile key={s.key} s={s} onDrop={dropStaged} wide />)}
-                {!docs.length && !staged.some((s) => s.kind === 'document') && <p className="text-xs text-slate-400">No brochures or spec sheets yet.</p>}
-              </MediaGroup>
-
-              <MediaGroup title={`Videos (${videos.length})`} icon={Film}>
-                {videos.map((m) => (
-                  <div key={m.id} className="flex items-center gap-2 rounded-xl border border-slate-200 p-2.5 pr-3 w-full">
-                    <Film className="w-4 h-4 text-slate-500 flex-shrink-0" />
-                    <div className="min-w-0 flex-1">
-                      <div className="text-xs font-bold text-slate-900 truncate">{m.title || 'Video'}</div>
-                      <a href={m.url} target="_blank" rel="noreferrer" className="text-[11px] text-blue-600 hover:underline truncate block">Open video</a>
-                    </div>
-                    {canSave && <button type="button" onClick={() => removeMedia(m)} className="text-slate-400 hover:text-red-600 cursor-pointer"><Trash2 className="w-3.5 h-3.5" /></button>}
-                  </div>
-                ))}
-                {staged.filter((s) => s.kind === 'video').map((s) => <StagedTile key={s.key} s={s} onDrop={dropStaged} wide />)}
-                {!videos.length && !staged.some((s) => s.kind === 'video') && <p className="text-xs text-slate-400">No uploaded videos yet.</p>}
-              </MediaGroup>
-
-              <MediaGroup title={`YouTube (${yts.length})`} icon={MonitorPlay}>
-                {yts.map((m) => (
-                  <div key={m.id} className="relative group w-40">
-                    <img src={ytId(m.url) ? `https://img.youtube.com/vi/${ytId(m.url)}/hqdefault.jpg` : imgFallback(m.id, 320, 180)} alt={m.title || ''} className="w-40 h-24 rounded-xl object-cover border border-slate-200" />
-                    <span className="absolute bottom-1 right-1 text-[9px] font-extrabold uppercase bg-red-600 text-white rounded px-1.5 py-0.5">▶ YouTube</span>
-                    {canSave && (
-                      <button type="button" onClick={() => removeMedia(m)} className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity bg-white/95 rounded-lg p-1 text-red-600 hover:bg-red-50 cursor-pointer">
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-                    <div className="text-[10px] text-slate-500 mt-1 truncate">{m.title || 'Untitled video'}</div>
-                  </div>
-                ))}
-                {!yts.length && <p className="text-xs text-slate-400">No YouTube links yet.</p>}
-              </MediaGroup>
-            </div>
-
-            {stagedReady > 0 && (
-              <div className="mt-4 flex items-center justify-between rounded-xl bg-amber-50 border border-amber-200 px-3.5 py-2.5">
-                <span className="text-xs text-amber-800 font-semibold">{stagedReady} file(s) ready to upload.</span>
-                <button className="btn btn-primary btn-sm" type="button" disabled={saving} onClick={() => save()}>
-                  {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />} Upload now
+            {canSave && (
+              <div className="flex items-center gap-1.5">
+                <label className="px-2.5 py-1 rounded-lg text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 cursor-pointer flex items-center gap-1 transition-colors">
+                  <Upload className="w-3 h-3" /> Upload Files
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*,application/pdf,video/*"
+                    className="hidden"
+                    onChange={(e) => { stageFiles(e.target.files); e.target.value = ''; }}
+                  />
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setYtOpen(true)}
+                  className="px-2.5 py-1 rounded-lg text-xs font-bold text-red-700 bg-red-50 hover:bg-red-100 border border-red-200/80 cursor-pointer flex items-center gap-1 transition-colors"
+                >
+                  <MonitorPlay className="w-3 h-3" /> + YouTube
                 </button>
               </div>
             )}
-          </section>
+          </div>
+
+          {/* Quick Filter Tabs */}
+          <div className="flex items-center gap-1 mb-2 flex-shrink-0 overflow-x-auto pb-0.5">
+            {[
+              { id: 'all', label: 'All', count: media.length + staged.length },
+              { id: 'image', label: 'Pictures', count: images.length + stagedImagesCount },
+              { id: 'document', label: 'Documents', count: docs.length + stagedDocsCount },
+              { id: 'video', label: 'Videos & YT', count: videos.length + yts.length + stagedVideosCount }
+            ].map((f) => (
+              <button
+                key={f.id}
+                type="button"
+                onClick={() => setMediaFilter(f.id)}
+                className={`px-2 py-0.5 rounded-md text-[11px] font-bold whitespace-nowrap transition-colors flex items-center gap-1 cursor-pointer ${
+                  mediaFilter === f.id
+                    ? 'bg-slate-800 text-white'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                <span>{f.label}</span>
+                <span className={`text-[9.5px] px-1 rounded-full ${mediaFilter === f.id ? 'bg-slate-700 text-slate-200' : 'bg-slate-200 text-slate-600'}`}>
+                  {f.count}
+                </span>
+              </button>
+            ))}
+          </div>
+
+          {/* Staged Upload Ready Banner */}
+          {stagedReady > 0 && (
+            <div className="mb-2 p-2 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 flex items-center justify-between text-xs flex-shrink-0">
+              <span className="font-semibold text-[11px]">{stagedReady} staged file(s) ready with title &amp; description</span>
+              <button
+                type="button"
+                className="px-2 py-0.5 rounded bg-amber-600 hover:bg-amber-700 text-white font-bold text-[10.5px] transition-colors"
+                disabled={saving}
+                onClick={() => save()}
+              >
+                {saving ? 'Uploading…' : 'Upload staged'}
+              </button>
+            </div>
+          )}
+
+          {/* Scrollable Media List */}
+          <div className="flex-1 min-h-0 overflow-y-auto space-y-2 pr-1">
+            {/* Staged Items */}
+            {stagedFiltered.map((s) => (
+              <div key={s.key} className="rounded-xl border-2 border-dashed border-amber-300 bg-amber-50/50 p-2 flex gap-2.5 items-start">
+                <div className="w-16 h-16 rounded-lg bg-white border border-amber-200 flex items-center justify-center flex-shrink-0 overflow-hidden relative">
+                  {s.kind === 'image' && <img src={s.url} alt="" className="w-full h-full object-cover" />}
+                  {s.kind === 'document' && <FileText className="w-7 h-7 text-red-500" />}
+                  {s.kind === 'video' && <Film className="w-7 h-7 text-indigo-500" />}
+                  <span className="absolute bottom-0 inset-x-0 bg-amber-600 text-white text-[8px] font-extrabold uppercase text-center py-0.5">
+                    {s.status === 'uploading' ? 'Uploading…' : 'Staged'}
+                  </span>
+                </div>
+
+                <div className="flex-1 min-w-0 space-y-1">
+                  <div className="flex items-center justify-between gap-1">
+                    <span className="text-[10px] font-extrabold uppercase text-amber-800 tracking-wider">
+                      {s.kind === 'document' ? 'PDF Document' : (s.kind === 'video' ? 'Video' : 'Picture')}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => dropStaged(s.key)}
+                      className="text-slate-400 hover:text-red-600 p-0.5 cursor-pointer"
+                      title="Discard staged file"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                  <input
+                    className="w-full text-xs font-semibold px-2 py-0.5 rounded border border-amber-200 bg-white placeholder:font-normal placeholder:text-slate-400"
+                    placeholder="Title (optional, e.g. Side Profile View)"
+                    value={s.title || ''}
+                    onChange={(e) => updateStaged(s.key, 'title', e.target.value)}
+                  />
+                  <input
+                    className="w-full text-[11px] px-2 py-0.5 rounded border border-amber-200 bg-white placeholder:text-slate-400"
+                    placeholder="Description / caption (optional, e.g. BT40 spindle taper)"
+                    value={s.description || ''}
+                    onChange={(e) => updateStaged(s.key, 'description', e.target.value)}
+                  />
+                </div>
+              </div>
+            ))}
+
+            {/* Existing Uploaded Media */}
+            {mediaFiltered.map((m) => {
+              const isModified = mediaEdits[m.id] !== undefined;
+              const ytVideoId = m.type === 'youtube' ? ytId(m.url) : null;
+              return (
+                <div key={m.id} className="rounded-xl border border-slate-200/90 bg-slate-50/60 hover:bg-slate-50 hover:border-slate-300 p-2.5 flex gap-2.5 items-start transition-all">
+                  <div className="w-16 h-16 rounded-lg bg-white border border-slate-200 flex items-center justify-center flex-shrink-0 overflow-hidden relative group">
+                    {m.type === 'image' && (
+                      <img src={m.url} alt={m.alt || m.title || ''} className="w-full h-full object-cover" />
+                    )}
+                    {m.type === 'youtube' && (
+                      <img
+                        src={ytVideoId ? `https://img.youtube.com/vi/${ytVideoId}/hqdefault.jpg` : imgFallback(m.id, 160, 160)}
+                        alt={m.title || ''}
+                        className="w-full h-full object-cover"
+                      />
+                    )}
+                    {m.type === 'document' && <FileText className="w-7 h-7 text-red-500" />}
+                    {m.type === 'video' && <Film className="w-7 h-7 text-slate-500" />}
+
+                    {m.primary && (
+                      <span className="absolute top-0.5 left-0.5 bg-blue-600 text-white text-[8px] font-extrabold uppercase px-1 rounded shadow-xs">
+                        Primary
+                      </span>
+                    )}
+                    {m.type === 'youtube' && (
+                      <span className="absolute bottom-0.5 right-0.5 bg-red-600 text-white text-[7.5px] font-black px-1 rounded">
+                        ▶ YT
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex-1 min-w-0 space-y-1">
+                    <div className="flex items-center justify-between gap-1">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className="text-[10px] font-extrabold uppercase text-slate-500 tracking-wider">
+                          {m.type === 'document' ? 'PDF Document' : (m.type === 'youtube' ? 'YouTube' : (m.type === 'video' ? 'Video' : 'Picture'))}
+                        </span>
+                        <a
+                          href={m.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-[10.5px] text-blue-600 hover:underline truncate max-w-[150px] inline-flex items-center gap-0.5"
+                          title="Open asset in new tab"
+                        >
+                          <ExternalLink className="w-2.5 h-2.5" /> Open
+                        </a>
+                      </div>
+
+                      <div className="flex items-center gap-1">
+                        {m.type === 'image' && !m.primary && canSave && (
+                          <button
+                            type="button"
+                            onClick={() => setPrimary(m)}
+                            className="text-[10px] font-bold text-slate-500 hover:text-blue-600 px-1.5 py-0.5 rounded hover:bg-white border border-transparent hover:border-slate-200 cursor-pointer flex items-center gap-0.5"
+                            title="Set as catalog primary photo"
+                          >
+                            <Star className="w-2.5 h-2.5" /> Make Primary
+                          </button>
+                        )}
+                        {isModified && (
+                          <button
+                            type="button"
+                            disabled={savingMediaId === m.id}
+                            onClick={() => quickSaveMedia(m)}
+                            className="text-[10px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-1.5 py-0.5 rounded cursor-pointer flex items-center gap-0.5"
+                            title="Save title and description"
+                          >
+                            {savingMediaId === m.id ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : <Save className="w-2.5 h-2.5" />}
+                            Save
+                          </button>
+                        )}
+                        {canSave && (
+                          <button
+                            type="button"
+                            onClick={() => removeMedia(m)}
+                            className="text-slate-400 hover:text-red-600 p-0.5 cursor-pointer transition-colors"
+                            title="Remove asset"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    <input
+                      className="w-full text-xs font-semibold px-2 py-0.5 rounded border border-slate-200 bg-white focus:border-indigo-500 focus:outline-none placeholder:font-normal placeholder:text-slate-400"
+                      placeholder="Title (optional, e.g. Spindle Clearance)"
+                      value={getMediaVal(m, 'title')}
+                      disabled={!canSave}
+                      onChange={(e) => handleMediaEdit(m.id, 'title', e.target.value)}
+                    />
+                    <input
+                      className="w-full text-[11px] px-2 py-0.5 rounded border border-slate-200 bg-white focus:border-indigo-500 focus:outline-none placeholder:text-slate-400"
+                      placeholder="Description / caption (optional, e.g. Dual-contact BT40 taper)"
+                      value={getMediaVal(m, 'description')}
+                      disabled={!canSave}
+                      onChange={(e) => handleMediaEdit(m.id, 'description', e.target.value)}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+
+            {!mediaFiltered.length && !stagedFiltered.length && (
+              <div className="py-8 text-center text-slate-400 text-xs">
+                No media assets found in this filter.
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* ------- side column: ERP facts + history ------- */}
-        <div className="space-y-5">
-          <section className="rounded-2xl border border-slate-200/80 bg-white p-5">
-            <h3 className="font-extrabold text-slate-900 text-sm mb-3">From ERP Inventory</h3>
-            <dl className="space-y-2 text-xs">
+        {/* Column 3: ERP Inventory & Status History */}
+        <div className="lg:col-span-3 flex flex-col h-full min-h-0 gap-2.5">
+          {/* Top Panel: From ERP Inventory */}
+          <div className="flex-1 min-h-0 flex flex-col bg-white rounded-xl border border-slate-200/90 shadow-2xs p-3">
+            <div className="flex items-center justify-between pb-1.5 mb-1.5 border-b border-slate-100 flex-shrink-0">
+              <h3 className="font-extrabold text-slate-900 text-xs">From ERP Inventory</h3>
+              {p.erp_synced && (
+                <span className="text-[9px] font-extrabold uppercase text-emerald-700 bg-emerald-50 border border-emerald-200 rounded px-1.5 py-0.5">
+                  Synced
+                </span>
+              )}
+            </div>
+            <div className="flex-1 min-h-0 overflow-y-auto space-y-1.5 text-xs pr-1">
               <Fact k="SKU" v={p.sku || p.id} mono />
               <Fact k="Brand" v={p.brand || '—'} />
               <Fact k="MPN" v={p.mpn || '—'} mono />
@@ -576,51 +880,78 @@ function ContentEditor({ id }) {
               <Fact k="Lead time" v={p.leadTime || '—'} />
               <Fact k="Warehouse" v={p.warehouse || '—'} mono />
               <Fact k="Stock on hand" v={p.stock ?? '—'} mono strong />
-              {p.erp_item_id && <Fact k="ERP product ID" v={p.erp_item_id} mono />}
-              {p.erp_last_synced_at && <Fact k="ERP last sync" v={fmtDate(p.erp_last_synced_at)} />}
-            </dl>
-          </section>
+              {p.erp_item_id && <Fact k="ERP item ID" v={p.erp_item_id} mono />}
+              {p.erp_last_synced_at && <Fact k="Last Synced" v={fmtDate(p.erp_last_synced_at)} />}
+            </div>
+          </div>
 
-          <section className="rounded-2xl border border-slate-200/80 bg-white p-5">
-            <h3 className="font-extrabold text-slate-900 text-sm mb-3">Status history</h3>
-            {(!p.workflow_history || !p.workflow_history.length)
-              ? <p className="text-xs text-slate-400">No recorded actions yet.</p>
-              : (
-                <ol className="space-y-3">
+          {/* Bottom Panel: Status History */}
+          <div className="flex-1 min-h-0 flex flex-col bg-white rounded-xl border border-slate-200/90 shadow-2xs p-3">
+            <div className="pb-1.5 mb-1.5 border-b border-slate-100 flex-shrink-0">
+              <h3 className="font-extrabold text-slate-900 text-xs">Workflow History</h3>
+            </div>
+            <div className="flex-1 min-h-0 overflow-y-auto space-y-2 text-xs pr-1">
+              {(!p.workflow_history || !p.workflow_history.length) ? (
+                <p className="text-xs text-slate-400">No recorded actions yet.</p>
+              ) : (
+                <ol className="space-y-2">
                   {p.workflow_history.map((h) => (
-                    <li key={h.id} className="text-xs border-l-2 border-slate-200 pl-3">
-                      <div className="font-bold text-slate-800">{h.stage || String(h.to || '').replace(/_/g, ' ')}</div>
-                      <div className="text-slate-500">{h.by || 'system'} · {fmtDate(h.ts)}</div>
-                      {h.note && <div className="text-slate-600 mt-0.5">“{h.note}”</div>}
+                    <li key={h.id} className="text-xs border-l-2 border-indigo-200 pl-2.5">
+                      <div className="font-bold text-slate-800 text-[11px]">{h.stage || String(h.to || '').replace(/_/g, ' ')}</div>
+                      <div className="text-slate-400 text-[10px]">{h.by || 'system'} · {fmtDate(h.ts)}</div>
+                      {h.note && <div className="text-slate-600 text-[10.5px] mt-0.5">“{h.note}”</div>}
                     </li>
                   ))}
                 </ol>
               )}
-          </section>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* ---- modals ---- */}
+      {/* ---- Add YouTube Modal ---- */}
       {ytOpen && (
-        <Modal title="▶ Add YouTube video" onClose={() => setYtOpen(false)}>
-          <Field label="YouTube link" req hint="youtube.com/watch?v=… , youtu.be/… or a Shorts link.">
+        <Modal title="▶ Attach YouTube Video" onClose={() => setYtOpen(false)}>
+          <Field label="YouTube Link" req hint="youtube.com/watch?v=… , youtu.be/… or a Shorts link">
             <input value={ytUrl} onChange={(e) => setYtUrl(e.target.value)} placeholder="https://www.youtube.com/watch?v=…" />
           </Field>
-          <Field label="Video title">
-            <input value={ytTitle} onChange={(e) => setYtTitle(e.target.value)} placeholder="e.g. Machining demo — 10mm end mill" />
+          <Field label="Video Title (optional)">
+            <input value={ytTitle} onChange={(e) => setYtTitle(e.target.value)} placeholder="e.g. 5-Axis CNC Machining Demo" />
+          </Field>
+          <Field label="Video Description / Highlights (optional)">
+            <textarea
+              rows={2}
+              value={ytDesc}
+              onChange={(e) => setYtDesc(e.target.value)}
+              placeholder="e.g. High-speed trochoidal milling of titanium alloy at 12,000 RPM."
+              className="w-full text-xs px-2.5 py-1.5 rounded-lg border border-slate-200 resize-none leading-relaxed"
+            />
           </Field>
           {ytId(ytUrl) && (
-            <img src={`https://img.youtube.com/vi/${ytId(ytUrl)}/hqdefault.jpg`} alt="preview" className="mt-3 w-full max-w-xs rounded-xl border border-slate-200" />
+            <img src={`https://img.youtube.com/vi/${ytId(ytUrl)}/hqdefault.jpg`} alt="preview" className="mt-2 w-full max-w-xs rounded-xl border border-slate-200" />
           )}
-          <div className="flex gap-2 justify-end mt-5">
+          <div className="flex gap-2 justify-end mt-4">
             <button className="btn btn-ghost btn-sm" type="button" onClick={() => setYtOpen(false)}>Cancel</button>
-            <button className="btn btn-primary btn-sm" type="button" onClick={addYoutube}>Attach video</button>
+            <button className="btn btn-primary btn-sm bg-red-600 hover:bg-red-700 text-white" type="button" onClick={addYoutube}>Attach Video</button>
           </div>
         </Modal>
       )}
 
-      {preview && <ListingPreview p={{ ...p, short, desc, specs: Object.fromEntries(specs.filter((r) => r.k.trim()).map((r) => [r.k, r.v])) }} images={images} docs={docs} videos={videos} yts={yts} staged={staged} onClose={() => setPreview(false)} />}
+      {/* ---- Listing Preview Modal ---- */}
+      {preview && (
+        <ListingPreview
+          p={{ ...p, short, desc, specs: Object.fromEntries(specs.filter((r) => r.k.trim()).map((r) => [r.k, r.v])) }}
+          images={images}
+          docs={docs}
+          videos={videos}
+          yts={yts}
+          staged={staged}
+          mediaEdits={mediaEdits}
+          onClose={() => setPreview(false)}
+        />
+      )}
 
+      {/* ---- Confirmation Modal ---- */}
       {confirmSubmit && (
         <Confirm
           title="Send to Accounts / Finance?"
@@ -631,100 +962,165 @@ function ContentEditor({ id }) {
           onOk={submitToFinance}
         />
       )}
-    </>
+    </div>
   );
 }
 
 /* ---------------------------------------------------------------- small pieces */
 function Fact({ k, v, mono, strong }) {
   return (
-    <div className="flex items-start justify-between gap-3">
-      <dt className="text-slate-500 flex-shrink-0">{k}</dt>
-      <dd className={`text-right ${mono ? 'font-mono' : ''} ${strong ? 'font-extrabold text-slate-900' : 'font-semibold text-slate-800'} break-all`}>{v}</dd>
-    </div>
-  );
-}
-
-function MediaGroup({ title, icon: Icon, children }) {
-  return (
-    <div>
-      <div className="flex items-center gap-1.5 mb-2 text-[11px] font-extrabold uppercase tracking-wide text-slate-500">
-        <Icon className="w-3.5 h-3.5" /> {title}
-      </div>
-      <div className="flex flex-wrap gap-3">{children}</div>
-    </div>
-  );
-}
-
-function StagedTile({ s, onDrop, wide }) {
-  const uploading = s.status === 'uploading';
-  return (
-    <div className={`relative rounded-xl border-2 border-dashed border-amber-300 bg-amber-50/50 p-2 ${wide ? 'w-full' : 'w-28'}`}>
-      <button type="button" onClick={() => onDrop(s.key)} className="absolute top-1 right-1 bg-white/95 rounded-lg p-0.5 text-slate-500 hover:text-red-600 cursor-pointer" title="Remove">
-        <Trash2 className="w-3 h-3" />
-      </button>
-      {s.kind === 'image' && <img src={s.url} alt="" className="w-full h-24 rounded-lg object-cover" />}
-      <div className="text-[10px] text-slate-600 truncate mt-1" title={s.file && s.file.name}>{s.file ? s.file.name : 'file'}{uploading && ' · uploading…'}</div>
-      {s.kind === 'document' && (
-        <input className="mt-1 text-[10px]" value={s.title} placeholder="Document title" onChange={() => {}} readOnly />
-      )}
+    <div className="flex items-start justify-between gap-2">
+      <dt className="text-slate-500 flex-shrink-0 text-[11px]">{k}</dt>
+      <dd className={`text-right text-[11px] ${mono ? 'font-mono' : ''} ${strong ? 'font-extrabold text-slate-900' : 'font-semibold text-slate-800'} truncate max-w-[140px]`}>{v}</dd>
     </div>
   );
 }
 
 /* ---------------------------------------------------------------- listing preview */
-function ListingPreview({ p, images, docs, videos, yts, staged, onClose }) {
+function ListingPreview({ p, images, docs, videos, yts, staged, mediaEdits = {}, onClose }) {
   const stagedImgs = staged.filter((s) => s.kind === 'image');
-  const allImgs = [...images.map((i) => i.url), ...stagedImgs.map((s) => s.url)];
+  const allImgs = [
+    ...images.map((i) => ({ ...i, title: mediaEdits[i.id]?.title ?? i.title, description: mediaEdits[i.id]?.description ?? i.description ?? i.alt })),
+    ...stagedImgs.map((s) => ({ url: s.url, title: s.title, description: s.description || s.alt }))
+  ];
+
+  const stagedDocs = staged.filter((s) => s.kind === 'document');
+  const allDocs = [
+    ...docs.map((d) => ({ ...d, title: mediaEdits[d.id]?.title ?? d.title, description: mediaEdits[d.id]?.description ?? d.description })),
+    ...stagedDocs.map((s) => ({ url: s.url, title: s.title || s.file?.name, description: s.description, staged: true }))
+  ];
+
+  const allYts = [
+    ...yts.map((y) => ({ ...y, title: mediaEdits[y.id]?.title ?? y.title, description: mediaEdits[y.id]?.description ?? y.description })),
+    ...staged.filter((s) => s.kind === 'youtube')
+  ];
+
+  const [activeImgIdx, setActiveImgIdx] = useState(0);
+  const activeImg = allImgs[activeImgIdx] || null;
   const specs = Object.entries(p.specs || {}).filter(([k]) => k.trim());
-  const ytsAll = [...yts, ...staged.filter((s) => s.kind === 'youtube')];
+
   return (
-    <Modal wide title="👁 Listing preview — exactly what a Salesperson will see" onClose={onClose}>
-      <div className="grid md:grid-cols-2 gap-6">
-        <div>
-          {allImgs.length
-            ? <img src={allImgs[0]} alt={p.alt || p.name} className="w-full aspect-[4/3] object-cover rounded-2xl border border-slate-200" />
-            : <div className="w-full aspect-[4/3] rounded-2xl border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-400 text-xs">No image yet</div>}
-          {allImgs.length > 1 && (
-            <div className="flex gap-2 mt-2 overflow-x-auto">
-              {allImgs.slice(1).map((u, i) => <img key={i} src={u} alt="" className="w-16 h-16 rounded-lg object-cover border border-slate-200 flex-shrink-0" />)}
+    <Modal wide title="👁 Industrial Catalog Preview — Sales & Customer View" onClose={onClose}>
+      <div className="grid md:grid-cols-12 gap-6 max-h-[75vh] overflow-y-auto pr-1">
+        {/* Left: Gallery & Visual Asset Display */}
+        <div className="md:col-span-6 space-y-3">
+          <div className="aspect-[4/3] rounded-xl border border-slate-200 bg-slate-100 overflow-hidden relative flex items-center justify-center">
+            {activeImg ? (
+              <img src={activeImg.url} alt={activeImg.title || p.name} className="w-full h-full object-cover" />
+            ) : (
+              <div className="text-slate-400 text-xs">No primary image attached</div>
+            )}
+          </div>
+
+          {/* Active Photo Caption Box */}
+          {activeImg && (activeImg.title || activeImg.description) && (
+            <div className="p-2.5 rounded-lg bg-slate-900 text-white text-xs">
+              {activeImg.title && <div className="font-bold flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-orange-500" />{activeImg.title}</div>}
+              {activeImg.description && <div className="text-[11px] text-slate-300 mt-0.5">{activeImg.description}</div>}
             </div>
           )}
-          {ytsAll.filter((y) => ytId(y.url)).slice(0, 1).map((y) => (
-            <iframe key={y.id || y.url} className="mt-3 w-full aspect-video rounded-2xl border border-slate-200" src={`https://www.youtube.com/embed/${ytId(y.url)}`} title={y.title || 'Product video'} allowFullScreen />
+
+          {/* Thumbnails */}
+          {allImgs.length > 1 && (
+            <div className="flex gap-2 overflow-x-auto pb-1">
+              {allImgs.map((img, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => setActiveImgIdx(i)}
+                  className={`w-14 h-14 rounded-lg border-2 overflow-hidden flex-shrink-0 cursor-pointer ${
+                    activeImgIdx === i ? 'border-orange-500 ring-2 ring-orange-200' : 'border-slate-200 opacity-70 hover:opacity-100'
+                  }`}
+                >
+                  <img src={img.url} alt="" className="w-full h-full object-cover" />
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* YouTube Embed Showcase */}
+          {allYts.filter((y) => ytId(y.url)).map((y, idx) => (
+            <div key={idx} className="rounded-xl border border-slate-200 overflow-hidden bg-slate-50 p-2.5">
+              <iframe className="w-full aspect-video rounded-lg" src={`https://www.youtube.com/embed/${ytId(y.url)}`} title={y.title || 'Product Video'} allowFullScreen />
+              {y.title && <div className="font-bold text-xs text-slate-900 mt-2">{y.title}</div>}
+              {y.description && <div className="text-[11px] text-slate-600 mt-0.5">{y.description}</div>}
+            </div>
           ))}
         </div>
-        <div>
-          <h2 className="text-xl font-black text-slate-900 tracking-tight">{p.name}</h2>
-          {p.short && <p className="text-sm text-slate-600 mt-1">{p.short}</p>}
-          <div className="text-2xl font-black text-slate-900 mt-3">On request</div>
-          <div className="text-[11px] text-slate-500">Price is set by Finance after approval.</div>
 
-          {specs.length > 0 && (
-            <table className="w-full text-xs mt-4 border border-slate-200 rounded-xl overflow-hidden">
-              <tbody className="divide-y divide-slate-100">
-                {specs.map(([k, v]) => (
-                  <tr key={k}><td className="px-3 py-2 bg-slate-50 font-bold text-slate-700 w-1/2">{k}</td><td className="px-3 py-2 text-slate-800 font-mono">{v}</td></tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+        {/* Right: Technical Specs, Overview, Documents */}
+        <div className="md:col-span-6 space-y-4">
+          <div>
+            <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 bg-slate-100 text-slate-700 rounded-md">
+              {p.categoryName || p.category || 'Industrial Catalog'}
+            </span>
+            <h2 className="text-lg font-black text-slate-900 tracking-tight mt-1">{p.name}</h2>
+            <div className="text-xs text-slate-500 font-mono mt-0.5">SKU: {p.sku || p.id}{p.brand ? ` · Brand: ${p.brand}` : ''}</div>
+          </div>
 
-          <div className="mt-4 text-xs text-slate-700 whitespace-pre-wrap leading-relaxed">{p.desc || 'No description written yet.'}</div>
-
-          {(docs.length > 0 || staged.some((s) => s.kind === 'document')) && (
-            <div className="mt-4">
-              <div className="text-[11px] font-extrabold uppercase tracking-wide text-slate-500 mb-1">Documents</div>
-              <ul className="space-y-1">
-                {docs.map((d) => <li key={d.id} className="text-xs"><a className="text-blue-600 hover:underline" href={d.url} target="_blank" rel="noreferrer">📄 {d.title || 'Document'}</a></li>)}
-                {staged.filter((s) => s.kind === 'document').map((s) => <li key={s.key} className="text-xs text-amber-700">📄 {s.title || s.file?.name} <span className="text-[10px]">(not uploaded yet)</span></li>)}
-              </ul>
+          {p.short && (
+            <div className="p-2.5 rounded-lg bg-orange-50/60 border border-orange-200/80 text-xs text-slate-800 font-medium">
+              {p.short}
             </div>
           )}
-          {videos.length > 0 && (
-            <div className="mt-4">
-              <div className="text-[11px] font-extrabold uppercase tracking-wide text-slate-500 mb-1">Videos</div>
-              {videos.map((v) => <div key={v.id} className="mt-1"><video src={v.url} controls className="w-full max-w-sm rounded-xl" /></div>)}
+
+          <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
+            <div className="text-xl font-black text-slate-900">On request</div>
+            <div className="text-[11px] text-slate-500">Commercial pricing will be finalized by Finance prior to publication.</div>
+          </div>
+
+          {specs.length > 0 && (
+            <div>
+              <div className="text-[11px] font-extrabold uppercase tracking-wide text-slate-500 mb-1.5">
+                Technical Specifications
+              </div>
+              <table className="w-full text-xs border border-slate-200 rounded-lg overflow-hidden">
+                <tbody className="divide-y divide-slate-100">
+                  {specs.map(([k, v]) => (
+                    <tr key={k} className="hover:bg-slate-50/50">
+                      <td className="px-2.5 py-1.5 bg-slate-50 font-bold text-slate-700 w-1/2">{k}</td>
+                      <td className="px-2.5 py-1.5 text-slate-800 font-mono">{v}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          <div>
+            <div className="text-[11px] font-extrabold uppercase tracking-wide text-slate-500 mb-1">
+              Sales Description
+            </div>
+            <div className="text-xs text-slate-700 whitespace-pre-wrap leading-relaxed">
+              {p.desc || 'No description written yet.'}
+            </div>
+          </div>
+
+          {allDocs.length > 0 && (
+            <div>
+              <div className="text-[11px] font-extrabold uppercase tracking-wide text-slate-500 mb-1.5">
+                Technical Documents &amp; Datasheets ({allDocs.length})
+              </div>
+              <div className="space-y-1.5">
+                {allDocs.map((d, idx) => (
+                  <div key={idx} className="p-2 rounded-lg border border-slate-200 bg-white flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <FileText className="w-4 h-4 text-red-500 flex-shrink-0" />
+                      <div className="min-w-0">
+                        <div className="text-xs font-bold text-slate-900 truncate">{d.title || 'Datasheet'}</div>
+                        {d.description && <div className="text-[10px] text-slate-500 truncate">{d.description}</div>}
+                      </div>
+                    </div>
+                    {d.staged ? (
+                      <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">Staged</span>
+                    ) : (
+                      <a href={d.url} target="_blank" rel="noreferrer" className="text-xs font-bold text-blue-600 hover:underline flex-shrink-0">
+                        Download PDF ↓
+                      </a>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>
@@ -732,3 +1128,4 @@ function ListingPreview({ p, images, docs, videos, yts, staged, onClose }) {
     </Modal>
   );
 }
+
