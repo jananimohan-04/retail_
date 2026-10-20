@@ -137,6 +137,22 @@ const MENU_CATALOG = [
       { id: 'store_orders', label: 'My Orders', path: '/store/orders', icon: 'Package', defaultRoles: ['super_admin', 'company_admin', 'sales_user', 'sales_regional_partner', 'sales_channel_partner', 'sales_referral_partner'] },
       { id: 'store_profile', label: 'My Profile', path: '/store/profile', icon: 'User', defaultRoles: ['super_admin', 'company_admin', 'sales_user', 'sales_regional_partner', 'sales_channel_partner', 'sales_referral_partner'] }
     ]
+  },
+  {
+    id: 'browse_categories',
+    label: 'Browse Categories',
+    description: 'Category navigation and storefront product filters',
+    items: [
+      { id: 'cat_cnc_machines', label: 'CNC Machines', path: '/store/listing?cat=cnc-machines', icon: 'Boxes', emoji: '🏭', defaultRoles: ['super_admin', 'company_admin', 'sales_user', 'sales_regional_partner', 'sales_channel_partner', 'sales_referral_partner'] },
+      { id: 'cat_cutting_tools', label: 'Cutting Tools', path: '/store/listing?cat=cutting-tools', icon: 'Boxes', emoji: '🔩', defaultRoles: ['super_admin', 'company_admin', 'sales_user', 'sales_regional_partner', 'sales_channel_partner', 'sales_referral_partner'] },
+      { id: 'cat_spares', label: 'Machine Spare Parts', path: '/store/listing?cat=spares', icon: 'Boxes', emoji: '⚙️', defaultRoles: ['super_admin', 'company_admin', 'sales_user', 'sales_regional_partner', 'sales_channel_partner', 'sales_referral_partner'] },
+      { id: 'cat_workholding', label: 'Workholding & Accessories', path: '/store/listing?cat=workholding', icon: 'Boxes', emoji: '🗜️', defaultRoles: ['super_admin', 'company_admin', 'sales_user', 'sales_regional_partner', 'sales_channel_partner', 'sales_referral_partner'] },
+      { id: 'cat_electrical', label: 'Control & Electrical', path: '/store/listing?cat=electrical', icon: 'Boxes', emoji: '🎛️', defaultRoles: ['super_admin', 'company_admin', 'sales_user', 'sales_regional_partner', 'sales_channel_partner', 'sales_referral_partner'] },
+      { id: 'cat_raw_materials', label: 'Raw Materials', path: '/store/listing?cat=raw-materials', icon: 'Boxes', emoji: '🧱', defaultRoles: ['super_admin', 'company_admin', 'sales_user', 'sales_regional_partner', 'sales_channel_partner', 'sales_referral_partner'] },
+      { id: 'cat_consumables', label: 'Industrial Consumables', path: '/store/listing?cat=consumables', icon: 'Boxes', emoji: '🛢️', defaultRoles: ['super_admin', 'company_admin', 'sales_user', 'sales_regional_partner', 'sales_channel_partner', 'sales_referral_partner'] },
+      { id: 'cat_measuring', label: 'Measuring & Inspection', path: '/store/listing?cat=measuring', icon: 'Boxes', emoji: '📏', defaultRoles: ['super_admin', 'company_admin', 'sales_user', 'sales_regional_partner', 'sales_channel_partner', 'sales_referral_partner'] },
+      { id: 'cat_safety', label: 'Safety & Maintenance', path: '/store/listing?cat=safety', icon: 'Boxes', emoji: '🦺', defaultRoles: ['super_admin', 'company_admin', 'sales_user', 'sales_regional_partner', 'sales_channel_partner', 'sales_referral_partner'] }
+    ]
   }
 ];
 
@@ -166,12 +182,22 @@ function defaultRoles() {
 }
 
 const PARTNER_ROLE_IDS = ['sales_user', 'sales_partner', 'sales_regional_partner', 'sales_channel_partner', 'sales_referral_partner'];
+const CATEGORY_PERM_IDS = [
+  'cat_cnc_machines', 'cat_cutting_tools', 'cat_spares', 'cat_workholding',
+  'cat_electrical', 'cat_raw_materials', 'cat_consumables', 'cat_measuring', 'cat_safety'
+];
 
 function ensureRolePermissions() {
   if (!Array.isArray(db.roles)) db.roles = defaultRoles();
   db.roles.forEach(r => {
     if (!Array.isArray(r.menuPermissions) || r.menuPermissions.length === 0) {
       r.menuPermissions = defaultPermissionsForRole(r.id);
+    }
+    // Auto-migrate new category permissions to roles that have store_listing
+    if (r.menuPermissions.includes('store_listing')) {
+      CATEGORY_PERM_IDS.forEach(cId => {
+        if (!r.menuPermissions.includes(cId)) r.menuPermissions.push(cId);
+      });
     }
     if (r.id === 'super_admin' && !r.menuPermissions.includes('super_access')) {
       r.menuPermissions.push('super_access');

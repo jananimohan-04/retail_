@@ -527,6 +527,178 @@ export const MENU_CATALOG = [
         }
       }
     ]
+  },
+  {
+    id: 'browse_categories',
+    label: 'Browse Categories',
+    description: 'Category navigation and storefront product filters',
+    color: 'emerald',
+    dotClass: 'bg-emerald-500 shadow-emerald-500/50',
+    badgeClass: 'bg-emerald-50 text-emerald-800 border-emerald-200',
+    items: [
+      {
+        id: 'cat_cnc_machines',
+        categorySlug: 'cnc-machines',
+        label: 'CNC Machines',
+        path: '/store/listing?cat=cnc-machines',
+        icon: 'Boxes',
+        emoji: '🏭',
+        defaultRoles: ['super_admin', 'company_admin', 'sales_user', 'sales_regional_partner', 'sales_channel_partner', 'sales_referral_partner'],
+        theme: {
+          name: 'emerald',
+          gradient: 'from-emerald-600 via-teal-600 to-cyan-600',
+          activeLink: 'bg-emerald-50/90 text-emerald-800 font-bold border-emerald-200/80 shadow-xs shadow-emerald-100',
+          activeIcon: 'text-emerald-600',
+          indicator: 'bg-emerald-600',
+          badge: 'bg-emerald-600 text-white',
+          glow: 'shadow-emerald-500/20'
+        }
+      },
+      {
+        id: 'cat_cutting_tools',
+        categorySlug: 'cutting-tools',
+        label: 'Cutting Tools',
+        path: '/store/listing?cat=cutting-tools',
+        icon: 'Boxes',
+        emoji: '🔩',
+        defaultRoles: ['super_admin', 'company_admin', 'sales_user', 'sales_regional_partner', 'sales_channel_partner', 'sales_referral_partner'],
+        theme: {
+          name: 'blue',
+          gradient: 'from-blue-600 via-indigo-600 to-sky-600',
+          activeLink: 'bg-blue-50/90 text-blue-800 font-bold border-blue-200/80 shadow-xs shadow-blue-100',
+          activeIcon: 'text-blue-600',
+          indicator: 'bg-blue-600',
+          badge: 'bg-blue-600 text-white',
+          glow: 'shadow-blue-500/20'
+        }
+      },
+      {
+        id: 'cat_spares',
+        categorySlug: 'spares',
+        label: 'Machine Spare Parts',
+        path: '/store/listing?cat=spares',
+        icon: 'Boxes',
+        emoji: '⚙️',
+        defaultRoles: ['super_admin', 'company_admin', 'sales_user', 'sales_regional_partner', 'sales_channel_partner', 'sales_referral_partner'],
+        theme: {
+          name: 'slate',
+          gradient: 'from-slate-600 via-zinc-600 to-stone-600',
+          activeLink: 'bg-slate-100 text-slate-900 font-bold border-slate-300 shadow-xs',
+          activeIcon: 'text-slate-700',
+          indicator: 'bg-slate-600',
+          badge: 'bg-slate-700 text-white',
+          glow: 'shadow-slate-500/20'
+        }
+      },
+      {
+        id: 'cat_workholding',
+        categorySlug: 'workholding',
+        label: 'Workholding & Accessories',
+        path: '/store/listing?cat=workholding',
+        icon: 'Boxes',
+        emoji: '🗜️',
+        defaultRoles: ['super_admin', 'company_admin', 'sales_user', 'sales_regional_partner', 'sales_channel_partner', 'sales_referral_partner'],
+        theme: {
+          name: 'amber',
+          gradient: 'from-amber-600 via-yellow-600 to-orange-600',
+          activeLink: 'bg-amber-50/90 text-amber-900 font-bold border-amber-200/80 shadow-xs shadow-amber-100',
+          activeIcon: 'text-amber-600',
+          indicator: 'bg-amber-600',
+          badge: 'bg-amber-600 text-white',
+          glow: 'shadow-amber-500/20'
+        }
+      },
+      {
+        id: 'cat_electrical',
+        categorySlug: 'electrical',
+        label: 'Control & Electrical',
+        path: '/store/listing?cat=electrical',
+        icon: 'Boxes',
+        emoji: '🎛️',
+        defaultRoles: ['super_admin', 'company_admin', 'sales_user', 'sales_regional_partner', 'sales_channel_partner', 'sales_referral_partner'],
+        theme: {
+          name: 'purple',
+          gradient: 'from-purple-600 via-indigo-600 to-violet-600',
+          activeLink: 'bg-purple-50/90 text-purple-900 font-bold border-purple-200/80 shadow-xs shadow-purple-100',
+          activeIcon: 'text-purple-600',
+          indicator: 'bg-purple-600',
+          badge: 'bg-purple-600 text-white',
+          glow: 'shadow-purple-500/20'
+        }
+      },
+      {
+        id: 'cat_raw_materials',
+        categorySlug: 'raw-materials',
+        label: 'Raw Materials',
+        path: '/store/listing?cat=raw-materials',
+        icon: 'Boxes',
+        emoji: '🧱',
+        defaultRoles: ['super_admin', 'company_admin', 'sales_user', 'sales_regional_partner', 'sales_channel_partner', 'sales_referral_partner'],
+        theme: {
+          name: 'rose',
+          gradient: 'from-rose-600 via-pink-600 to-red-600',
+          activeLink: 'bg-rose-50/90 text-rose-900 font-bold border-rose-200/80 shadow-xs shadow-rose-100',
+          activeIcon: 'text-rose-600',
+          indicator: 'bg-rose-600',
+          badge: 'bg-rose-600 text-white',
+          glow: 'shadow-rose-500/20'
+        }
+      },
+      {
+        id: 'cat_consumables',
+        categorySlug: 'consumables',
+        label: 'Industrial Consumables',
+        path: '/store/listing?cat=consumables',
+        icon: 'Boxes',
+        emoji: '🛢️',
+        defaultRoles: ['super_admin', 'company_admin', 'sales_user', 'sales_regional_partner', 'sales_channel_partner', 'sales_referral_partner'],
+        theme: {
+          name: 'cyan',
+          gradient: 'from-cyan-600 via-sky-600 to-blue-600',
+          activeLink: 'bg-cyan-50/90 text-cyan-900 font-bold border-cyan-200/80 shadow-xs shadow-cyan-100',
+          activeIcon: 'text-cyan-600',
+          indicator: 'bg-cyan-600',
+          badge: 'bg-cyan-600 text-white',
+          glow: 'shadow-cyan-500/20'
+        }
+      },
+      {
+        id: 'cat_measuring',
+        categorySlug: 'measuring',
+        label: 'Measuring & Inspection',
+        path: '/store/listing?cat=measuring',
+        icon: 'Boxes',
+        emoji: '📏',
+        defaultRoles: ['super_admin', 'company_admin', 'sales_user', 'sales_regional_partner', 'sales_channel_partner', 'sales_referral_partner'],
+        theme: {
+          name: 'teal',
+          gradient: 'from-teal-600 via-emerald-600 to-green-600',
+          activeLink: 'bg-teal-50/90 text-teal-900 font-bold border-teal-200/80 shadow-xs shadow-teal-100',
+          activeIcon: 'text-teal-600',
+          indicator: 'bg-teal-600',
+          badge: 'bg-teal-600 text-white',
+          glow: 'shadow-teal-500/20'
+        }
+      },
+      {
+        id: 'cat_safety',
+        categorySlug: 'safety',
+        label: 'Safety & Maintenance',
+        path: '/store/listing?cat=safety',
+        icon: 'Boxes',
+        emoji: '🦺',
+        defaultRoles: ['super_admin', 'company_admin', 'sales_user', 'sales_regional_partner', 'sales_channel_partner', 'sales_referral_partner'],
+        theme: {
+          name: 'orange',
+          gradient: 'from-orange-600 via-amber-600 to-yellow-600',
+          activeLink: 'bg-orange-50/90 text-orange-900 font-bold border-orange-200/80 shadow-xs shadow-orange-100',
+          activeIcon: 'text-orange-600',
+          indicator: 'bg-orange-600',
+          badge: 'bg-orange-600 text-white',
+          glow: 'shadow-orange-500/20'
+        }
+      }
+    ]
   }
 ];
 

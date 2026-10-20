@@ -538,15 +538,59 @@
   },
   "audit_logs": [
     {
-      "id": "A-179240372882421",
-      "ts": "2026-10-19T09:55:28.824Z",
+      "id": "A-179247567708386",
+      "ts": "2026-10-20T05:54:37.084Z",
       "actor": "Argus User",
       "role": "super_admin",
       "action": "permissions.role_update",
       "entity": "role",
       "entityId": "sales_user",
       "companyId": "",
-      "summary": "Updated role permissions for \"Direct Sales User\": 6 pages enabled (was 3)"
+      "summary": "Updated role permissions for \"Sales Partner\" (applied to all partner roles): 15 pages enabled"
+    },
+    {
+      "id": "A-179247566127413",
+      "ts": "2026-10-20T05:54:21.274Z",
+      "actor": "Argus User",
+      "role": "super_admin",
+      "action": "permissions.role_update",
+      "entity": "role",
+      "entityId": "sales_user",
+      "companyId": "",
+      "summary": "Updated role permissions for \"Sales Partner\" (applied to all partner roles): 5 pages enabled"
+    },
+    {
+      "id": "A-179247279899153",
+      "ts": "2026-10-20T05:06:38.991Z",
+      "actor": "Janani Mohan",
+      "role": "super_admin",
+      "action": "permissions.role_update",
+      "entity": "role",
+      "entityId": "super_admin",
+      "companyId": "",
+      "summary": "Updated role permissions for \"Super Admin\": 14 pages enabled (was 18)"
+    },
+    {
+      "id": "A-179243554327882",
+      "ts": "2026-10-19T18:45:43.278Z",
+      "actor": "Test Runner",
+      "role": "company_admin",
+      "action": "media.delete",
+      "entity": "media",
+      "entityId": "M-MVFLUACJYV",
+      "companyId": "C-ARGUS",
+      "summary": "Deleted youtube of test"
+    },
+    {
+      "id": "A-179243554020218",
+      "ts": "2026-10-19T18:45:40.202Z",
+      "actor": "Test Runner",
+      "role": "company_admin",
+      "action": "media.upload",
+      "entity": "media",
+      "entityId": "M-MVFLUACJYV",
+      "companyId": "C-ARGUS",
+      "summary": "Uploaded youtube for test"
     },
     {
       "id": "A-179240370940195",
@@ -1128,8 +1172,18 @@
         "store_cart",
         "store_quotes",
         "store_orders",
-        "store_profile"
-      ]
+        "store_profile",
+        "cat_cnc_machines",
+        "cat_cutting_tools",
+        "cat_spares",
+        "cat_workholding",
+        "cat_electrical",
+        "cat_raw_materials",
+        "cat_consumables",
+        "cat_measuring",
+        "cat_safety"
+      ],
+      "updatedAt": "2026-10-20T05:54:37.074Z"
     },
     {
       "id": "sales_channel_partner",
@@ -1147,8 +1201,18 @@
         "store_cart",
         "store_quotes",
         "store_orders",
-        "store_profile"
-      ]
+        "store_profile",
+        "cat_cnc_machines",
+        "cat_cutting_tools",
+        "cat_spares",
+        "cat_workholding",
+        "cat_electrical",
+        "cat_raw_materials",
+        "cat_consumables",
+        "cat_measuring",
+        "cat_safety"
+      ],
+      "updatedAt": "2026-10-20T05:54:37.074Z"
     },
     {
       "id": "sales_referral_partner",
@@ -1166,8 +1230,18 @@
         "store_cart",
         "store_quotes",
         "store_orders",
-        "store_profile"
-      ]
+        "store_profile",
+        "cat_cnc_machines",
+        "cat_cutting_tools",
+        "cat_spares",
+        "cat_workholding",
+        "cat_electrical",
+        "cat_raw_materials",
+        "cat_consumables",
+        "cat_measuring",
+        "cat_safety"
+      ],
+      "updatedAt": "2026-10-20T05:54:37.074Z"
     },
     {
       "id": "sales_user",
@@ -1185,9 +1259,18 @@
         "store_cart",
         "store_quotes",
         "store_orders",
-        "store_profile"
+        "store_profile",
+        "cat_cnc_machines",
+        "cat_cutting_tools",
+        "cat_spares",
+        "cat_workholding",
+        "cat_electrical",
+        "cat_raw_materials",
+        "cat_consumables",
+        "cat_measuring",
+        "cat_safety"
       ],
-      "updatedAt": "2026-10-19T09:55:28.822Z"
+      "updatedAt": "2026-10-20T05:54:37.074Z"
     },
     {
       "id": "company_admin",
@@ -1215,7 +1298,16 @@
         "store_cart",
         "store_quotes",
         "store_orders",
-        "store_profile"
+        "store_profile",
+        "cat_cnc_machines",
+        "cat_cutting_tools",
+        "cat_spares",
+        "cat_workholding",
+        "cat_electrical",
+        "cat_raw_materials",
+        "cat_consumables",
+        "cat_measuring",
+        "cat_safety"
       ]
     },
     {
@@ -1262,20 +1354,26 @@
         "super_catalog",
         "super_categories",
         "super_media",
-        "super_orders",
-        "super_quotes",
         "super_access",
-        "super_settings",
         "super_audit",
         "content_writer",
         "finance_review",
-        "store_home",
         "store_listing",
         "store_cart",
-        "store_quotes",
         "store_orders",
-        "store_profile"
-      ]
+        "store_profile",
+        "store_quotes",
+        "cat_cnc_machines",
+        "cat_cutting_tools",
+        "cat_spares",
+        "cat_workholding",
+        "cat_electrical",
+        "cat_raw_materials",
+        "cat_consumables",
+        "cat_measuring",
+        "cat_safety"
+      ],
+      "updatedAt": "2026-10-20T05:06:38.989Z"
     }
   ]
 }

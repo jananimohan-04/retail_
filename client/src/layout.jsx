@@ -88,13 +88,28 @@ export function Sidebar({ counts, onItemClick, mini = false }) {
     return (page.defaultRoles || []).includes(userRole) || (userRole.startsWith('sales_') && (page.defaultRoles || []).includes('sales_user'));
   };
 
-  // Filter categories to only those with at least 1 visible page
-  const activeCategories = MENU_CATALOG.map(cat => ({
+  // Filter categories to only those with at least 1 visible page (exclude browse_categories from standard list since it has dedicated section below)
+  const activeCategories = MENU_CATALOG.filter(cat => cat.id !== 'browse_categories').map(cat => ({
     ...cat,
     items: cat.items.filter(item => hasPermission(item.id))
   })).filter(cat => cat.items.length > 0);
 
-  const showCategories = hasPermission('store_listing') && (counts?.cats || []).length > 0;
+  // Dynamic category check: a category is visible if user has permission for cat_<id>
+  const isCatPermitted = (c) => {
+    if (!c || !c.id) return false;
+    const permId = `cat_${c.id.replace(/-/g, '_')}`;
+    return hasPermission(permId);
+  };
+
+  const catalogCatModule = MENU_CATALOG.find(c => c.id === 'browse_categories');
+  const fallbackCats = (catalogCatModule?.items || []).map(i => ({
+    id: i.categorySlug,
+    name: i.label,
+    icon: i.emoji
+  }));
+  const allCats = (counts?.cats && counts.cats.length > 0) ? counts.cats : fallbackCats;
+  const permittedCats = allCats.filter(isCatPermitted);
+  const showCategories = permittedCats.length > 0;
 
   return (
     <div className={`w-full flex flex-col ${mini ? 'gap-1 py-0.5 items-center' : 'gap-2 py-0.5'}`}>
@@ -142,14 +157,14 @@ export function Sidebar({ counts, onItemClick, mini = false }) {
         </div>
       )}
 
-      {/* Dynamic Browse Categories for store browsers */}
+      {/* Dynamic Browse Categories governed by dynamic permissions */}
       {showCategories && (
         <div className="w-full">
           {mini && <div className="w-8 border-t border-slate-800 my-1 mx-auto" />}
           <div>
             {!mini && <div className="text-[10px] font-black uppercase tracking-wider text-slate-400 px-3 mb-1 mt-1.5">BROWSE CATEGORIES</div>}
             <div className={mini ? 'flex flex-col gap-0.5 items-center' : 'space-y-0.5'}>
-              {(counts?.cats || []).map((c) => (
+              {permittedCats.map((c) => (
                 <NavLink
                   key={c.id}
                   to={'/store/listing?cat=' + c.id}

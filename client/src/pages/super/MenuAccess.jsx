@@ -602,8 +602,12 @@ export default function MenuAccess() {
                               }`}>
                                 {checked && <Check className="w-3.5 h-3.5 stroke-[3]" />}
                               </div>
-                              <div className={`p-1.5 rounded-lg ${checked ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-400'}`}>
-                                <IconComp className="w-4 h-4" />
+                              <div className={`p-1.5 rounded-lg flex items-center justify-center ${checked ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-400'}`}>
+                                {item.emoji ? (
+                                  <span className="text-sm leading-none flex items-center justify-center w-4 h-4 select-none">{item.emoji}</span>
+                                ) : (
+                                  <IconComp className="w-4 h-4" />
+                                )}
                               </div>
                               <div>
                                 <div className="flex items-center gap-2">
@@ -813,10 +817,14 @@ export default function MenuAccess() {
                           >
                             {/* Left details */}
                             <div className="flex items-center gap-3">
-                              <div className={`p-2 rounded-xl ${
+                              <div className={`p-2 rounded-xl flex items-center justify-center ${
                                 isEffective ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-400'
                               }`}>
-                                <IconComp className="w-4 h-4" />
+                                {item.emoji ? (
+                                  <span className="text-sm leading-none flex items-center justify-center w-4 h-4 select-none">{item.emoji}</span>
+                                ) : (
+                                  <IconComp className="w-4 h-4" />
+                                )}
                               </div>
                               <div>
                                 <div className="flex items-center gap-2">
