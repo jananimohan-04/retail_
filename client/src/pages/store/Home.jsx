@@ -9,7 +9,6 @@ import { Field, Modal, Skeleton, toast } from '../../components/ui';
 export const availBadge = (p, style) => {
   if (p.price == null && p.stock <= 0) return <span className="badge out" style={style}>Check availability</span>;
   if (p.stock <= 0) return <span className="badge out" style={style}>Out of stock</span>;
-  if (p.stock <= 10) return <span className="badge low" style={style}>Low stock • {p.stock}</span>;
   return <span className="badge in" style={style}>In stock</span>;
 };
 

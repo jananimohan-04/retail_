@@ -46,7 +46,6 @@ function availBadge(p, left=44){
   const st = left ? ` style="left:${left}px"` : '';
   if (p.price == null && p.stock <= 0) return `<span class="badge out"${st}>Check availability</span>`;
   if (p.stock <= 0) return `<span class="badge out"${st}>Out of stock</span>`;
-  if (p.stock <= 10) return `<span class="badge low"${st}>Low stock • ${p.stock}</span>`;
   return `<span class="badge in"${st}>In stock</span>`;
 }
 function priceHtml(p, big){
@@ -639,10 +638,10 @@ function vAdminDash(){
   <div class="grid-kpi"><div class="kpi k1"><h3>${ps.length}</h3><p>SKUs in catalog</p><small>${ps.filter(p=>p.visible).length} visible • ${ps.filter(p=>p.price==null).length} quotation-only</small></div>
   <div class="kpi k4"><h3>${os.length}</h3><p>Orders</p><small>${pend} pending • ${qs.filter(q=>q.status==='Pending').length} open RFQs</small></div>
   <div class="kpi k3"><h3>${fmt(rev)}</h3><p>Order value</p><small>${del} delivered</small></div></div>
-  <div style="display:grid;grid-template-columns:1.4fr .8fr;gap:14px" class="dash2">
+  <div class="dash2" style="margin-top:14px">
   <div class="card"><div class="card-pad"><div class="section-head" style="margin-top:0"><h2>Recent orders</h2><a class="btn btn-ghost btn-sm" href="#/admin/orders">View all →</a></div>
   <div class="table-wrap"><table><tr><th>Order</th><th>Customer</th><th>Total</th><th>Status</th></tr>${os.length ? os.slice(0,4).map(o=>`<tr><td><a href="#/admin/orders/${o.id}"><b>${o.id}</b></a><div class="hint">${o.date}</div></td><td>${o.companyName||o.customer}</td><td><b>${fmt(o.total)}</b></td><td>${statusBadge(o.status)}</td></tr>`).join('') : '<tr><td colspan="4"><div class="empty">No orders placed yet for this company.</div></td></tr>'}</table></div></div></div>
-  <div class="card"><div class="card-pad"><h2 style="margin:0 0 8px;font-size:16px">Low stock alerts</h2>${ps.filter(p=>p.stock<=15).map(p=>`<div style="display:flex;gap:10px;align-items:center;padding:9px 0;border-top:1px solid #F1F5F9"><img class="thumb" src="${img0(p)}" onerror="${NOIMG_ERR}"><div><b style="font-size:13px">${p.name}</b><div class="hint">${p.sku||''} • ${p.stock} ${p.uom||''} left • ${p.warehouse||''}</div></div><a class="btn btn-ghost btn-sm" style="margin-left:auto" href="#/admin/products/edit/${p.id}">Restock</a></div>`).join('')||'<p class="hint">Stock levels healthy or catalog empty.</p>'}</div></div></div>`;
+  </div>`;
 }
 function vProducts(){
   const q=(ui.adminQ||'').toLowerCase();

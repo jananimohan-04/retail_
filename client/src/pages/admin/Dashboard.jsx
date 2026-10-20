@@ -64,7 +64,6 @@ export default function Dashboard() {
   const openQ = stats ? stats.openQuotes : 0;
   const rev = stats ? stats.revenue : os.reduce((a, o) => a + (o.total || 0), 0);
   const del = stats ? stats.delivered : os.filter((o) => o.status === 'Delivered').length;
-  const low = ps.filter((p) => p.stock <= 15);
 
   const displayName = coName || (me && me.companyId) || 'Company';
 
@@ -162,102 +161,55 @@ export default function Dashboard() {
         </motion.div>
       </div>
 
-      {/* Main Grid: Orders & Low Stock */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Recent Orders Table */}
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-            <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-              <Receipt className="w-4 h-4 text-blue-600" /> Recent Purchase Orders
-            </h2>
-            <Link 
-              to="/admin/orders" 
-              className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1"
-            >
-              View all <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead>
-                <tr className="border-b border-slate-100 text-slate-400 uppercase tracking-wider text-[10px]">
-                  <th className="pb-2.5 font-bold">Order ID</th>
-                  <th className="pb-2.5 font-bold">Customer Entity</th>
-                  <th className="pb-2.5 font-bold">Total</th>
-                  <th className="pb-2.5 font-bold">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {os.length ? os.slice(0, 5).map((o) => (
-                  <tr key={o.id} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="py-3 font-mono font-bold text-blue-600">
-                      <Link to={'/admin/orders/' + o.id} className="hover:underline">
-                        {o.id}
-                      </Link>
-                      <div className="text-[10px] text-slate-400 font-sans mt-0.5">{o.date}</div>
-                    </td>
-                    <td className="py-3 font-medium text-slate-800">
-                      {o.companyName || o.customer}
-                      {o.poRef && <span className="block text-[10px] text-slate-400 font-mono">PO: {o.poRef}</span>}
-                    </td>
-                    <td className="py-3 font-mono font-bold text-slate-900">{fmt(o.total)}</td>
-                    <td className="py-3">{statusBadge(o.status)}</td>
-                  </tr>
-                )) : (
-                  <tr>
-                    <td colSpan={4} className="py-8 text-center text-slate-400">
-                      No orders placed yet for this company.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+      {/* Recent Orders Table */}
+      <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
+        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+          <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+            <Receipt className="w-4 h-4 text-blue-600" /> Recent Purchase Orders
+          </h2>
+          <Link 
+            to="/admin/orders" 
+            className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1"
+          >
+            View all <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
         </div>
 
-        {/* Low Stock Alerts */}
-        <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-            <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 text-amber-500" /> Low Stock Alerts
-            </h2>
-            <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700">
-              {low.length}
-            </span>
-          </div>
-
-          <div className="divide-y divide-slate-100">
-            {low.length ? low.slice(0, 6).map((p) => (
-              <div key={p.id} className="py-3 flex items-center gap-3">
-                <img 
-                  src={(p.images || [])[0] || ''} 
-                  onError={(e) => { e.currentTarget.src = imgFallback(p.sku || p.id, 100, 100); }} 
-                  className="w-11 h-11 rounded-lg object-cover border border-slate-200 bg-slate-50 flex-shrink-0" 
-                  alt="" 
-                />
-                <div className="flex-1 min-w-0">
-                  <div className="font-bold text-slate-900 text-xs truncate">{p.name}</div>
-                  <div className="text-[11px] text-slate-500 mt-0.5">
-                    SKU: <span className="font-mono text-slate-700">{p.sku || ''}</span>
-                  </div>
-                  <div className="text-[11px] font-bold text-amber-600 mt-0.5">
-                    {p.stock} {p.uom || 'Pc'} remaining ({p.warehouse || 'WH-01'})
-                  </div>
-                </div>
-                <Link 
-                  to={'/admin/products/edit/' + p.id}
-                  className="px-2.5 py-1 text-[11px] font-bold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors flex-shrink-0"
-                >
-                  Restock
-                </Link>
-              </div>
-            )) : (
-              <p className="text-xs text-slate-400 py-6 text-center">
-                All inventory levels are healthy above threshold.
-              </p>
-            )}
-          </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs">
+            <thead>
+              <tr className="border-b border-slate-100 text-slate-400 uppercase tracking-wider text-[10px]">
+                <th className="pb-2.5 font-bold">Order ID</th>
+                <th className="pb-2.5 font-bold">Customer Entity</th>
+                <th className="pb-2.5 font-bold">Total</th>
+                <th className="pb-2.5 font-bold">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {os.length ? os.slice(0, 5).map((o) => (
+                <tr key={o.id} className="hover:bg-slate-50/80 transition-colors">
+                  <td className="py-3 font-mono font-bold text-blue-600">
+                    <Link to={'/admin/orders/' + o.id} className="hover:underline">
+                      {o.id}
+                    </Link>
+                    <div className="text-[10px] text-slate-400 font-sans mt-0.5">{o.date}</div>
+                  </td>
+                  <td className="py-3 font-medium text-slate-800">
+                    {o.companyName || o.customer}
+                    {o.poRef && <span className="block text-[10px] text-slate-400 font-mono">PO: {o.poRef}</span>}
+                  </td>
+                  <td className="py-3 font-mono font-bold text-slate-900">{fmt(o.total)}</td>
+                  <td className="py-3">{statusBadge(o.status)}</td>
+                </tr>
+              )) : (
+                <tr>
+                  <td colSpan={4} className="py-8 text-center text-slate-400">
+                    No orders placed yet for this company.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

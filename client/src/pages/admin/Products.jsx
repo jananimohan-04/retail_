@@ -264,7 +264,7 @@ export default function Products() {
                 },
                 {
                   key: 'stock', label: 'Stock', render: (p) => (
-                    <span>{p.stock <= 10 ? <b style={{ color: '#D97706' }}>{p.stock} low</b> : p.stock} <span className="hint">{p.uom || ''}</span></span>)
+                    <span>{p.stock} <span className="hint">{p.uom || ''}</span></span>)
                 },
                 {
                   key: 'vis', label: 'Visible', render: (p) => (
