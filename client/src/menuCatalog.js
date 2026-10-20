@@ -42,12 +42,12 @@ export const MENU_CATALOG = [
         defaultRoles: ['super_admin'],
         theme: {
           name: 'coffee',
-          gradient: 'from-[#2B1704] via-[#4A2E1B] to-[#6E422A]',
-          activeLink: 'bg-gradient-to-r from-[#2B1704] to-[#4A2E1B] text-amber-100 font-bold border-[#6E422A]/50 shadow-xs shadow-[#2B1704]/40',
+          gradient: 'from-[#160A03] via-[#2A1408] to-[#4A2510]',
+          activeLink: 'bg-gradient-to-r from-[#160A03] to-[#2A1408] text-amber-100 font-bold border-[#4A2510]/50 shadow-xs shadow-[#160A03]/50',
           activeIcon: 'text-amber-300',
-          indicator: 'bg-[#6E422A]',
-          badge: 'bg-[#4A2E1B] text-white',
-          glow: 'shadow-[#2B1704]/40'
+          indicator: 'bg-[#542B14]',
+          badge: 'bg-[#2A1408] text-white',
+          glow: 'shadow-[#160A03]/50'
         }
       },
       {

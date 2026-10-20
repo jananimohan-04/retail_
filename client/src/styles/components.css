@@ -26,14 +26,14 @@
 /* Dark navigation sidebar rules to guarantee high-contrast text and sleek scrollbars */
 aside, .sidebar-dark {
   color: #E8DDD5;
-  background-color: #1C1008;
+  background-color: #0E0704;
 }
 aside a, .sidebar-dark a {
   color: #D7C4B7;
 }
 aside a:hover, .sidebar-dark a:hover {
   color: #FFFFFF;
-  background-color: rgba(52, 31, 22, 0.85);
+  background-color: rgba(34, 18, 10, 0.9);
 }
 aside a.active, .sidebar-dark a.active {
   color: #FFFFFF !important;
@@ -44,7 +44,7 @@ aside a.active span, .sidebar-dark a.active span {
 
 .sidebar-scroll {
   scrollbar-width: thin;
-  scrollbar-color: #4A2818 transparent;
+  scrollbar-color: #361C0E transparent;
 }
 .sidebar-scroll::-webkit-scrollbar {
   width: 5px;
@@ -53,37 +53,37 @@ aside a.active span, .sidebar-dark a.active span {
   background: transparent;
 }
 .sidebar-scroll::-webkit-scrollbar-thumb {
-  background: #4A2818;
+  background: #361C0E;
   border-radius: 999px;
   border: none;
 }
 .sidebar-scroll::-webkit-scrollbar-thumb:hover {
-  background: #6B3B24;
+  background: #522B16;
 }
 
 /* Header specific input & select overrides for dark topbar */
 header input#headerSearchInput {
-  background-color: #24140B !important;
+  background-color: #150A05 !important;
   color: #FDFBF7 !important;
-  border: 1px solid #3E2316 !important;
+  border: 1px solid #2C160B !important;
   padding: 7px 36px 7px 36px !important;
   font-size: 12px !important;
   border-radius: 12px !important;
   height: 36px !important;
 }
 header input#headerSearchInput:focus {
-  border-color: #8C4E2E !important;
-  box-shadow: 0 0 0 2px rgba(140, 78, 46, 0.35) !important;
-  background-color: #1C1008 !important;
+  border-color: #7A3E1E !important;
+  box-shadow: 0 0 0 2px rgba(122, 62, 30, 0.35) !important;
+  background-color: #0E0704 !important;
 }
 header input#headerSearchInput::placeholder {
   color: #A89080 !important;
 }
 
 header select.company-select {
-  background-color: #24140B !important;
+  background-color: #150A05 !important;
   color: #FDFBF7 !important;
-  border: 1px solid #3E2316 !important;
+  border: 1px solid #2C160B !important;
   padding: 6px 10px 6px 10px !important;
   font-size: 12px !important;
   font-weight: 700 !important;
@@ -92,11 +92,11 @@ header select.company-select {
   width: auto !important;
 }
 header select.company-select:focus {
-  border-color: #8C4E2E !important;
-  box-shadow: 0 0 0 2px rgba(140, 78, 46, 0.35) !important;
+  border-color: #7A3E1E !important;
+  box-shadow: 0 0 0 2px rgba(122, 62, 30, 0.35) !important;
 }
 header select.company-select option {
-  background-color: #1C1008 !important;
+  background-color: #0E0704 !important;
   color: #FDFBF7 !important;
 }
 
@@ -314,57 +314,57 @@ input.err,select.err{border-color:var(--red)}
 
 /* ---------- Page-specific Light Brown Dashboard Theme (#/super/dashboard) ---------- */
 .dashboard-light-brown {
-  --surface: #FAF5EF;
-  color: #2B1704;
+  --surface: #EDE1D3;
+  color: #1A0A03;
 }
 .dashboard-light-brown .card {
-  background: #FAF5EF !important;
-  border: 1px solid #DCCBC0 !important;
-  box-shadow: 0 1px 4px rgba(43, 23, 4, 0.05), 0 6px 18px rgba(43, 23, 4, 0.03) !important;
+  background: #EDE1D3 !important;
+  border: 1px solid #BAA794 !important;
+  box-shadow: 0 1px 4px rgba(26, 10, 3, 0.08), 0 6px 18px rgba(26, 10, 3, 0.04) !important;
 }
 .dashboard-light-brown .card h3 {
-  color: #2B1704 !important;
+  color: #1A0A03 !important;
   font-weight: 800 !important;
 }
 .dashboard-light-brown .card-pad {
-  color: #2B1704 !important;
+  color: #1A0A03 !important;
 }
 .dashboard-light-brown .empty {
-  color: #7C5E4C !important;
-  background: #F4EBE0 !important;
+  color: #5C3826 !important;
+  background: #E0D1C1 !important;
 }
 .dashboard-light-brown .w-full.bg-slate-100 {
-  background-color: #EADFD3 !important;
+  background-color: #D4C2B0 !important;
 }
 .dashboard-light-brown .truncate.text-slate-600 {
-  color: #4A2E1B !important;
-  font-weight: 600 !important;
+  color: #381C0D !important;
+  font-weight: 700 !important;
 }
 .dashboard-light-brown .font-mono.text-slate-800 {
-  color: #2B1704 !important;
+  color: #1A0A03 !important;
   font-weight: 800 !important;
 }
 .dashboard-light-brown table th {
-  background: #F0E5D8 !important;
-  color: #4A2E1B !important;
-  border-bottom: 1px solid #DCCBC0 !important;
+  background: #DECDBE !important;
+  color: #2E1508 !important;
+  border-bottom: 1px solid #BAA794 !important;
   font-weight: 800 !important;
 }
 .dashboard-light-brown table td {
-  border-bottom: 1px solid #EBE0D3 !important;
-  color: #2B1704 !important;
+  border-bottom: 1px solid #D8C6B5 !important;
+  color: #1A0A03 !important;
 }
 .dashboard-light-brown table tr:hover td {
-  background: #F4EBE0 !important;
+  background: #E5D7C9 !important;
 }
 .dashboard-light-brown .hint {
-  color: #7C5E4C !important;
+  color: #6B503E !important;
 }
 .dashboard-light-brown a.btn-ghost {
-  color: #6E422A !important;
+  color: #4A2310 !important;
 }
 .dashboard-light-brown a.btn-ghost:hover {
-  background: #EFE4D6 !important;
-  color: #2B1704 !important;
+  background: #DECDBE !important;
+  color: #1A0A03 !important;
 }
 

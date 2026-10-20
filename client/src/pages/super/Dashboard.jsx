@@ -42,28 +42,28 @@ export default function Dashboard() {
         subtitle="Real-time multi-tenant health, cross-company operations, order pipeline status, and manufacturing fulfillment metrics."
         badgeText="Platform Core"
         badgeColor="amber"
-        gradient="from-[#2B1704] via-[#4A2E1B] to-[#6E422A]"
-        className="bg-gradient-to-r from-[#FAF5EF] via-[#F5ECE3] to-[#EFE6DC] border-[#DCCBC0] shadow-xs"
+        gradient="from-[#160A03] via-[#2A1408] to-[#4A2510]"
+        className="bg-gradient-to-r from-[#EFE4D6] via-[#E8DCCF] to-[#DECDBE] border-[#BAA794] shadow-xs"
         actions={
           <>
-            <Link className="px-3.5 py-2 rounded-xl text-xs font-bold text-[#4A2E1B] bg-[#EFE6DC] hover:bg-[#E5DACF] border border-[#D5C4B5] transition-colors" to="/super/audit">
+            <Link className="px-3.5 py-2 rounded-xl text-xs font-bold text-[#301A0E] bg-[#E2D4C5] hover:bg-[#D5C5B4] border border-[#BFAEA0] transition-colors" to="/super/audit">
               Audit Trail
             </Link>
-            <Link className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#2B1704] to-[#4A2E1B] hover:from-[#1E100A] hover:to-[#381F12] shadow-xs shadow-[#2B1704]/30 transition-all" to="/super/companies/new">
+            <Link className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#160A03] to-[#3B1C0B] hover:from-[#0E0602] hover:to-[#2B1408] shadow-xs shadow-[#160A03]/40 transition-all" to="/super/companies/new">
               + New Company
             </Link>
           </>
         }
       />
       {co && (
-        <div className="flex items-center justify-between gap-3 p-3.5 mb-4 bg-[#FAF5EF] border border-[#DCCBC0] rounded-2xl shadow-2xs">
+        <div className="flex items-center justify-between gap-3 p-3.5 mb-4 bg-[#EDE1D3] border border-[#BAA794] rounded-2xl shadow-2xs">
           <div className="flex items-center gap-3">
             <span className="text-2xl">{co.logo || '🏭'}</span>
             <div>
-              <div className="text-xs font-bold text-[#2B1704]">
-                Active Tenant Scope: <span className="text-[#824E30] font-extrabold">{co.name}</span> <span className="font-mono text-[#7C5E4C]">({co.code || co.id})</span>
+              <div className="text-xs font-bold text-[#1A0A03]">
+                Active Tenant Scope: <span className="text-[#6B3519] font-extrabold">{co.name}</span> <span className="font-mono text-[#6B503E]">({co.code || co.id})</span>
               </div>
-              <div className="text-[11px] text-[#7C5E4C]">
+              <div className="text-[11px] text-[#6B503E]">
                 Dashboard metrics, catalog inventory, and orders are scoped to this company
               </div>
             </div>
@@ -71,21 +71,21 @@ export default function Dashboard() {
           <button
             type="button"
             onClick={() => setActiveCompany('all')}
-            className="px-3 py-1.5 rounded-xl text-xs font-bold text-[#824E30] hover:text-[#5C331E] bg-[#F5ECE3] hover:bg-[#EAE0D4] border border-[#D5C2B1] transition-colors cursor-pointer shadow-2xs"
+            className="px-3 py-1.5 rounded-xl text-xs font-bold text-[#5A2C14] hover:text-[#381B0C] bg-[#E2D4C5] hover:bg-[#D5C5B4] border border-[#BFAEA0] transition-colors cursor-pointer shadow-2xs"
           >
             Reset to All Companies
           </button>
         </div>
       )}
       <div className="stat-grid">
-        <Kpi to="#/super/companies?tab=companies" value={companiesCount} label={co ? "Company" : "Total companies"} sub={companiesSub} grad="linear-gradient(135deg,#2B1704,#5C3826)" />
+        <Kpi to="#/super/companies?tab=companies" value={companiesCount} label={co ? "Company" : "Total companies"} sub={companiesSub} grad="linear-gradient(135deg,#160A03,#3B1C0B)" />
         <Kpi to="#/super/companies?tab=admins" value={co ? (co.admin || '1') : s.admins} label="Company admins" sub={co ? "Lead administrator" : "across all companies"} grad="linear-gradient(135deg,#6D28D9,#7C3AED)" />
         <Kpi to="#/super/companies?tab=users" value={usersCount} label="Sales users" sub={co ? "Assigned team users" : "procurement teams"} grad="linear-gradient(135deg,#0E7490,#0EA5E9)" />
         <Kpi to="#/super/categories" value={s.categories} label="Global categories" sub="CNC catalog taxonomy" grad="linear-gradient(135deg,#92400E,#D97706)" />
         <Kpi to="#/super/orders" value={ordersCount} label="Total orders" sub={`${pendingCount} pending action`} grad="linear-gradient(135deg,#14532D,#16A34A)" />
         <Kpi to="#/super/orders?status=Pending" value={pendingCount} label="Pending orders" sub="needs processing" grad="linear-gradient(135deg,#065F46,#10B981)" />
-        <Kpi to="#/super/quotes" value={s.quotes} label="Quotation requests" sub={`${s.openQuotes} open RFQs`} grad="linear-gradient(135deg,#3A2216,#6E3C24)" />
-        <Kpi to="#/super/orders" value={fmt(gmvValue)} label="Order value" sub={co ? `${co.name} gross value` : "all companies, live rows"} grad="linear-gradient(135deg,#1C1008,#3E2316)" />
+        <Kpi to="#/super/quotes" value={s.quotes} label="Quotation requests" sub={`${s.openQuotes} open RFQs`} grad="linear-gradient(135deg,#2E170B,#542C16)" />
+        <Kpi to="#/super/orders" value={fmt(gmvValue)} label="Order value" sub={co ? `${co.name} gross value` : "all companies, live rows"} grad="linear-gradient(135deg,#0E0704,#26140B)" />
       </div>
       <div className="grid2" style={{ marginTop: 14 }}>
         <div className="card"><div className="card-pad">

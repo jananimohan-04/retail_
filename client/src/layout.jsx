@@ -33,7 +33,7 @@ function sideLink(to, label, IconComponent, badge = null, onClick = null, mini =
         group relative flex items-center ${mini ? 'justify-center p-2 w-9 h-9 mx-auto' : 'gap-2.5 px-2.5 py-1.5'} rounded-lg text-xs font-semibold transition-all duration-150
         ${isActive 
           ? `${activeClass} font-bold border` 
-          : 'text-[#D7C4B7] hover:text-white hover:bg-[#341F16]/80'}
+          : 'text-[#D7C4B7] hover:text-white hover:bg-[#22120A]/90'}
       `}
     >
       {({ isActive }) => (
@@ -48,7 +48,7 @@ function sideLink(to, label, IconComponent, badge = null, onClick = null, mini =
           <span className={`p-0.5 rounded-md transition-colors ${
             isActive 
               ? `${activeIconColor} bg-white/20 shadow-2xs` 
-              : 'text-[#B89F8F] group-hover:text-amber-300 group-hover:bg-[#43281C]'
+              : 'text-[#B89F8F] group-hover:text-amber-300 group-hover:bg-[#32170D]'
           }`}>
             {IconComponent && <IconComponent className="w-4 h-4 flex-shrink-0" />}
           </span>
@@ -60,11 +60,11 @@ function sideLink(to, label, IconComponent, badge = null, onClick = null, mini =
             </span>
           )}
           {!mini && badge ? (
-            <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold tracking-wide ${isActive ? badgeClass : 'bg-[#2E180E] text-[#D7C4B7] border border-[#482819]'}`}>
+            <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold tracking-wide ${isActive ? badgeClass : 'bg-[#170A04] text-[#D7C4B7] border border-[#36180C]'}`}>
               {badge}
             </span>
           ) : mini && badge ? (
-            <span className={`absolute top-1 right-1 w-2.5 h-2.5 rounded-full ${indicatorColor} ring-2 ring-[#1C1008]`} />
+            <span className={`absolute top-1 right-1 w-2.5 h-2.5 rounded-full ${indicatorColor} ring-2 ring-[#0E0704]`} />
           ) : null}
         </>
       )}
@@ -115,7 +115,7 @@ export function Sidebar({ counts, onItemClick, mini = false }) {
     <div className={`w-full flex flex-col ${mini ? 'gap-1 py-0.5 items-center' : 'gap-2 py-0.5'}`}>
       {activeCategories.map((cat, idx) => (
         <div key={cat.id} className="w-full">
-          {idx > 0 && mini && <div className="w-8 border-t border-[#3A2217] my-1 mx-auto" />}
+          {idx > 0 && mini && <div className="w-8 border-t border-[#26140B] my-1 mx-auto" />}
           <div>
             {!mini && (
               <div className="flex items-center gap-1.5 px-3 mb-1 mt-1.5 first:mt-0">
@@ -138,7 +138,7 @@ export function Sidebar({ counts, onItemClick, mini = false }) {
 
       {/* Guidance boxes for content writer / finance if active and only workflow */}
       {!mini && role === 'content_writer' && hasPermission('content_writer') && !hasPermission('admin_products') && (
-        <div className="mt-2 p-2.5 rounded-xl bg-[#28150D]/90 border border-[#482819]/90">
+        <div className="mt-2 p-2.5 rounded-xl bg-[#180A04]/95 border border-[#36180C]/95">
           <div className="text-[10px] font-extrabold uppercase tracking-widest text-amber-400 mb-1">GUIDANCE</div>
           <p className="text-[11px] leading-relaxed text-[#D7C4B7]">
             Products arrive here automatically from ERP Inventory. Write sales copy, attach media, then
@@ -148,7 +148,7 @@ export function Sidebar({ counts, onItemClick, mini = false }) {
       )}
 
       {!mini && role === 'finance' && hasPermission('finance_review') && !hasPermission('admin_products') && (
-        <div className="mt-2 p-2.5 rounded-xl bg-[#28150D]/90 border border-[#482819]/90">
+        <div className="mt-2 p-2.5 rounded-xl bg-[#180A04]/95 border border-[#36180C]/95">
           <div className="text-[10px] font-extrabold uppercase tracking-widest text-teal-400 mb-1">GUIDANCE</div>
           <p className="text-[11px] leading-relaxed text-[#D7C4B7]">
             Review submitted content, set the selling price, then
@@ -160,7 +160,7 @@ export function Sidebar({ counts, onItemClick, mini = false }) {
       {/* Dynamic Browse Categories governed by dynamic permissions */}
       {showCategories && (
         <div className="w-full">
-          {mini && <div className="w-8 border-t border-[#3A2217] my-1 mx-auto" />}
+          {mini && <div className="w-8 border-t border-[#26140B] my-1 mx-auto" />}
           <div>
             {!mini && <div className="text-[10px] font-black uppercase tracking-wider text-[#A88E7D] px-3 mb-1 mt-1.5">BROWSE CATEGORIES</div>}
             <div className={mini ? 'flex flex-col gap-0.5 items-center' : 'space-y-0.5'}>
@@ -172,7 +172,7 @@ export function Sidebar({ counts, onItemClick, mini = false }) {
                   title={c.name}
                   className={({ isActive }) => `
                     flex items-center ${mini ? 'justify-center w-9 h-9 p-1.5' : 'gap-2.5 px-2.5 py-1.5'} rounded-lg text-xs font-semibold transition-all
-                    ${isActive ? 'bg-gradient-to-r from-[#4A2818] to-[#6E3C24] text-white font-bold shadow-xs border border-[#8C4E2E]/40' : 'text-[#D7C4B7] hover:text-white hover:bg-[#341F16]/80'}
+                    ${isActive ? 'bg-gradient-to-r from-[#3A1E0F] to-[#5C3018] text-white font-bold shadow-xs border border-[#7A3E1E]/50' : 'text-[#D7C4B7] hover:text-white hover:bg-[#22120A]/90'}
                   `}
                 >
                   {({ isActive }) => (
@@ -233,13 +233,13 @@ export const Topbar = forwardRef(function Topbar({ onMobileToggle, sidebarOpen, 
   const roleLabel = me?.salesTier ? `${me.salesTier} (+${me.markupPct || 0}%)` : (ROLE_LABELS[me?.role] || 'Sales');
 
   return (
-    <header ref={ref} className="sticky top-0 z-50 bg-[#1C1008] backdrop-blur-md border-b border-[#3A2217] shadow-md shadow-black/30 w-full text-stone-100">
+    <header ref={ref} className="sticky top-0 z-50 bg-[#0E0704] backdrop-blur-md border-b border-[#26140B] shadow-md shadow-black/40 w-full text-stone-100">
       <div className="w-full px-3 sm:px-5 h-15 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2.5 flex-shrink-0">
           <button
             type="button"
             onClick={onMobileToggle}
-            className="lg:hidden p-2 rounded-xl text-[#A89080] hover:text-white hover:bg-[#341F16] transition-colors cursor-pointer"
+            className="lg:hidden p-2 rounded-xl text-[#A89080] hover:text-white hover:bg-[#22120A] transition-colors cursor-pointer"
             aria-label="Toggle menu"
           >
             <Menu className="w-5 h-5" />
@@ -257,7 +257,7 @@ export const Topbar = forwardRef(function Topbar({ onMobileToggle, sidebarOpen, 
               className={`hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-all text-xs font-bold cursor-pointer shadow-xs ml-3 sm:ml-4 ${
                 !sidebarOpen
                   ? 'bg-gradient-to-r from-orange-500 to-amber-600 text-white border-orange-500 hover:from-orange-600 hover:to-amber-700 shadow-sm shadow-orange-500/30'
-                  : 'bg-[#28150D]/90 border-[#482819]/80 text-[#D7C4B7] hover:bg-[#341F16] hover:text-white'
+                  : 'bg-[#180A04]/90 border-[#36180C]/80 text-[#D7C4B7] hover:bg-[#22120A] hover:text-white'
               }`}
             >
               {!sidebarOpen ? (
@@ -282,25 +282,25 @@ export const Topbar = forwardRef(function Topbar({ onMobileToggle, sidebarOpen, 
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Search SKU, part number, brand, industrial tooling..."
-            className="w-full pl-9 pr-10 py-1.5 text-xs bg-[#24140B] border border-[#3E2316] rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 transition-all text-stone-100 placeholder-[#9E8676]"
+            className="w-full pl-9 pr-10 py-1.5 text-xs bg-[#150A05] border border-[#2C160B] rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 transition-all text-stone-100 placeholder-[#9E8676]"
           />
-          <kbd className="absolute right-3 px-1.5 py-0.5 text-[10px] font-mono font-semibold text-[#A89080] bg-[#341E12] border border-[#4A2D1F] rounded-md pointer-events-none shadow-xs">/</kbd>
+          <kbd className="absolute right-3 px-1.5 py-0.5 text-[10px] font-mono font-semibold text-[#A89080] bg-[#241007] border border-[#36180C] rounded-md pointer-events-none shadow-xs">/</kbd>
         </form>
 
         <div className="flex items-center gap-2 sm:gap-2.5 flex-shrink-0">
           {/* Global Company Selector for Super Admin */}
           {me?.role === 'super_admin' && (
-            <div className="flex items-center gap-1.5 px-2.5 py-1 bg-[#24140B] border border-[#3E2316] hover:border-amber-600/50 rounded-xl shadow-xs transition-colors">
+            <div className="flex items-center gap-1.5 px-2.5 py-1 bg-[#150A05] border border-[#2C160B] hover:border-amber-600/50 rounded-xl shadow-xs transition-colors">
               <Building2 className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
               <select
                 value={activeCompany}
                 onChange={(e) => setActiveCompany(e.target.value)}
-                className="company-select bg-[#24140B] text-xs font-bold text-stone-100 outline-none cursor-pointer border-none py-0.5 pr-1 max-w-[150px] sm:max-w-[185px] truncate"
+                className="company-select bg-[#150A05] text-xs font-bold text-stone-100 outline-none cursor-pointer border-none py-0.5 pr-1 max-w-[150px] sm:max-w-[185px] truncate"
                 title="Filter active company scope across Super Admin pages"
               >
-                <option value="all" className="bg-[#1C1008] text-stone-100">🏢 All Companies (Platform)</option>
+                <option value="all" className="bg-[#0E0704] text-stone-100">🏢 All Companies (Platform)</option>
                 {companies.map((c) => (
-                  <option key={c.id} value={c.id} className="bg-[#1C1008] text-stone-100">
+                  <option key={c.id} value={c.id} className="bg-[#0E0704] text-stone-100">
                     {c.logo || '🏭'} {c.name} ({c.code || c.id})
                   </option>
                 ))}
@@ -311,7 +311,7 @@ export const Topbar = forwardRef(function Topbar({ onMobileToggle, sidebarOpen, 
           {me && (
             <Link
               to="/store/profile"
-              className="hidden sm:flex items-center gap-2 bg-[#24140B] hover:bg-[#341F16] px-2.5 py-1 rounded-xl border border-[#3E2316] transition-colors cursor-pointer"
+              className="hidden sm:flex items-center gap-2 bg-[#150A05] hover:bg-[#22120A] px-2.5 py-1 rounded-xl border border-[#2C160B] transition-colors cursor-pointer"
               title="View Profile"
             >
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
@@ -323,18 +323,18 @@ export const Topbar = forwardRef(function Topbar({ onMobileToggle, sidebarOpen, 
           )}
 
           {(!me || !me.google) && (
-            <div className="hidden 2xl:flex items-center gap-1 p-0.5 bg-[#24140B] rounded-xl border border-[#3E2316] text-[11px] font-bold">
+            <div className="hidden 2xl:flex items-center gap-1 p-0.5 bg-[#150A05] rounded-xl border border-[#2C160B] text-[11px] font-bold">
               <button
                 type="button"
                 onClick={() => loginAs('super_admin')}
-                className={`px-2 py-0.5 rounded-lg transition-all cursor-pointer ${me?.role === 'super_admin' ? 'bg-[#824E30] text-white shadow-xs font-black' : 'text-[#A89080] hover:text-white'}`}
+                className={`px-2 py-0.5 rounded-lg transition-all cursor-pointer ${me?.role === 'super_admin' ? 'bg-[#6B3519] text-white shadow-xs font-black' : 'text-[#A89080] hover:text-white'}`}
               >
                 Super
               </button>
               <button
                 type="button"
                 onClick={() => loginAs('company_admin')}
-                className={`px-2 py-0.5 rounded-lg transition-all cursor-pointer ${me?.role === 'company_admin' ? 'bg-[#6B3A1E] text-white shadow-xs font-black' : 'text-[#A89080] hover:text-white'}`}
+                className={`px-2 py-0.5 rounded-lg transition-all cursor-pointer ${me?.role === 'company_admin' ? 'bg-[#542812] text-white shadow-xs font-black' : 'text-[#A89080] hover:text-white'}`}
               >
                 Admin
               </button>
@@ -364,7 +364,7 @@ export const Topbar = forwardRef(function Topbar({ onMobileToggle, sidebarOpen, 
 
           <Link
             to="/store/cart"
-            className="relative p-2 rounded-xl border border-[#3E2316] bg-[#24140B] hover:bg-[#341F16] text-[#D7C4B7] hover:text-amber-400 transition-all duration-200 shadow-xs group cursor-pointer"
+            className="relative p-2 rounded-xl border border-[#2C160B] bg-[#150A05] hover:bg-[#22120A] text-[#D7C4B7] hover:text-amber-400 transition-all duration-200 shadow-xs group cursor-pointer"
             aria-label="Shopping Cart"
           >
             <ShoppingCart className="w-4 h-4 transition-transform group-hover:scale-110" />
@@ -372,7 +372,7 @@ export const Topbar = forwardRef(function Topbar({ onMobileToggle, sidebarOpen, 
               <motion.span
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
-                className="absolute -top-1.5 -right-1.5 bg-orange-600 text-white font-extrabold text-[10px] min-w-4 h-4 rounded-full flex items-center justify-center px-1 shadow-sm border border-[#1C1008]"
+                className="absolute -top-1.5 -right-1.5 bg-orange-600 text-white font-extrabold text-[10px] min-w-4 h-4 rounded-full flex items-center justify-center px-1 shadow-sm border border-[#0E0704]"
               >
                 {cartN}
               </motion.span>
@@ -381,7 +381,7 @@ export const Topbar = forwardRef(function Topbar({ onMobileToggle, sidebarOpen, 
 
           <Link
             to="/store/profile"
-            className="p-2 rounded-xl border border-[#3E2316] bg-[#24140B] hover:bg-[#341F16] text-[#D7C4B7] hover:text-amber-400 transition-all duration-200 shadow-xs cursor-pointer group"
+            className="p-2 rounded-xl border border-[#2C160B] bg-[#150A05] hover:bg-[#22120A] text-[#D7C4B7] hover:text-amber-400 transition-all duration-200 shadow-xs cursor-pointer group"
             title={me?.name ? `${me.name} (${roleLabel}) — User Profile` : 'User Profile'}
             aria-label="User Profile"
           >
@@ -391,7 +391,7 @@ export const Topbar = forwardRef(function Topbar({ onMobileToggle, sidebarOpen, 
           <button
             type="button"
             onClick={() => { logout(); nav('/login'); }}
-            className="p-2 rounded-xl text-[#B89F8F] hover:text-rose-400 hover:bg-rose-950/40 border border-[#3E2316] transition-colors cursor-pointer"
+            className="p-2 rounded-xl text-[#B89F8F] hover:text-rose-400 hover:bg-rose-950/40 border border-[#2C160B] transition-colors cursor-pointer"
             title="Sign Out"
           >
             <LogOut className="w-4 h-4" />
@@ -451,7 +451,7 @@ export function Shell({ counts, noSide, children }) {
         {!noSide && (
           <aside 
             style={{ top: `${headerH}px`, height: `calc(100vh - ${headerH}px)` }}
-            className={`hidden lg:flex flex-col flex-shrink-0 bg-[#1C1008] border-r border-[#3A2217] sticky self-start overflow-y-auto sidebar-scroll sidebar-dark text-[#E8DDD5] transition-all duration-200 z-30 shadow-md ${
+            className={`hidden lg:flex flex-col flex-shrink-0 bg-[#0E0704] border-r border-[#26140B] sticky self-start overflow-y-auto sidebar-scroll sidebar-dark text-[#E8DDD5] transition-all duration-200 z-30 shadow-md ${
               sidebarOpen ? 'w-64 px-2 py-2.5' : 'w-14 p-1.5 items-center'
             }`}
           >
@@ -461,7 +461,7 @@ export function Shell({ counts, noSide, children }) {
 
         <div className={`flex-1 min-w-0 flex flex-col justify-between w-full transition-colors duration-200 ${
           location.pathname === '/super/dashboard' 
-            ? 'bg-[#EDE3D6]' 
+            ? 'bg-[#DAC8B8]' 
             : 'bg-gradient-to-br from-slate-100 via-slate-50 to-orange-50/15'
         }`}>
           <main className="w-full flex-1 px-3 py-2 sm:px-4 sm:py-2.5 lg:px-4 lg:py-2.5">
@@ -476,7 +476,7 @@ export function Shell({ counts, noSide, children }) {
             </motion.div>
           </main>
 
-          <footer className="border-t border-[#3A2217] bg-[#1C1008] py-4 text-xs text-[#A89080] w-full mt-auto">
+          <footer className="border-t border-[#26140B] bg-[#0E0704] py-4 text-xs text-[#A89080] w-full mt-auto">
             <div className="w-full px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
               <div>
                 <span className="font-bold text-white">ARGUSCNC ERP Industrial Procurement</span> • Connected B2B Factory Platform
@@ -506,16 +506,16 @@ export function Shell({ counts, noSide, children }) {
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 250 }}
-              className="fixed inset-y-0 left-0 w-72 bg-[#1C1008] border-r border-[#3A2217] shadow-2xl p-4 flex flex-col z-10 overflow-y-auto sidebar-scroll sidebar-dark text-[#E8DDD5]"
+              className="fixed inset-y-0 left-0 w-72 bg-[#0E0704] border-r border-[#26140B] shadow-2xl p-4 flex flex-col z-10 overflow-y-auto sidebar-scroll sidebar-dark text-[#E8DDD5]"
             >
-              <div className="flex items-center justify-between pb-4 border-b border-[#3A2217] mb-2">
+              <div className="flex items-center justify-between pb-4 border-b border-[#26140B] mb-2">
                 <div className="bg-white px-2 py-1 rounded-lg">
                   <img src="assets/argus-logo.png" alt="ARGUSCNC" className="h-6 w-auto" />
                 </div>
                 <button
                   type="button"
                   onClick={() => setMobileOpen(false)}
-                  className="p-1.5 rounded-lg text-[#A89080] hover:text-white hover:bg-[#341F16]"
+                  className="p-1.5 rounded-lg text-[#A89080] hover:text-white hover:bg-[#22120A]"
                 >
                   <X className="w-5 h-5" />
                 </button>
