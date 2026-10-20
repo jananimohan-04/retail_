@@ -311,3 +311,60 @@ input.err,select.err{border-color:var(--red)}
   .section-head h2{font-size:16px}
   td{padding:8px 10px}
 }
+
+/* ---------- Page-specific Light Brown Dashboard Theme (#/super/dashboard) ---------- */
+.dashboard-light-brown {
+  --surface: #FAF5EF;
+  color: #2B1704;
+}
+.dashboard-light-brown .card {
+  background: #FAF5EF !important;
+  border: 1px solid #DCCBC0 !important;
+  box-shadow: 0 1px 4px rgba(43, 23, 4, 0.05), 0 6px 18px rgba(43, 23, 4, 0.03) !important;
+}
+.dashboard-light-brown .card h3 {
+  color: #2B1704 !important;
+  font-weight: 800 !important;
+}
+.dashboard-light-brown .card-pad {
+  color: #2B1704 !important;
+}
+.dashboard-light-brown .empty {
+  color: #7C5E4C !important;
+  background: #F4EBE0 !important;
+}
+.dashboard-light-brown .w-full.bg-slate-100 {
+  background-color: #EADFD3 !important;
+}
+.dashboard-light-brown .truncate.text-slate-600 {
+  color: #4A2E1B !important;
+  font-weight: 600 !important;
+}
+.dashboard-light-brown .font-mono.text-slate-800 {
+  color: #2B1704 !important;
+  font-weight: 800 !important;
+}
+.dashboard-light-brown table th {
+  background: #F0E5D8 !important;
+  color: #4A2E1B !important;
+  border-bottom: 1px solid #DCCBC0 !important;
+  font-weight: 800 !important;
+}
+.dashboard-light-brown table td {
+  border-bottom: 1px solid #EBE0D3 !important;
+  color: #2B1704 !important;
+}
+.dashboard-light-brown table tr:hover td {
+  background: #F4EBE0 !important;
+}
+.dashboard-light-brown .hint {
+  color: #7C5E4C !important;
+}
+.dashboard-light-brown a.btn-ghost {
+  color: #6E422A !important;
+}
+.dashboard-light-brown a.btn-ghost:hover {
+  background: #EFE4D6 !important;
+  color: #2B1704 !important;
+}
+

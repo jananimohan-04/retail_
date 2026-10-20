@@ -35,7 +35,7 @@ export default function Dashboard() {
   const gmvValue = co ? (companyStats.revenue ?? 0) : s.gmv;
 
   return (
-    <>
+    <div className="dashboard-light-brown pb-6">
       <PageHero
         icon={LayoutDashboard}
         title="Platform Executive Dashboard"
@@ -43,9 +43,10 @@ export default function Dashboard() {
         badgeText="Platform Core"
         badgeColor="amber"
         gradient="from-[#2B1704] via-[#4A2E1B] to-[#6E422A]"
+        className="bg-gradient-to-r from-[#FAF5EF] via-[#F5ECE3] to-[#EFE6DC] border-[#DCCBC0] shadow-xs"
         actions={
           <>
-            <Link className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors" to="/super/audit">
+            <Link className="px-3.5 py-2 rounded-xl text-xs font-bold text-[#4A2E1B] bg-[#EFE6DC] hover:bg-[#E5DACF] border border-[#D5C4B5] transition-colors" to="/super/audit">
               Audit Trail
             </Link>
             <Link className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#2B1704] to-[#4A2E1B] hover:from-[#1E100A] hover:to-[#381F12] shadow-xs shadow-[#2B1704]/30 transition-all" to="/super/companies/new">
@@ -55,14 +56,14 @@ export default function Dashboard() {
         }
       />
       {co && (
-        <div className="flex items-center justify-between gap-3 p-3.5 mb-4 bg-[#FAF6F0] border border-[#E3D5C8] rounded-2xl shadow-2xs">
+        <div className="flex items-center justify-between gap-3 p-3.5 mb-4 bg-[#FAF5EF] border border-[#DCCBC0] rounded-2xl shadow-2xs">
           <div className="flex items-center gap-3">
             <span className="text-2xl">{co.logo || '🏭'}</span>
             <div>
-              <div className="text-xs font-bold text-slate-900">
-                Active Tenant Scope: <span className="text-[#824E30] font-extrabold">{co.name}</span> <span className="font-mono text-slate-500">({co.code || co.id})</span>
+              <div className="text-xs font-bold text-[#2B1704]">
+                Active Tenant Scope: <span className="text-[#824E30] font-extrabold">{co.name}</span> <span className="font-mono text-[#7C5E4C]">({co.code || co.id})</span>
               </div>
-              <div className="text-[11px] text-slate-500">
+              <div className="text-[11px] text-[#7C5E4C]">
                 Dashboard metrics, catalog inventory, and orders are scoped to this company
               </div>
             </div>
@@ -70,7 +71,7 @@ export default function Dashboard() {
           <button
             type="button"
             onClick={() => setActiveCompany('all')}
-            className="px-3 py-1.5 rounded-xl text-xs font-bold text-[#824E30] hover:text-[#5C331E] bg-white hover:bg-[#F3EBE3] border border-[#D5C2B1] transition-colors cursor-pointer shadow-2xs"
+            className="px-3 py-1.5 rounded-xl text-xs font-bold text-[#824E30] hover:text-[#5C331E] bg-[#F5ECE3] hover:bg-[#EAE0D4] border border-[#D5C2B1] transition-colors cursor-pointer shadow-2xs"
           >
             Reset to All Companies
           </button>
@@ -132,6 +133,6 @@ export default function Dashboard() {
           <p className="hint">Every metric on this page is computed from live database rows.</p>
         </div>
       </div>
-    </>
+    </div>
   );
 }

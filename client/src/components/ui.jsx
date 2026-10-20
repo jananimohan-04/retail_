@@ -100,7 +100,8 @@ export function PageHero({
   badgeText,
   badgeColor = 'blue',
   gradient = 'from-blue-600 to-indigo-600',
-  actions
+  actions,
+  className = ''
 }) {
   const BADGE_COLORS = {
     blue: 'bg-blue-50 text-blue-700 border-blue-200',
@@ -120,7 +121,7 @@ export function PageHero({
       initial={{ opacity: 0, y: -4 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2, ease: 'easeOut' }}
-      className="relative overflow-hidden bg-gradient-to-r from-white via-slate-50/90 to-orange-50/20 rounded-xl border border-slate-200/90 px-4 py-2.5 sm:px-5 sm:py-3 shadow-xs mb-3.5"
+      className={`relative overflow-hidden ${className ? className : 'bg-gradient-to-r from-white via-slate-50/90 to-orange-50/20 border-slate-200/90'} rounded-xl border px-4 py-2.5 sm:px-5 sm:py-3 shadow-xs mb-3.5`}
     >
       <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-orange-500 via-amber-500 to-transparent" />
       <div className="relative flex items-center justify-between gap-3">
