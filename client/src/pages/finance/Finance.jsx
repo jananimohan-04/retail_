@@ -52,12 +52,14 @@ function FinanceQueue() {
   }, [load]);
 
   const counts = (data && data.counts) || {};
+  const rows = (data && data.rows) || [];
   const tabCount = (t) => {
     if (t.id === 'all') return (data && data.total) || 0;
-    if (t.id === 'submitted_to_finance') return counts.submitted_to_finance || 0;
-    if (t.id === 'finance_review') return (counts.finance_review || 0) + (counts.pricing_saved || 0);
+    if (t.id === 'queue' || t.id === 'submitted_to_finance') return counts.submitted_to_finance || 0;
+    if (t.id === 'finance_review') return counts.finance_review || 0;
+    if (t.id === 'pricing_saved') return counts.pricing_saved || 0;
     if (t.id === 'published') return counts.published || 0;
-    if (t.id === 'returned_for_correction') return counts.returned_for_correction || 0;
+    if (t.id === 'returned' || t.id === 'returned_for_correction') return counts.returned_for_correction || 0;
     return 0;
   };
 
@@ -204,6 +206,18 @@ function FinanceDetail({ id }) {
   const [confirmApprove, setConfirmApprove] = useState(false);
   const [confirmReturn, setConfirmReturn] = useState(false);
   const [returnComment, setReturnComment] = useState('');
+  const [roles, setRoles] = useState([
+    { id: 'sales_regional_partner', markupPct: 10 },
+    { id: 'sales_channel_partner', markupPct: 15 },
+    { id: 'sales_referral_partner', markupPct: 5 }
+  ]);
+
+  useEffect(() => {
+    api.get('/api/permissions/roles').then((r) => {
+      const list = Array.isArray(r) ? r : (r && r.data) || [];
+      if (list.length > 0) setRoles(list);
+    }).catch(() => {});
+  }, []);
 
   const load = useCallback(() => {
     api.get('/api/workflow/' + id)
