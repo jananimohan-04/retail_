@@ -1750,13 +1750,23 @@ window.App={
             </div>
             <span class="hint" style="font-size:11px;padding-top:16px">If omitted, WhatsApp prompts you to select a chat.</span>
           </div>
+
+          <div style="display:flex;align-items:center;justify-content:space-between;background:#ECFDF5;border:1px solid #A7F3D0;border-radius:6px;padding:8px 12px;margin-bottom:10px;font-size:11.5px;color:#065F46">
+            <span>📎 <b>Media available:</b> ${products.reduce((a,p)=>a+(window.ProductShare?.getProductMedia(p).images.length||0),0)} photo(s) • ${products.reduce((a,p)=>a+(window.ProductShare?.getProductMedia(p).docs.length||0),0)} document(s)</span>
+            <span style="font-weight:600">Share with Attached Files sends files via system app</span>
+          </div>
+
           <div style="margin-bottom:12px">
             <label style="font-size:12px;font-weight:700;color:#2E1508;display:block;margin-bottom:4px">Formatted Message Preview</label>
             <textarea id="waText" rows="8" style="width:100%;font-family:monospace;font-size:12px;padding:8px;border:1px solid #BAA794;border-radius:6px;box-sizing:border-box">${whatsAppData}</textarea>
           </div>
-          <div style="display:flex;gap:8px;justify-content:space-between;align-items:center">
-            <button class="btn btn-ghost btn-sm" style="border:1px solid #BAA794" onclick="App.exportCatalogPdfNow()">📄 Download PDF to Attach</button>
-            <div style="display:flex;gap:8px">
+          <div style="display:flex;gap:8px;justify-content:space-between;align-items:center;flex-wrap:wrap">
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn btn-ghost btn-sm" style="border:1px solid #BAA794" onclick="App.exportCatalogPdfNow()">📄 PDF Booklet</button>
+              <button class="btn btn-ghost btn-sm" style="border:1px solid #BAA794" onclick="App.downloadAllAttachments()">📎 Download Files</button>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn btn-sm" style="background:#1E293B;color:#fff;font-weight:700;padding:8px 12px;border:none;border-radius:6px;cursor:pointer" onclick="App.shareNativeFiles('whatsapp')">📤 Share with Attached Files</button>
               <button class="btn btn-ghost btn-sm" style="border:1px solid #BAA794" onclick="App.copyTextFromEl('waText','WhatsApp text')">📋 Copy Text</button>
               <button class="btn btn-primary btn-sm" style="background:#047857;color:#fff;font-weight:700;padding:8px 16px" onclick="App.launchWhatsAppNow()">💬 Open WhatsApp</button>
             </div>
@@ -1774,16 +1784,27 @@ window.App={
               <input id="emSubj" value="${String(emailData.subject).replace(/"/g,'&quot;')}" style="width:100%;font-size:12px;padding:8px;border:1px solid #BAA794;border-radius:6px">
             </div>
           </div>
+
+          <div style="display:flex;align-items:center;justify-content:space-between;background:#F0F9FF;border:1px solid #BAE6FD;border-radius:6px;padding:8px 12px;margin-bottom:10px;font-size:11.5px;color:#0369A1">
+            <span>📎 <b>Attachments:</b> ${products.reduce((a,p)=>a+(window.ProductShare?.getProductMedia(p).images.length||0),0)} photo(s) • ${products.reduce((a,p)=>a+(window.ProductShare?.getProductMedia(p).docs.length||0),0)} attached PDF(s)</span>
+            <span style="font-weight:600">Draft Email (.eml) attaches files directly</span>
+          </div>
+
           <div style="margin-bottom:12px">
             <label style="font-size:12px;font-weight:700;color:#2E1508;display:block;margin-bottom:4px">Email Body</label>
             <textarea id="emBody" rows="8" style="width:100%;font-family:monospace;font-size:12px;padding:8px;border:1px solid #BAA794;border-radius:6px;box-sizing:border-box">${emailData.body}</textarea>
           </div>
-          <div style="display:flex;gap:8px;justify-content:space-between;align-items:center">
-            <button class="btn btn-ghost btn-sm" style="border:1px solid #BAA794" onclick="App.exportCatalogPdfNow()">📄 Download PDF to Attach</button>
+          <div style="display:flex;gap:8px;justify-content:space-between;align-items:center;flex-wrap:wrap">
             <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn btn-ghost btn-sm" style="border:1px solid #BAA794" onclick="App.exportCatalogPdfNow()">📄 PDF Booklet</button>
+              <button class="btn btn-ghost btn-sm" style="border:1px solid #BAA794" onclick="App.downloadAllAttachments()">📎 Download Attached Files</button>
               <button class="btn btn-ghost btn-sm" style="border:1px solid #BAA794" onclick="App.copyTextFromEl('emBody','Email text')">📋 Copy Text</button>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn btn-sm" style="background:#2E1508;color:#fff;font-weight:700;padding:8px 14px;border:none;border-radius:6px;cursor:pointer" onclick="App.generateEmlEmailDraft()">✉️ Draft Email (.eml with Attachments)</button>
+              <button class="btn btn-sm" style="background:#1E293B;color:#fff;font-weight:700;padding:8px 12px;border:none;border-radius:6px;cursor:pointer" onclick="App.shareNativeFiles('email')">📤 System Mail App</button>
               <button class="btn btn-sm" style="background:#b91c1c;color:#fff;font-weight:700;padding:8px 14px;border:none;border-radius:6px;cursor:pointer" onclick="App.launchEmailNow('gmail')">✉️ Open in Gmail</button>
-              <button class="btn btn-primary btn-sm" style="background:#075985;color:#fff;font-weight:700;padding:8px 14px;border:none;border-radius:6px;cursor:pointer" onclick="App.launchEmailNow('default')">↗️ Default Mail App</button>
+              <button class="btn btn-primary btn-sm" style="background:#075985;color:#fff;font-weight:700;padding:8px 14px;border:none;border-radius:6px;cursor:pointer" onclick="App.launchEmailNow('default')">↗️ mailto:</button>
             </div>
           </div>
         ` : ''}
@@ -1804,6 +1825,55 @@ window.App={
       toast('Generating catalog PDF...', '📄');
     }
   },
+  async generateEmlEmailDraft(){
+    const list = window._curShareProducts || [];
+    if (!list.length) return;
+    const to = (document.getElementById('emTo')?.value || '').trim();
+    const subj = document.getElementById('emSubj')?.value || '';
+    const body = document.getElementById('emBody')?.value || '';
+    toast('Creating email draft with attached documents & photos…', '✉️');
+    try {
+      if (window.ProductShare?.generateEmlEmail) {
+        await window.ProductShare.generateEmlEmail({ to, subject: subj, body, products: list });
+        toast('Email draft created! Open in Outlook / Mail.', '📬');
+      }
+    } catch(e) {
+      console.warn(e);
+      toast('Failed to create email draft', '⚠️');
+    }
+  },
+  async shareNativeFiles(fromTab = 'email'){
+    const list = window._curShareProducts || [];
+    if (!list.length) return;
+    const subj = document.getElementById('emSubj')?.value || 'Industrial Product Catalog';
+    const text = fromTab === 'whatsapp' ? (document.getElementById('waText')?.value || '') : (document.getElementById('emBody')?.value || '');
+    toast('Preparing files for native app share…', '📤');
+    try {
+      if (window.ProductShare?.shareWithNativeFiles) {
+        const ok = await window.ProductShare.shareWithNativeFiles({ title: subj, text, products: list });
+        if (ok) {
+          toast('Shared via system app!', '🚀');
+        } else {
+          toast('Native file share not supported on this browser', 'ℹ️');
+        }
+      }
+    } catch(e) {
+      if (e.name !== 'AbortError') toast('Share failed', '⚠️');
+    }
+  },
+  async downloadAllAttachments(){
+    const list = window._curShareProducts || [];
+    if (!list.length) return;
+    toast('Downloading all product photos and documents…', '📎');
+    try {
+      if (window.ProductShare?.downloadAllProductAttachments) {
+        const count = await window.ProductShare.downloadAllProductAttachments(list);
+        toast(`Downloaded ${count} file(s)!`, '✅');
+      }
+    } catch(e) {
+      toast('Failed to download attachments', '⚠️');
+    }
+  },
   copyTextFromEl(id, label){
     const el = document.getElementById(id);
     if (!el) return;
@@ -1822,15 +1892,21 @@ window.App={
     const subj = document.getElementById('emSubj')?.value || '';
     const body = document.getElementById('emBody')?.value || '';
     if (provider === 'gmail') {
+      if (window.ProductShare?.downloadAllProductAttachments) {
+        window.ProductShare.downloadAllProductAttachments(window._curShareProducts || []).catch(()=>{});
+      }
       const gUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(to)}&su=${encodeURIComponent(subj)}&body=${encodeURIComponent(body)}`;
       window.open(gUrl, '_blank');
-      toast('Redirecting to Gmail…', '📧');
+      toast('Redirecting to Gmail… Attachments downloaded.', '📧');
       return;
     }
     if (provider === 'outlook') {
+      if (window.ProductShare?.downloadAllProductAttachments) {
+        window.ProductShare.downloadAllProductAttachments(window._curShareProducts || []).catch(()=>{});
+      }
       const outUrl = `https://outlook.live.com/mail/0/deeplink/compose?to=${encodeURIComponent(to)}&subject=${encodeURIComponent(subj)}&body=${encodeURIComponent(body)}`;
       window.open(outUrl, '_blank');
-      toast('Redirecting to Outlook…', '📧');
+      toast('Redirecting to Outlook… Attachments downloaded.', '📧');
       return;
     }
     let safeBody = body;

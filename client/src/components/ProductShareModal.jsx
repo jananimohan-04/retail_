@@ -6,14 +6,21 @@ import {
   Copy,
   ExternalLink,
   FileText,
-  Check
+  Check,
+  Paperclip,
+  Download,
+  Share2
 } from 'lucide-react';
 import { Modal, toast } from './ui';
 import {
   getProductMedia,
   exportProductsPdf,
   formatProductsEmail,
-  formatProductsWhatsApp
+  formatProductsWhatsApp,
+  downloadAttachment,
+  downloadAllProductAttachments,
+  generateEmlEmail,
+  shareWithNativeFiles
 } from '../utils/productShare';
 
 export default function ProductShareModal({
@@ -29,9 +36,14 @@ export default function ProductShareModal({
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [copied, setCopied] = useState(false);
+  const [busy, setBusy] = useState(false);
 
   const initialEmail = formatProductsEmail(products, companyName);
   const initialWhatsApp = formatProductsWhatsApp(products, companyName);
+
+  const totalImages = products.reduce((acc, p) => acc + getProductMedia(p).images.length, 0);
+  const totalDocs = products.reduce((acc, p) => acc + getProductMedia(p).docs.length, 0);
+  const totalYt = products.reduce((acc, p) => acc + getProductMedia(p).youtube.length, 0);
 
   const [subject, setSubject] = useState(initialEmail.subject);
   const [emailBody, setEmailBody] = useState(initialEmail.body);
@@ -68,18 +80,81 @@ export default function ProductShareModal({
     window.open(url, '_blank');
   };
 
+  /* Native OS Share with real file attachments (images + PDF documents) */
+  const handleNativeShare = async () => {
+    setBusy(true);
+    toast('Preparing files for native app share…', '📤');
+    try {
+      const ok = await shareWithNativeFiles({
+        title: subject,
+        text: tab === 'whatsapp' ? whatsAppText : emailBody,
+        products
+      });
+      if (ok) {
+        toast('Shared via system app!', '🚀');
+      } else {
+        toast('Native file sharing not supported on this browser — use buttons below', 'ℹ️');
+      }
+    } catch (e) {
+      if (e.name !== 'AbortError') {
+        console.warn('Native share failed:', e);
+        toast('Native share failed', '⚠️');
+      }
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  /* Download all photos & documents directly */
+  const handleDownloadAllAttachments = async () => {
+    setBusy(true);
+    toast('Downloading all attached documents & photos…', '📎');
+    try {
+      const count = await downloadAllProductAttachments(products);
+      toast(`Downloaded ${count} file(s)!`, '✅');
+    } catch (e) {
+      console.warn('Download attachments failed:', e);
+      toast('Failed to download some attachments', '⚠️');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  /* Generate RFC 822 MIME .eml email with real attached documents & images */
+  const handleGenerateEmlDraft = async () => {
+    setBusy(true);
+    toast('Creating email draft with attached documents & photos…', '✉️');
+    try {
+      await generateEmlEmail({
+        to: email,
+        subject,
+        body: emailBody,
+        products
+      });
+      toast('Email draft opened! Check your mail app with attachments.', '📬');
+    } catch (e) {
+      console.warn('Failed to generate .eml email:', e);
+      toast('Failed to generate email draft', '⚠️');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const handleLaunchEmail = (provider = 'gmail') => {
     const to = (email || '').trim();
     if (provider === 'gmail') {
+      // Automatically download attachments so user can drag & drop them directly into Gmail
+      downloadAllProductAttachments(products).catch(() => {});
       const gUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(to)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailBody)}`;
       window.open(gUrl, '_blank');
-      toast('Redirecting to Gmail webmail…', '📧');
+      toast('Opening Gmail! Attachments downloaded ready to attach.', '📧');
       return;
     }
     if (provider === 'outlook') {
+      downloadAllProductAttachments(products).catch(() => {});
       const outUrl = `https://outlook.live.com/mail/0/deeplink/compose?to=${encodeURIComponent(to)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailBody)}`;
       window.open(outUrl, '_blank');
-      toast('Redirecting to Outlook…', '📧');
+      toast('Opening Outlook! Attachments downloaded ready to attach.', '📧');
       return;
     }
 
@@ -393,18 +468,54 @@ export default function ProductShareModal({
               />
             </div>
 
-            <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[#BAA794]">
-              <button
-                type="button"
-                onClick={handleExportPdfNow}
-                className="btn btn-ghost btn-sm text-[#2E1508] border border-[#BAA794] flex items-center gap-1.5"
-                title="Download the PDF booklet to attach in WhatsApp"
-              >
-                <FileDown className="w-4 h-4" />
-                Download PDF to Attach
-              </button>
+            {/* Attached media counter banner */}
+            <div className="flex items-center justify-between p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 text-xs text-emerald-950 flex-wrap gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <Paperclip className="w-4 h-4 text-emerald-700 flex-shrink-0" />
+                <span>
+                  <b>Media available:</b> {totalImages} photo(s) • {totalDocs} document(s)
+                  {totalYt > 0 && <span className="text-emerald-800"> • {totalYt} YouTube link(s)</span>}
+                </span>
+              </div>
+              <span className="text-[11px] text-emerald-800 font-medium">
+                Click Share with Attached Files to send files via system WhatsApp
+              </span>
+            </div>
 
-              <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[#BAA794]">
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={handleExportPdfNow}
+                  className="btn btn-ghost btn-sm text-[#2E1508] border border-[#BAA794] flex items-center gap-1.5"
+                  title="Download the PDF booklet to attach in WhatsApp"
+                >
+                  <FileDown className="w-3.5 h-3.5" />
+                  PDF Booklet
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDownloadAllAttachments}
+                  disabled={busy}
+                  className="btn btn-ghost btn-sm text-[#2E1508] border border-[#BAA794] flex items-center gap-1.5"
+                  title="Download all product photos and documents to attach in WhatsApp"
+                >
+                  <Paperclip className="w-3.5 h-3.5 text-[#8F2A0E]" />
+                  Download Files
+                </button>
+              </div>
+
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={handleNativeShare}
+                  disabled={busy}
+                  className="btn btn-sm bg-slate-800 hover:bg-slate-900 text-white border-none shadow-xs flex items-center gap-1.5 cursor-pointer font-bold px-3 py-2"
+                  title="Share message with photos and documents via System App (WhatsApp, Mail, etc.)"
+                >
+                  <Share2 className="w-4 h-4" />
+                  Share with Attached Files
+                </button>
                 <button
                   type="button"
                   onClick={() => handleCopyText(whatsAppText, 'WhatsApp text')}
@@ -455,6 +566,20 @@ export default function ProductShareModal({
               </div>
             </div>
 
+            {/* Attachments status info banner */}
+            <div className="flex items-center justify-between p-2.5 rounded-lg bg-sky-50 border border-sky-200 text-xs text-sky-950 flex-wrap gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <Paperclip className="w-4 h-4 text-sky-700 flex-shrink-0" />
+                <span>
+                  <b>Attachments:</b> {totalImages} attached photo(s) • {totalDocs} attached PDF(s)
+                  {totalYt > 0 && <span className="text-slate-600"> • {totalYt} YouTube link(s)</span>}
+                </span>
+              </div>
+              <span className="text-[11px] text-sky-800 font-medium">
+                Draft Email (.eml) attaches files directly!
+              </span>
+            </div>
+
             <div>
               <div className="flex items-center justify-between mb-1">
                 <label className="text-xs font-bold text-[#2E1508]">
@@ -465,7 +590,7 @@ export default function ProductShareModal({
                 </span>
               </div>
               <textarea
-                rows={10}
+                rows={9}
                 value={emailBody}
                 onChange={(e) => setEmailBody(e.target.value)}
                 className="w-full text-xs font-mono p-3 rounded-xl border border-[#BAA794] bg-white text-[#1A0A03] leading-relaxed resize-y"
@@ -473,17 +598,26 @@ export default function ProductShareModal({
             </div>
 
             <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[#BAA794]">
-              <button
-                type="button"
-                onClick={handleExportPdfNow}
-                className="btn btn-ghost btn-sm text-[#2E1508] border border-[#BAA794] flex items-center gap-1.5"
-                title="Download the PDF datasheet to attach to your email"
-              >
-                <FileDown className="w-3.5 h-3.5" />
-                Download PDF to Attach
-              </button>
-
               <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={handleExportPdfNow}
+                  className="btn btn-ghost btn-sm text-[#2E1508] border border-[#BAA794] flex items-center gap-1.5"
+                  title="Download the PDF datasheet to attach to your email"
+                >
+                  <FileDown className="w-3.5 h-3.5" />
+                  PDF Booklet
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDownloadAllAttachments}
+                  disabled={busy}
+                  className="btn btn-ghost btn-sm text-[#2E1508] border border-[#BAA794] flex items-center gap-1.5"
+                  title="Download all attached photos and PDF documents"
+                >
+                  <Paperclip className="w-3.5 h-3.5 text-[#8F2A0E]" />
+                  Download Attached Files
+                </button>
                 <button
                   type="button"
                   onClick={() => handleCopyText(`Subject: ${subject}\n\n${emailBody}`, 'Email text')}
@@ -492,11 +626,34 @@ export default function ProductShareModal({
                   {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
                   {copied ? 'Copied!' : 'Copy Text'}
                 </button>
+              </div>
+
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={handleGenerateEmlDraft}
+                  disabled={busy}
+                  className="btn btn-sm bg-[#2E1508] hover:bg-[#432311] text-white border-none shadow-xs flex items-center gap-1.5 cursor-pointer font-bold px-3.5 py-2"
+                  title="Creates an RFC 822 email file with photos and documents already attached. Opens directly in Outlook, Windows Mail, Thunderbird, Apple Mail, etc."
+                >
+                  <Mail className="w-4 h-4 text-amber-400" />
+                  Draft Email (.eml with Attachments)
+                </button>
+                <button
+                  type="button"
+                  onClick={handleNativeShare}
+                  disabled={busy}
+                  className="btn btn-sm bg-slate-800 hover:bg-slate-900 text-white border-none shadow-xs flex items-center gap-1.5 cursor-pointer font-bold px-3 py-2"
+                  title="Open system share dialog to pick Mail or Outlook with files attached"
+                >
+                  <Share2 className="w-4 h-4" />
+                  System Mail App
+                </button>
                 <button
                   type="button"
                   onClick={() => handleLaunchEmail('gmail')}
                   className="btn btn-sm bg-rose-700 hover:bg-rose-800 text-white border-none shadow-xs flex items-center gap-1.5 cursor-pointer font-bold px-3 py-2"
-                  title="Directly redirect into Gmail webmail"
+                  title="Directly redirect into Gmail webmail (downloads attachments ready to attach)"
                 >
                   <Mail className="w-4 h-4" />
                   Open in Gmail
@@ -505,10 +662,10 @@ export default function ProductShareModal({
                   type="button"
                   onClick={() => handleLaunchEmail('default')}
                   className="btn btn-sm bg-sky-800 hover:bg-sky-900 text-white border-none shadow-xs flex items-center gap-1.5 cursor-pointer font-bold px-3 py-2"
-                  title="Open Default Desktop Mail App (Outlook, Windows Mail, or app picker)"
+                  title="Open Default Desktop Mail App (mailto: protocol)"
                 >
                   <ExternalLink className="w-4 h-4" />
-                  Default Mail App
+                  mailto:
                 </button>
               </div>
             </div>

@@ -147,31 +147,29 @@ export function formatProductsWhatsApp(products, companyName = 'ARGUS CNC') {
       }
     }
 
-    // All Images under this product
-    if (images.length) {
-      if (images.length === 1) {
-        msg += `• *Product Photo:* ${images[0]}\n`;
-      } else {
-        msg += `• *Product Photos (${images.length}):*\n`;
-        images.forEach((img, i) => {
-          msg += `   🖼️ Photo ${i + 1}: ${img}\n`;
-        });
-      }
-    }
-
-    // YouTube Demo Link under this product
+    // YouTube link as a link
     if (youtube.length) {
-      msg += `• *YouTube Video / Demo:*\n`;
-      youtube.forEach((y, i) => {
+      msg += `• *YouTube Video Link:*\n`;
+      youtube.forEach((y) => {
         msg += `   ▶️ ${y.title || 'Watch Demo'}: ${y.url}\n`;
       });
     }
 
-    // Attached Documents & Datasheets under this product
+    // Photo as an attached image
+    if (images.length) {
+      msg += `• *Attached Product Image(s) (${images.length}):*\n`;
+      images.forEach((img, i) => {
+        const fn = img.split('/').pop().split('?')[0] || `photo-${i + 1}.png`;
+        msg += `   🖼️ [Attached Image] ${fn}\n`;
+      });
+    }
+
+    // Document as an attached document
     if (docs.length) {
-      msg += `• *Attached Documents & Datasheets (${docs.length}):*\n`;
+      msg += `• *Attached Document(s) & Datasheet(s) (${docs.length}):*\n`;
       docs.forEach(d => {
-        msg += `   📄 ${d.title}: ${d.url}\n`;
+        const fn = d.title.endsWith('.pdf') ? d.title : `${d.title}.pdf`;
+        msg += `   📄 [Attached Document] ${fn}\n`;
       });
     }
 
@@ -192,7 +190,7 @@ export function formatProductsEmail(products, companyName = 'ARGUS CNC') {
   const skuList = products.map(p => p.sku || p.name).slice(0, 3).join(', ') + (count > 3 ? ` +${count - 3} more` : '');
   const subject = `Industrial Product Catalog & Datasheets (${count} SKU${count > 1 ? 's' : ''}: ${skuList}) - ${companyName}`;
 
-  let body = `Dear Customer,\n\nPlease find the technical specifications, pricing, and attached datasheets for the selected industrial product(s) from ${companyName}:\n\n`;
+  let body = `Dear Customer,\n\nPlease find the technical specifications, pricing, attached documents, and photo(s) for the selected industrial product(s) from ${companyName}:\n\n`;
   body += `============================================================\n`;
 
   products.forEach((p, idx) => {
@@ -224,27 +222,29 @@ export function formatProductsEmail(products, companyName = 'ARGUS CNC') {
       }
     }
 
-    // Product Images under this product
-    if (images.length) {
-      body += `Product Images (${images.length}):\n`;
-      images.forEach((img, i) => {
-        body += `  - Photo ${i + 1}: ${img}\n`;
-      });
-    }
-
-    // YouTube Demo Link under this product
+    // YouTube Video Link as a link
     if (youtube.length) {
-      body += `YouTube Video / Demonstration:\n`;
-      youtube.forEach((y, i) => {
-        body += `  - [YouTube] ${y.title || 'Watch Demo'}: ${y.url}\n`;
+      body += `YouTube Video Link:\n`;
+      youtube.forEach((y) => {
+        body += `  • [YouTube Link] ${y.title || 'Watch Video Demo'}: ${y.url}\n`;
       });
     }
 
-    // Attached Documents & Drawings under this product
+    // Photo as an attached image
+    if (images.length) {
+      body += `Attached Product Image(s) (${images.length}):\n`;
+      images.forEach((img, i) => {
+        const fn = img.split('/').pop().split('?')[0] || `photo-${i + 1}.png`;
+        body += `  • [Attached Image] ${fn} (attached to email)\n`;
+      });
+    }
+
+    // Document as an attached document
     if (docs.length) {
-      body += `Attached PDF Datasheets / Drawings (${docs.length}):\n`;
+      body += `Attached Document(s) & Datasheet(s) (${docs.length}):\n`;
       docs.forEach(d => {
-        body += `  - [PDF] ${d.title}: ${d.url}\n`;
+        const fn = d.title.endsWith('.pdf') ? d.title : `${d.title}.pdf`;
+        body += `  • [Attached Document] ${fn} (attached PDF)\n`;
       });
     }
 
@@ -831,3 +831,203 @@ export function exportProductsPdf(products, companyInfo = {}) {
     }
   }, 400);
 }
+
+function arrayBufferToBase64(buffer) {
+  let binary = '';
+  const bytes = new Uint8Array(buffer);
+  const len = bytes.byteLength;
+  for (let i = 0; i < len; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return window.btoa(binary);
+}
+
+/* Download an individual file (image or PDF document) */
+export async function downloadAttachment(url, filename) {
+  try {
+    const res = await fetch(url);
+    const blob = await res.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = filename || url.split('/').pop().split('?')[0] || 'attachment';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+      try {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(blobUrl);
+      } catch {}
+    }, 400);
+  } catch (e) {
+    console.warn('Blob download fallback to window.open:', e);
+    window.open(url, '_blank');
+  }
+}
+
+/* Download all attached photos and PDF documents for selected products */
+export async function downloadAllProductAttachments(products) {
+  let count = 0;
+  for (const p of products) {
+    const { images, docs } = getProductMedia(p);
+
+    // Download photos
+    for (let i = 0; i < images.length; i++) {
+      const url = images[i];
+      const ext = url.split('.').pop().split('?')[0] || 'png';
+      const name = `${(p.sku || p.name || 'product').replace(/[^a-zA-Z0-9_-]/g, '_')}_photo_${i + 1}.${ext}`;
+      await downloadAttachment(url, name);
+      count++;
+      await new Promise(r => setTimeout(r, 200));
+    }
+
+    // Download documents
+    for (let i = 0; i < docs.length; i++) {
+      const doc = docs[i];
+      const name = `${(doc.title || 'document').replace(/[^a-zA-Z0-9_-]/g, '_').replace(/\.pdf$/i, '')}.pdf`;
+      await downloadAttachment(doc.url, name);
+      count++;
+      await new Promise(r => setTimeout(r, 200));
+    }
+  }
+  return count;
+}
+
+/* Generate and open standard RFC 822 MIME .eml email with REAL file attachments (images + documents) */
+export async function generateEmlEmail({ to, subject, body, products }) {
+  const boundary = '----=_Part_ARGUS_' + Date.now();
+  const parts = [];
+
+  // Headers
+  parts.push(`To: ${(to || '').trim()}`);
+  parts.push(`Subject: ${subject || 'Industrial Product Catalog & Datasheets'}`);
+  parts.push(`X-Unsent: 1`);
+  parts.push(`MIME-Version: 1.0`);
+  parts.push(`Content-Type: multipart/mixed; boundary="${boundary}"`);
+  parts.push(``);
+
+  // Body Part (Text with YouTube link)
+  parts.push(`--${boundary}`);
+  parts.push(`Content-Type: text/plain; charset=utf-8`);
+  parts.push(`Content-Transfer-Encoding: 8bit`);
+  parts.push(``);
+  parts.push(body || '');
+  parts.push(``);
+
+  // Fetch and embed images & PDF documents as real MIME attachments
+  for (const p of products) {
+    const { images, docs } = getProductMedia(p);
+
+    // Attach Photos
+    for (let i = 0; i < images.length; i++) {
+      try {
+        const imgUrl = images[i];
+        const res = await fetch(imgUrl);
+        const buf = await res.arrayBuffer();
+        const b64 = arrayBufferToBase64(buf);
+        const ext = imgUrl.split('.').pop().split('?')[0] || 'png';
+        const mime = ext.toLowerCase() === 'jpg' || ext.toLowerCase() === 'jpeg' ? 'image/jpeg' : 'image/png';
+        const fn = `${(p.sku || p.name || 'product').replace(/[^a-zA-Z0-9_-]/g, '_')}_photo_${i + 1}.${ext}`;
+
+        parts.push(`--${boundary}`);
+        parts.push(`Content-Type: ${mime}; name="${fn}"`);
+        parts.push(`Content-Disposition: attachment; filename="${fn}"`);
+        parts.push(`Content-Transfer-Encoding: base64`);
+        parts.push(``);
+        parts.push(b64);
+        parts.push(``);
+      } catch (e) {
+        console.warn('Failed to embed image attachment into EML:', e);
+      }
+    }
+
+    // Attach PDF Documents
+    for (let i = 0; i < docs.length; i++) {
+      try {
+        const doc = docs[i];
+        const res = await fetch(doc.url);
+        const buf = await res.arrayBuffer();
+        const b64 = arrayBufferToBase64(buf);
+        const fn = `${(doc.title || 'datasheet').replace(/[^a-zA-Z0-9_-]/g, '_').replace(/\.pdf$/i, '')}.pdf`;
+
+        parts.push(`--${boundary}`);
+        parts.push(`Content-Type: application/pdf; name="${fn}"`);
+        parts.push(`Content-Disposition: attachment; filename="${fn}"`);
+        parts.push(`Content-Transfer-Encoding: base64`);
+        parts.push(``);
+        parts.push(b64);
+        parts.push(``);
+      } catch (e) {
+        console.warn('Failed to embed document attachment into EML:', e);
+      }
+    }
+  }
+
+  parts.push(`--${boundary}--`);
+
+  const emlContent = parts.join('\r\n');
+  const blob = new Blob([emlContent], { type: 'message/rfc822' });
+  const blobUrl = URL.createObjectURL(blob);
+
+  const a = document.createElement('a');
+  a.href = blobUrl;
+  a.download = `${(subject || 'Product_Catalog').slice(0, 30).replace(/[^a-zA-Z0-9_-]/g, '_')}.eml`;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => {
+    try {
+      document.body.removeChild(a);
+      URL.revokeObjectURL(blobUrl);
+    } catch {}
+  }, 400);
+
+  return true;
+}
+
+/* Native OS Share tray with real File objects (when supported by browser/device) */
+export async function shareWithNativeFiles({ title, text, products }) {
+  const files = [];
+  for (const p of products) {
+    const { images, docs } = getProductMedia(p);
+    for (let i = 0; i < images.length; i++) {
+      try {
+        const imgUrl = images[i];
+        const res = await fetch(imgUrl);
+        const blob = await res.blob();
+        const ext = imgUrl.split('.').pop().split('?')[0] || 'png';
+        const fn = `${(p.sku || p.name || 'product').replace(/[^a-zA-Z0-9_-]/g, '_')}_photo_${i + 1}.${ext}`;
+        files.push(new File([blob], fn, { type: blob.type || 'image/png' }));
+      } catch (e) {
+        console.warn('Fetch image file failed:', e);
+      }
+    }
+    for (let i = 0; i < docs.length; i++) {
+      try {
+        const doc = docs[i];
+        const res = await fetch(doc.url);
+        const blob = await res.blob();
+        const fn = `${(doc.title || 'datasheet').replace(/[^a-zA-Z0-9_-]/g, '_').replace(/\.pdf$/i, '')}.pdf`;
+        files.push(new File([blob], fn, { type: 'application/pdf' }));
+      } catch (e) {
+        console.warn('Fetch document file failed:', e);
+      }
+    }
+  }
+
+  if (navigator.canShare && files.length > 0 && navigator.canShare({ files })) {
+    await navigator.share({
+      title,
+      text,
+      files
+    });
+    return true;
+  }
+
+  if (navigator.share) {
+    await navigator.share({ title, text });
+    return true;
+  }
+
+  return false;
+}
+
