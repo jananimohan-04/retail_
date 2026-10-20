@@ -286,6 +286,42 @@ function vLogin(){
           <span>Continue with Google</span>
         </button>
 
+        <div style="margin:16px 0 12px;display:flex;align-items:center;gap:10px;color:#94A3B8;font-size:11px;font-weight:700">
+          <div style="flex:1;height:1px;background:#E2E8F0"></div>
+          <span>OR SIGN IN WITH REGISTERED EMAIL</span>
+          <div style="flex:1;height:1px;background:#E2E8F0"></div>
+        </div>
+
+        <form onsubmit="event.preventDefault(); App.localLogin($('#localEmailInput').value);" style="display:flex;flex-direction:column;gap:8px">
+          <input
+            type="email"
+            id="localEmailInput"
+            placeholder="e.g. jananimohan44@gmail.com"
+            value="jananimohan44@gmail.com"
+            style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #CBD5E1;border-radius:8px;font-size:13px;color:#1E293B;background:#FFFFFF"
+          />
+          <button
+            type="submit"
+            class="btn btn-dark"
+            style="width:100%;padding:10px;font-weight:700;font-size:13px;border-radius:8px;background:#2E1508;color:#FFF;border:none;cursor:pointer"
+          >
+            Sign In with Email
+          </button>
+        </form>
+
+        <div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:4px;font-size:11px">
+          <span style="color:#64748B;width:100%;margin-bottom:2px">Quick switch:</span>
+          <button type="button" class="tag" style="cursor:pointer;background:#EDE1D3;border:1px solid #BAA794;color:#2E1508;padding:2px 6px;border-radius:4px" onclick="$('#localEmailInput').value='jananimohan44@gmail.com'; App.localLogin('jananimohan44@gmail.com');">
+            👑 Janani Mohan (Super Admin)
+          </button>
+          <button type="button" class="tag" style="cursor:pointer;background:#EDE1D3;border:1px solid #BAA794;color:#2E1508;padding:2px 6px;border-radius:4px" onclick="$('#localEmailInput').value='technologiesargus@gmail.com'; App.localLogin('technologiesargus@gmail.com');">
+            👑 Technologies Argus (Super Admin)
+          </button>
+          <button type="button" class="tag" style="cursor:pointer;background:#F1F5F9;border:1px solid #CBD5E1;color:#334155;padding:2px 6px;border-radius:4px" onclick="$('#localEmailInput').value='argushexadoc2021@gmail.com'; App.localLogin('argushexadoc2021@gmail.com');">
+            🏢 Argus (Company Admin)
+          </button>
+        </div>
+
         <div class="auth-security">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
           <span>Secure access to your authorized workspace.</span>
@@ -1222,6 +1258,32 @@ window.App={
       console.error('afterGoogleLogin error:', e);
       if(!silent) toast('Could not resolve your ERP role: ' + (e.message || 'error'), '⚠️');
       render();
+    }
+  },
+  async localLogin(email){
+    email = (email || '').trim().toLowerCase();
+    if (!email) { toast('Please enter an email address', '⚠️'); return; }
+    try {
+      const r = await fetch('/api/me', { headers: { 'x-user-email': email } });
+      const j = await r.json();
+      const u = j.data || {};
+      if (!u.role || u.role === 'pending' || u.role === 'disabled') {
+        toast(j.error || 'Account not registered in ERP', '⚠️');
+        return;
+      }
+      me = { role: u.role, companyId: u.companyId, name: u.name || 'User', email: u.email || email, mobile: u.mobile || '', google: false };
+      window._meResolved = true;
+      setSession(me);
+      if (window.Backend) {
+        window.Backend.cache = { products:null, orders:null, companies:null, users:null, cats:null, quotes:null, pstats:null, media:null, audit:null, gsettings:null, catalog:null };
+        await window.Backend.refresh().catch(()=>{});
+      }
+      toast(`Signed in as ${me.name} (${me.role === 'super_admin' ? 'Super Admin' : me.role})`, '👋');
+      const target = me.role === 'super_admin' ? '#/super/dashboard' : me.role === 'company_admin' ? '#/admin/dashboard' : me.role === 'content_writer' ? '#/content' : me.role === 'finance' ? '#/finance' : '#/store/home';
+      location.hash = target;
+      render();
+    } catch(e) {
+      toast('Login failed: ' + (e.message || 'error'), '⚠️');
     }
   },
   afterGoogleLogout(){ setSession(null); me = null; location.hash = '#/login'; render(); },

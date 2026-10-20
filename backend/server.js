@@ -383,6 +383,7 @@ app.use(async (req, _res, next) => {
       const u = await SB.authUserFromToken(h.slice(7).trim());
       if (u && u.email) {
         const email = String(u.email).toLowerCase();
+        let person = (db.users || []).find(x => (x.email || '').toLowerCase() === email);
         const isSuper = SB.isSuperEmail ? SB.isSuperEmail(email) : (email === SB.superEmail);
         if (!person && isSuper) { // first-login bootstrap for the Super Admin
           person = { id: 'U-' + Date.now(), name: (u.user_metadata && u.user_metadata.full_name) || (email === 'technologiesargus@gmail.com' ? 'ARGUS TECHNOLOGIES' : 'Janani Mohan'), role: 'super_admin', companyId: null, email, active: true, createdAt: new Date().toISOString().slice(0, 10) };
@@ -395,20 +396,36 @@ app.use(async (req, _res, next) => {
           save();
         }
         const display = (u.user_metadata && (u.user_metadata.full_name || u.user_metadata.name)) || (person && person.name) || email;
-        if (person && person.active === false) { req.ctx = { role: 'disabled', companyId: person.companyId, name: display, email, google: true }; return next(); }
-        if (person) { req.ctx = { role: person.role, companyId: person.companyId, name: display, email, google: true }; return next(); }
+        if (person && person.active === false) { req.ctx = { role: 'disabled', companyId: person.companyId, name: display, email, google: true, id: person.id }; return next(); }
+        if (person) { req.ctx = { role: person.role, companyId: person.companyId, name: display, email, google: true, id: person.id }; return next(); }
         req.ctx = { role: 'pending', companyId: null, name: display, email, google: true }; return next(); // Google OK, no ERP account yet
       }
-    } catch (e) { /* fall through to demo headers */ }
+    } catch (e) {
+      console.warn('Bearer auth error in server middleware:', e.message);
+      /* fall through to demo headers */
+    }
   }
-  const userEmail = req.headers['x-user-email'] || '';
+  const userEmail = (req.headers['x-user-email'] || '').trim().toLowerCase();
   const userId = req.headers['x-user-id'] || '';
+  let foundUser = null;
+  if (userEmail) {
+    foundUser = (db.users || []).find(x => (x.email || '').toLowerCase() === userEmail);
+  }
+  if (!foundUser && userId) {
+    foundUser = (db.users || []).find(x => x.id === userId);
+  }
+
+  const isSuper = userEmail && (SB.isSuperEmail ? SB.isSuperEmail(userEmail) : (userEmail === SB.superEmail));
+  const role = isSuper ? 'super_admin' : (foundUser ? foundUser.role : (req.headers['x-role'] || 'sales_user'));
+  const companyId = isSuper ? null : (foundUser ? (foundUser.role === 'super_admin' ? null : foundUser.companyId) : (req.headers['x-company-id'] || 'C-ARGUS'));
+  const name = foundUser ? foundUser.name : (req.headers['x-user-name'] || (isSuper ? (userEmail === 'technologiesargus@gmail.com' ? 'ARGUS TECHNOLOGIES' : 'Janani Mohan') : 'Argus User'));
+
   req.ctx = { 
-    role: req.headers['x-role'] || 'sales_user', 
-    companyId: req.headers['x-company-id'] || 'C-ARGUS', 
-    name: req.headers['x-user-name'] || 'Argus User',
-    email: userEmail,
-    id: userId
+    role, 
+    companyId, 
+    name,
+    email: userEmail || (foundUser ? foundUser.email : ''),
+    id: foundUser ? foundUser.id : userId
   };
   next();
 });

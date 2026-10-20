@@ -63,12 +63,13 @@ export const rolePath = (role) => {
 };
 
 export default function Login() {
-  const { me, googleLogin } = useAuth();
+  const { me, googleLogin, loginAsEmail } = useAuth();
   const nav = useNavigate();
   const [slide, setSlide] = useState(0);
   const [paused, setPaused] = useState(false);
   const [setupMsg, setSetupMsg] = useState(false);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [localEmail, setLocalEmail] = useState('jananimohan44@gmail.com');
 
   useEffect(() => { window.scrollTo(0, 0); }, []);
 
@@ -89,6 +90,28 @@ export default function Login() {
     } catch (e) {
       setSetupMsg(true);
       toast(e.message || 'Google OAuth configuration required (see setup guidance)', '⚠️');
+    } finally {
+      setIsLoggingIn(false);
+    }
+  };
+
+  const doEmailLogin = async (targetEmail) => {
+    const em = (targetEmail || localEmail || '').trim().toLowerCase();
+    if (!em) {
+      toast('Please enter an email address', '⚠️');
+      return;
+    }
+    try {
+      setIsLoggingIn(true);
+      const res = await loginAsEmail(em);
+      if (res && res.role) {
+        toast(`Signed in as ${res.name} (${res.role === 'super_admin' ? 'Super Admin' : res.role})`, '👋');
+        nav(rolePath(res.role), { replace: true });
+      } else {
+        toast('Account not found or not active in ERP', '⚠️');
+      }
+    } catch (e) {
+      toast('Login failed: ' + e.message, '⚠️');
     } finally {
       setIsLoggingIn(false);
     }
@@ -259,8 +282,62 @@ export default function Login() {
             <span>{isLoggingIn ? 'Connecting…' : 'Continue with Google'}</span>
           </button>
 
+          <div className="my-4 flex items-center gap-3 text-slate-400 text-[11px] font-bold">
+            <div className="flex-1 h-px bg-slate-200" />
+            <span>OR SIGN IN WITH REGISTERED EMAIL</span>
+            <div className="flex-1 h-px bg-slate-200" />
+          </div>
+
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              doEmailLogin();
+            }}
+            className="space-y-2.5"
+          >
+            <input
+              type="email"
+              value={localEmail}
+              onChange={(e) => setLocalEmail(e.target.value)}
+              placeholder="e.g. jananimohan44@gmail.com"
+              className="w-full text-xs p-2.5 rounded-xl border border-slate-300 bg-white text-slate-800 focus:outline-none focus:border-amber-700"
+            />
+            <button
+              type="submit"
+              disabled={isLoggingIn}
+              className="w-full py-2.5 px-4 rounded-xl bg-[#2E1508] hover:bg-[#432311] text-white font-bold text-xs shadow-xs transition-all cursor-pointer disabled:opacity-50"
+            >
+              Sign In with Email
+            </button>
+          </form>
+
+          <div className="mt-3 flex flex-wrap gap-1.5 text-[10.5px]">
+            <span className="text-slate-400 w-full mb-0.5">Quick switch:</span>
+            <button
+              type="button"
+              onClick={() => { setLocalEmail('jananimohan44@gmail.com'); doEmailLogin('jananimohan44@gmail.com'); }}
+              className="px-2 py-1 rounded bg-[#EDE1D3] hover:bg-[#DECDBE] text-[#2E1508] font-semibold border border-[#BAA794] cursor-pointer"
+            >
+              👑 Janani Mohan (Super Admin)
+            </button>
+            <button
+              type="button"
+              onClick={() => { setLocalEmail('technologiesargus@gmail.com'); doEmailLogin('technologiesargus@gmail.com'); }}
+              className="px-2 py-1 rounded bg-[#EDE1D3] hover:bg-[#DECDBE] text-[#2E1508] font-semibold border border-[#BAA794] cursor-pointer"
+            >
+              👑 Technologies Argus (Super Admin)
+            </button>
+            <button
+              type="button"
+              onClick={() => { setLocalEmail('argushexadoc2021@gmail.com'); doEmailLogin('argushexadoc2021@gmail.com'); }}
+              className="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold border border-slate-300 cursor-pointer"
+            >
+              🏢 Argus (Company Admin)
+            </button>
+          </div>
+
           {/* Security badge note */}
-          <div className="flex items-center justify-center gap-1.5 text-[11px] text-slate-500 mt-2.5">
+          <div className="flex items-center justify-center gap-1.5 text-[11px] text-slate-500 mt-3.5">
             <ShieldCheck size={13} className="text-emerald-600 flex-shrink-0" />
             <span>Encrypted Google Workspace OAuth SSO</span>
           </div>

@@ -9,7 +9,8 @@ const AuthCtx = createContext(null);
 export const useAuth = () => useContext(AuthCtx);
 
 const DEMO = {
-  super_admin: { role: 'super_admin', name: 'Technologies Argus', companyId: null, email: 'technologiesargus@gmail.com' },
+  super_admin: { role: 'super_admin', name: 'Janani Mohan', companyId: null, email: 'jananimohan44@gmail.com' },
+  super_admin_argus: { role: 'super_admin', name: 'Technologies Argus', companyId: null, email: 'technologiesargus@gmail.com' },
   company_admin: { role: 'company_admin', name: 'argus', companyId: 'C-ARGUS', email: 'argushexadoc2021@gmail.com' },
   content_writer: { role: 'content_writer', name: 'Content Writer', companyId: 'C-ARGUS', email: 'content.writer@arguscnc.com' },
   finance: { role: 'finance', name: 'Finance Reviewer', companyId: 'C-ARGUS', email: 'finance@arguscnc.com' },
@@ -156,5 +157,26 @@ export function AuthProvider({ children }) {
     resolved.current = false;
   }, [oauth]);
 
-  return <AuthCtx.Provider value={{ me, ready, oauthReady: !!oauth, loginAs, googleLogin, logout, resolveMe, setMe, refreshPermissions }}>{children}</AuthCtx.Provider>;
+  const loginAsEmail = useCallback(async (email) => {
+    email = (email || '').trim().toLowerCase();
+    try {
+      const res = await fetch(apiUrl('/api/me'), {
+        headers: {
+          'x-user-email': email
+        }
+      });
+      const j = await res.json().catch(() => ({}));
+      if (j && j.data && j.data.role) {
+        const full = { ...j.data, google: false };
+        setSession(full);
+        setMe(full);
+        return full;
+      }
+    } catch (e) {
+      console.warn('loginAsEmail error', e);
+    }
+    return null;
+  }, []);
+
+  return <AuthCtx.Provider value={{ me, ready, oauthReady: !!oauth, loginAs, loginAsEmail, googleLogin, logout, resolveMe, setMe, refreshPermissions }}>{children}</AuthCtx.Provider>;
 }
