@@ -22,6 +22,9 @@ export default function Listing() {
   const [selectedMap, setSelectedMap] = useState({});
   const [shareModal, setShareModal] = useState(null);
 
+  const selectedProducts = useMemo(() => Object.values(selectedMap), [selectedMap]);
+  const selectedCount = selectedProducts.length;
+
   const session = useMemo(() => getSession() || {}, []);
   const companyName = session.companyName || 'ARGUS CNC';
   const companyEmail = session.email || 'technologiesargus@gmail.com';
@@ -71,8 +74,6 @@ export default function Listing() {
   else ps.sort((a, b) => String(b.created).localeCompare(String(a.created)));
 
   // Multi-selection helpers
-  const selectedProducts = useMemo(() => Object.values(selectedMap), [selectedMap]);
-  const selectedCount = selectedProducts.length;
   const allVisibleSelected = ps.length > 0 && ps.every((p) => !!selectedMap[p.id]);
 
   const toggleSelect = (p) => {

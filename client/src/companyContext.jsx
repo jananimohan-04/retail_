@@ -1,4 +1,4 @@
-﻿/* Global Company Context for Super Admin cross-tenant filtering */
+/* Global Company Context for Super Admin cross-tenant filtering */
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { api } from './api';
 
@@ -24,7 +24,8 @@ export function CompanyProvider({ children }) {
       const list = Array.isArray(d) ? d : (d?.rows || []);
       setCompanies(list);
     } catch (e) {
-      console.warn('Failed to load companies in CompanyProvider', e);
+      // Non-super-admin sessions lack company hub permission; default safely to []
+      setCompanies([]);
     }
   }, []);
 

@@ -1,5 +1,5 @@
 /* Routes — identical hash paths to the legacy app (HashRouter preserves #/... URLs). */
-import { useCallback, useEffect, useState } from 'react';
+import React, { Component, useCallback, useEffect, useState } from 'react';
 import { HashRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './auth';
 import { CompanyProvider } from './companyContext';
@@ -60,6 +60,49 @@ const R = {
   store: ['super_admin', 'company_admin', 'sales_user', 'sales_regional_partner', 'sales_channel_partner', 'sales_referral_partner']
 };
 
+export class ErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error, errorInfo) {
+    console.error('ErrorBoundary caught error:', error, errorInfo);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-[#DAC8B8] text-[#2E1508]">
+          <div className="bg-[#FAF6F1] border border-[#BAA794] rounded-2xl p-8 max-w-md w-full shadow-lg text-center">
+            <div className="text-4xl mb-3">⚠️</div>
+            <h2 className="text-xl font-bold mb-2">Display Notice</h2>
+            <p className="text-xs text-[#735A47] mb-5 leading-relaxed">
+              {this.state.error?.message || 'An unexpected error occurred while rendering this page.'}
+            </p>
+            <div className="flex gap-2 justify-center">
+              <button
+                className="btn btn-primary btn-sm"
+                onClick={() => { this.setState({ hasError: false, error: null }); window.location.reload(); }}
+              >
+                Reload Page
+              </button>
+              <button
+                className="btn btn-ghost btn-sm"
+                onClick={() => { this.setState({ hasError: false, error: null }); window.location.hash = '#/store/home'; window.location.reload(); }}
+              >
+                Go to Storefront
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 /* "/" → each role's own home (a Content Writer no longer lands in the storefront) */
 function RoleRedirect() {
   const { me, ready } = useAuth();
@@ -108,7 +151,14 @@ function Gate({ children, noSide, roles, perm }) {
     }).catch(() => {});
   }, [me, loc.pathname]);
 
-  if (!ready) return null;
+  if (!ready) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[#DAC8B8] gap-3">
+        <div className="skel" style={{ width: 64, height: 64, borderRadius: 16 }} />
+        <span className="text-xs font-semibold text-[#664D3B]">Loading workspace…</span>
+      </div>
+    );
+  }
   if (loc.pathname === '/login') return <>{children}</>;
   if (!me) return <Navigate to="/login" replace />;
   if (me.role === 'pending' || me.role === 'disabled') return <Pending />;
@@ -138,7 +188,8 @@ export default function App() {
       <CompanyProvider>
         <HashRouter>
           <ToastHost />
-        <Routes>
+          <ErrorBoundary>
+            <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/pending" element={<Gate noSide><Pending /></Gate>} />
           <Route path="/super/dashboard" element={<Gate perm="super_dashboard" roles={R.super}><SuperDashboard /></Gate>} />
@@ -186,6 +237,7 @@ export default function App() {
           <Route path="/" element={<RoleRedirect />} />
           <Route path="*" element={<Gate><StoreHome /></Gate>} />
         </Routes>
+        </ErrorBoundary>
       </HashRouter>
       </CompanyProvider>
     </AuthProvider>
