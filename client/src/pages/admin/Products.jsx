@@ -126,7 +126,7 @@ export default function Products() {
   return (
     <>
       <PageHero
-        title={'Industrial Catalog (' + data.total + ' SKUs)'}
+        title={'Stock Library (' + data.total + ' SKUs)'}
         subtitle="Catalog inventory, pricing, stock levels, and visibility status."
         icon={Boxes}
         badgeText="Inventory Management"

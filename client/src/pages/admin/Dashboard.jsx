@@ -106,7 +106,7 @@ export default function Dashboard() {
           className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-2xs hover:shadow-xs transition-all relative overflow-hidden"
         >
           <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Industrial Catalog</span>
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Stock Library</span>
             <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
               <Boxes className="w-5 h-5" />
             </div>

@@ -90,8 +90,8 @@ export default function Users() {
   return (
     <div className="space-y-6">
       <PageHero
-        title={`Authorized Sales Users (${users.length})`}
-        subtitle="Manage internal sales team members, tier assignments, and commercial order ownership."
+        title={`Business Development Executives (${users.length})`}
+        subtitle="Manage business development executives, partner tiers, and commercial order ownership."
         icon={UsersIcon}
         badgeText="Team Access"
         badgeColor="sky"
@@ -102,7 +102,7 @@ export default function Users() {
             onClick={() => { setMErr(''); setShow(true); }}
             className="inline-flex items-center gap-1.5 px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs rounded-xl transition-all shadow-sm shadow-sky-600/30 cursor-pointer"
           >
-            <Plus className="w-3.5 h-3.5" /> Invite Sales User
+            <Plus className="w-3.5 h-3.5" /> Invite Executive
           </button>
         }
       />

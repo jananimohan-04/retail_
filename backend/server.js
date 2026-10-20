@@ -88,10 +88,10 @@ const MENU_CATALOG = [
     label: 'Operations',
     description: 'Tenant inventory, category mapping, sales reps, and store settings',
     items: [
-      { id: 'admin_products', label: 'Industrial Catalog', path: '/admin/products', icon: 'Boxes', defaultRoles: ['company_admin'] },
+      { id: 'admin_products', label: 'Stock Library', path: '/admin/products', icon: 'Boxes', defaultRoles: ['company_admin'] },
       { id: 'admin_media', label: 'Product Media', path: '/admin/media', icon: 'ImageIcon', defaultRoles: ['company_admin'] },
       { id: 'admin_categories', label: 'Custom Categories', path: '/admin/categories', icon: 'FolderTree', defaultRoles: ['company_admin'] },
-      { id: 'admin_users', label: 'Sales Representatives', path: '/admin/users', icon: 'User', defaultRoles: ['company_admin'] },
+      { id: 'admin_users', label: 'Business Development Executive', path: '/admin/users', icon: 'User', defaultRoles: ['company_admin'] },
       { id: 'admin_settings', label: 'Store Settings', path: '/admin/settings', icon: 'Settings', defaultRoles: ['company_admin'] }
     ]
   },
@@ -135,6 +135,7 @@ const MENU_CATALOG = [
       { id: 'store_cart', label: 'My Cart', path: '/store/cart', icon: 'ShoppingCart', defaultRoles: ['super_admin', 'company_admin', 'sales_user', 'sales_regional_partner', 'sales_channel_partner', 'sales_referral_partner'] },
       { id: 'store_quotes', label: 'My Quotations', path: '/store/quotes', icon: 'FileText', defaultRoles: ['super_admin', 'company_admin', 'sales_user', 'sales_regional_partner', 'sales_channel_partner', 'sales_referral_partner'] },
       { id: 'store_orders', label: 'My Orders', path: '/store/orders', icon: 'Package', defaultRoles: ['super_admin', 'company_admin', 'sales_user', 'sales_regional_partner', 'sales_channel_partner', 'sales_referral_partner'] },
+      { id: 'store_invoices', label: 'Invoice History', path: '/store/invoices', icon: 'Receipt', defaultRoles: ['super_admin', 'company_admin', 'sales_user', 'sales_regional_partner', 'sales_channel_partner', 'sales_referral_partner'] },
       { id: 'store_profile', label: 'My Profile', path: '/store/profile', icon: 'User', defaultRoles: ['super_admin', 'company_admin', 'sales_user', 'sales_regional_partner', 'sales_channel_partner', 'sales_referral_partner'] }
     ]
   },

@@ -162,7 +162,7 @@ export const MENU_CATALOG = [
     items: [
       {
         id: 'admin_products',
-        label: 'Industrial Catalog',
+        label: 'Stock Library',
         path: '/admin/products',
         icon: 'Boxes',
         defaultRoles: ['company_admin'],
@@ -210,7 +210,7 @@ export const MENU_CATALOG = [
       },
       {
         id: 'admin_users',
-        label: 'Sales Representatives',
+        label: 'Business Development Executive',
         path: '/admin/users',
         icon: 'User',
         defaultRoles: ['company_admin'],
