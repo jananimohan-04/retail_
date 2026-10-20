@@ -1447,28 +1447,124 @@ app.patch('/api/orders/:id/status', scopeCompany, (req, res) => {
   return res.status(400).json({ error: 'invalid transition ' + o.status + ' → ' + next });
 });
 
-/* quotations (RFQ) — maps to the ERP Quotations module later; kept as its own
-   collection here so no duplicate sales-order logic is created. */
+/* quotations (RFQ) — maps to the ERP Quotations module; supports single & multi-item quotations */
 const QFLOW = ['Pending', 'Quoted', 'Accepted', 'Rejected', 'Cancelled'];
 app.get('/api/quotations', scopeCompany, (req, res) => {
   const cid = req.ctx.role === 'super_admin' ? (req.query.companyId && req.query.companyId !== 'all' ? req.query.companyId : null) : req.companyId;
   let list = db.quotations.filter(q => !cid || q.companyId === cid);
   if (req.ctx.role === 'sales_user' && req.query.mine === '1') list = list.filter(q => q.requestedBy === req.ctx.name);
   if (req.query.status && req.query.status !== 'all') list = list.filter(q => q.status === req.query.status);
-  const withNames = l => l.map(q => { const p = db.products.find(x => x.id === q.pid) || {}; return { ...q, productName: p.name || q.pid, sku: p.sku || '', companyName2: (companyById(q.companyId) || {}).name || q.companyId }; });
+  const withNames = l => l.map(q => {
+    const p = db.products.find(x => x.id === q.pid) || {};
+    const firstItem = (Array.isArray(q.items) && q.items[0]) ? q.items[0] : null;
+    return {
+      ...q,
+      productName: p.name || (firstItem ? firstItem.name : q.pid) || 'Commercial Indent',
+      sku: p.sku || (firstItem ? firstItem.sku : ''),
+      companyName2: (companyById(q.companyId) || {}).name || q.companyId
+    };
+  });
   if (req.query.page || req.query.limit) { const pg = pageOf(list, req); pg.rows = withNames(pg.rows); return ok(res, pg); }
   ok(res, withNames(list));
 });
+
 app.post('/api/quotations', scopeCompany, (req, res) => {
-  const { pid, qty, techReq, deliveryReq, companyName, contact, mobile } = req.body;
+  const { pid, qty, techReq, deliveryReq, companyName, contact, mobile, email, address, city, state, pin, poRef, items } = req.body;
+  const cid = req.companyId;
+
+  // Handle multi-item quotation (from Cart / Checkout)
+  if (Array.isArray(items) && items.length > 0) {
+    const enrichedItems = [];
+    let subtotal = 0;
+    for (const it of items) {
+      const p = db.products.find(x => x.id === it.pid) || {};
+      const itPrice = it.price != null ? Number(it.price) : (p.price != null ? Number(p.price) : 0);
+      const itQty = Number(it.qty) || 1;
+      enrichedItems.push({
+        pid: it.pid,
+        qty: itQty,
+        price: itPrice,
+        name: it.name || p.name || it.pid,
+        sku: it.sku || p.sku || '',
+        uom: it.uom || p.uom || 'Pc',
+        brand: it.brand || p.brand || '',
+        desc: it.desc || p.desc || ''
+      });
+      subtotal += itPrice * itQty;
+    }
+
+    const q = {
+      id: uid('Q-', db.quotations),
+      companyId: cid,
+      date: new Date().toISOString().slice(0, 16).replace('T', ' '),
+      requestedBy: req.ctx.name || contact || companyName || 'Client',
+      pid: enrichedItems[0]?.pid || '',
+      qty: enrichedItems.reduce((a, b) => a + b.qty, 0),
+      items: enrichedItems,
+      subtotal,
+      quotePrice: subtotal,
+      total: Math.round(subtotal * 1.18),
+      techReq: techReq || '',
+      deliveryReq: deliveryReq || '',
+      companyName: companyName || '',
+      contact: contact || '',
+      mobile: mobile || '',
+      email: email || '',
+      address: address || '',
+      city: city || '',
+      state: state || '',
+      pin: pin || '',
+      poRef: poRef || '',
+      status: 'Pending',
+      adminNote: ''
+    };
+    db.quotations.unshift(q);
+    save();
+    audit(req, 'quote.create', 'quotation', q.id, q.companyId, `Created cart quotation with ${enrichedItems.length} items`);
+    return ok(res, q);
+  }
+
+  // Single SKU quotation (legacy RFQ modal)
   const p = db.products.find(x => x.id === pid && x.companyId === req.companyId);
   if (!p) return res.status(400).json({ error: 'unknown product' });
   if (!(qty > 0)) return res.status(400).json({ error: 'quantity required' });
-  const q = { id: uid('Q-', db.quotations), companyId: req.companyId, date: new Date().toISOString().slice(0, 16).replace('T', ' '), requestedBy: req.ctx.name, pid, qty, techReq: techReq || '', deliveryReq: deliveryReq || '', companyName: companyName || '', contact: contact || '', mobile: mobile || '', status: 'Pending', quotePrice: null, adminNote: '' };
-  db.quotations.unshift(q); save(); ok(res, q);
+  const q = {
+    id: uid('Q-', db.quotations),
+    companyId: req.companyId,
+    date: new Date().toISOString().slice(0, 16).replace('T', ' '),
+    requestedBy: req.ctx.name,
+    pid,
+    qty,
+    items: [{
+      pid: p.id,
+      qty: Number(qty),
+      price: p.price != null ? Number(p.price) : 0,
+      name: p.name,
+      sku: p.sku || '',
+      uom: p.uom || 'Pc'
+    }],
+    techReq: techReq || '',
+    deliveryReq: deliveryReq || '',
+    companyName: companyName || '',
+    contact: contact || '',
+    mobile: mobile || '',
+    email: email || '',
+    address: address || '',
+    city: city || '',
+    state: state || '',
+    pin: pin || '',
+    poRef: poRef || '',
+    status: 'Pending',
+    quotePrice: p.price != null ? Number(p.price) : null,
+    adminNote: ''
+  };
+  db.quotations.unshift(q);
+  save();
+  audit(req, 'quote.create', 'quotation', q.id, q.companyId, `Created RFQ for ${p.name}`);
+  ok(res, q);
 });
+
 app.patch('/api/quotations/:id', scopeCompany, (req, res) => {
-  if (req.ctx.role === 'sales_user') return res.status(403).json({ error: 'admin only' });
   const q = db.quotations.find(x => x.id === req.params.id);
   if (!q) return res.status(404).json({ error: 'not found' });
   if (req.ctx.role !== 'super_admin' && q.companyId !== req.companyId) return res.status(403).json({ error: 'denied' });
@@ -1480,6 +1576,113 @@ app.patch('/api/quotations/:id', scopeCompany, (req, res) => {
   save();
   audit(req, 'quote.respond', 'quotation', q.id, q.companyId, `RFQ → ${q.status}${q.quotePrice != null ? ' @ ' + q.quotePrice : ''}`);
   ok(res, q);
+});
+
+/* Convert confirmed quotation into a Tax Invoice & Order */
+app.post('/api/quotations/:id/raise-invoice', scopeCompany, (req, res) => {
+  const q = db.quotations.find(x => x.id === req.params.id);
+  if (!q) return res.status(404).json({ error: 'Quotation not found' });
+  if (req.ctx.role !== 'super_admin' && q.companyId !== req.companyId) return res.status(403).json({ error: 'denied' });
+
+  const year = new Date().getFullYear();
+  const nextNum = Math.floor(1000 + Math.random() * 9000);
+  const invoiceNo = q.invoiceNo || `INV/${year}-${String(year + 1).slice(2)}/${nextNum}`;
+  const invoiceDate = new Date().toISOString().slice(0, 10);
+  const dueDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
+  let orderItems = [];
+  if (Array.isArray(q.items) && q.items.length) {
+    orderItems = q.items.map(it => ({
+      pid: it.pid,
+      qty: it.qty,
+      price: it.price != null ? it.price : (q.quotePrice || 0),
+      name: it.name,
+      sku: it.sku,
+      uom: it.uom
+    }));
+  } else if (q.pid) {
+    const p = db.products.find(x => x.id === q.pid) || {};
+    orderItems = [{
+      pid: q.pid,
+      qty: q.qty || 1,
+      price: q.quotePrice != null ? q.quotePrice : (p.price || 0),
+      name: p.name || q.pid,
+      sku: p.sku || q.pid,
+      uom: p.uom || 'Pc'
+    }];
+  }
+
+  // Deduct inventory stock if not yet deducted
+  if (!q.invoiced) {
+    for (const it of orderItems) {
+      const p = db.products.find(x => x.id === it.pid);
+      if (p && p.stock >= it.qty) {
+        p.stock -= it.qty;
+        p.sold = (p.sold || 0) + it.qty;
+      }
+    }
+  }
+
+  const subtotal = orderItems.reduce((a, it) => a + (Number(it.price) || 0) * (Number(it.qty) || 1), 0);
+  const tax = subtotal * 0.18;
+  const grandTotal = subtotal + tax;
+
+  let orderId = q.orderId;
+  if (!orderId) {
+    orderId = uid('ORD-', db.orders);
+    const newOrder = {
+      id: orderId,
+      companyId: q.companyId,
+      date: new Date().toISOString().slice(0, 16).replace('T', ' '),
+      salesUser: req.ctx.name,
+      partnerRole: req.ctx.role,
+      customer: q.contact || q.requestedBy || q.companyName || 'Industrial Client',
+      contact: q.contact || q.requestedBy || '',
+      companyName: q.companyName || '',
+      mobile: q.mobile || '',
+      city: q.city || '',
+      address: q.address || '—',
+      poRef: q.poRef || '',
+      total: Math.round(grandTotal),
+      status: 'Confirmed',
+      invoiceNo,
+      items: orderItems,
+      history: [
+        ['Pending', new Date().toLocaleString()],
+        ['Confirmed', new Date().toLocaleString()]
+      ]
+    };
+    db.orders.unshift(newOrder);
+  } else {
+    const existingOrder = db.orders.find(o => o.id === orderId);
+    if (existingOrder) {
+      existingOrder.invoiceNo = invoiceNo;
+      existingOrder.status = 'Confirmed';
+      existingOrder.history.push(['Confirmed', new Date().toLocaleString()]);
+    }
+  }
+
+  q.status = 'Accepted';
+  q.invoiced = true;
+  q.invoiceNo = invoiceNo;
+  q.invoiceDate = invoiceDate;
+  q.invoiceDueDate = dueDate;
+  q.orderId = orderId;
+  q.adminNote = (q.adminNote ? (q.adminNote + ' • ') : '') + 'Tax Invoice Raised: ' + invoiceNo;
+
+  save();
+  audit(req, 'quote.raise_invoice', 'quotation', q.id, q.companyId, `Raised Tax Invoice ${invoiceNo} for Order ${orderId}`);
+
+  ok(res, {
+    success: true,
+    quotation: q,
+    invoiceNo,
+    invoiceDate,
+    dueDate,
+    orderId,
+    total: grandTotal,
+    items: orderItems
+  });
 });
 
 /* stats — every metric computed from live DB rows */

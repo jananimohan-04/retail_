@@ -521,8 +521,248 @@
       "companyId": "C-ARGUS"
     }
   ],
-  "orders": [],
-  "quotations": [],
+  "orders": [
+    {
+      "id": "ORD-MVH2HS2076",
+      "companyId": "C-ARGUS",
+      "date": "2026-10-20 19:19",
+      "salesUser": "Argus User",
+      "partnerRole": "sales_user",
+      "customer": "Rajesh Verma",
+      "contact": "Rajesh Verma",
+      "companyName": "Apex CNC Components Ltd",
+      "mobile": "98220 12345",
+      "city": "Pune",
+      "address": "Plot 72, Chakan Industrial Phase 2, Pune, Maharashtra - 410501",
+      "poRef": "PO/APEX/2026/089",
+      "total": 41654,
+      "status": "Confirmed",
+      "invoiceNo": "INV/2026-27/1061",
+      "items": [
+        {
+          "pid": "P-101",
+          "qty": 10,
+          "price": 1850,
+          "name": "Carbide End Mill 4-Flute Ø12mm",
+          "sku": "EM-CARB-12-4F",
+          "uom": "Pc"
+        },
+        {
+          "pid": "P-102",
+          "qty": 4,
+          "price": 4200,
+          "name": "BT40 ER32 Collet Chuck 70mm",
+          "sku": "BT40-ER32-70",
+          "uom": "Pc"
+        }
+      ],
+      "history": [
+        [
+          "Pending",
+          "21/10/2026, 12:49:36 am"
+        ],
+        [
+          "Confirmed",
+          "21/10/2026, 12:49:36 am"
+        ]
+      ]
+    },
+    {
+      "id": "ORD-MVH2H08QRJ",
+      "companyId": "C-ARGUS",
+      "date": "2026-10-20 19:19",
+      "salesUser": "Argus User",
+      "partnerRole": "sales_user",
+      "customer": "Rajesh Verma",
+      "contact": "Rajesh Verma",
+      "companyName": "Apex CNC Components Ltd",
+      "mobile": "98220 12345",
+      "city": "Pune",
+      "address": "Plot 72, Chakan Industrial Phase 2, Pune, Maharashtra - 410501",
+      "poRef": "PO/APEX/2026/089",
+      "total": 41654,
+      "status": "Confirmed",
+      "invoiceNo": "INV/2026-27/4533",
+      "items": [
+        {
+          "pid": "P-101",
+          "qty": 10,
+          "price": 1850,
+          "name": "Carbide End Mill 4-Flute Ø12mm",
+          "sku": "EM-CARB-12-4F",
+          "uom": "Pc"
+        },
+        {
+          "pid": "P-102",
+          "qty": 4,
+          "price": 4200,
+          "name": "BT40 ER32 Collet Chuck 70mm",
+          "sku": "BT40-ER32-70",
+          "uom": "Pc"
+        }
+      ],
+      "history": [
+        [
+          "Pending",
+          "21/10/2026, 12:49:00 am"
+        ],
+        [
+          "Confirmed",
+          "21/10/2026, 12:49:00 am"
+        ]
+      ]
+    }
+  ],
+  "quotations": [
+    {
+      "id": "Q-MVH2HQ3K3A",
+      "companyId": "C-ARGUS",
+      "date": "2026-10-20 19:19",
+      "requestedBy": "Argus User",
+      "pid": "P-101",
+      "qty": 14,
+      "items": [
+        {
+          "pid": "P-101",
+          "qty": 10,
+          "price": 1850,
+          "name": "Carbide End Mill 4-Flute Ø12mm",
+          "sku": "EM-CARB-12-4F",
+          "uom": "Pc",
+          "brand": "",
+          "desc": ""
+        },
+        {
+          "pid": "P-102",
+          "qty": 4,
+          "price": 4200,
+          "name": "BT40 ER32 Collet Chuck 70mm",
+          "sku": "BT40-ER32-70",
+          "uom": "Pc",
+          "brand": "",
+          "desc": ""
+        }
+      ],
+      "subtotal": 35300,
+      "quotePrice": 35300,
+      "total": 41654,
+      "techReq": "",
+      "deliveryReq": "",
+      "companyName": "Apex CNC Components Ltd",
+      "contact": "Rajesh Verma",
+      "mobile": "98220 12345",
+      "email": "purchase@apexcnc.in",
+      "address": "Plot 72, Chakan Industrial Phase 2, Pune, Maharashtra - 410501",
+      "city": "Pune",
+      "state": "Maharashtra",
+      "pin": "410501",
+      "poRef": "PO/APEX/2026/089",
+      "status": "Accepted",
+      "adminNote": "Tax Invoice Raised: INV/2026-27/1061",
+      "invoiced": true,
+      "invoiceNo": "INV/2026-27/1061",
+      "invoiceDate": "2026-10-20",
+      "invoiceDueDate": "2026-11-19",
+      "orderId": "ORD-MVH2HS2076"
+    },
+    {
+      "id": "Q-MVH2GYSZ1W",
+      "companyId": "C-ARGUS",
+      "date": "2026-10-20 19:18",
+      "requestedBy": "Argus User",
+      "pid": "P-101",
+      "qty": 14,
+      "items": [
+        {
+          "pid": "P-101",
+          "qty": 10,
+          "price": 1850,
+          "name": "Carbide End Mill 4-Flute Ø12mm",
+          "sku": "EM-CARB-12-4F",
+          "uom": "Pc",
+          "brand": "",
+          "desc": ""
+        },
+        {
+          "pid": "P-102",
+          "qty": 4,
+          "price": 4200,
+          "name": "BT40 ER32 Collet Chuck 70mm",
+          "sku": "BT40-ER32-70",
+          "uom": "Pc",
+          "brand": "",
+          "desc": ""
+        }
+      ],
+      "subtotal": 35300,
+      "quotePrice": 35300,
+      "total": 41654,
+      "techReq": "",
+      "deliveryReq": "",
+      "companyName": "Apex CNC Components Ltd",
+      "contact": "Rajesh Verma",
+      "mobile": "98220 12345",
+      "email": "purchase@apexcnc.in",
+      "address": "Plot 72, Chakan Industrial Phase 2, Pune, Maharashtra - 410501",
+      "city": "Pune",
+      "state": "Maharashtra",
+      "pin": "410501",
+      "poRef": "PO/APEX/2026/089",
+      "status": "Accepted",
+      "adminNote": "Tax Invoice Raised: INV/2026-27/4533",
+      "invoiced": true,
+      "invoiceNo": "INV/2026-27/4533",
+      "invoiceDate": "2026-10-20",
+      "invoiceDueDate": "2026-11-19",
+      "orderId": "ORD-MVH2H08QRJ"
+    },
+    {
+      "id": "Q-MVH2GHZNSC",
+      "companyId": "C-ARGUS",
+      "date": "2026-10-20 19:18",
+      "requestedBy": "Argus User",
+      "pid": "P-101",
+      "qty": 14,
+      "items": [
+        {
+          "pid": "P-101",
+          "qty": 10,
+          "price": 1850,
+          "name": "Carbide End Mill 4-Flute Ø12mm",
+          "sku": "EM-CARB-12-4F",
+          "uom": "Pc",
+          "brand": "",
+          "desc": ""
+        },
+        {
+          "pid": "P-102",
+          "qty": 4,
+          "price": 4200,
+          "name": "BT40 ER32 Collet Chuck 70mm",
+          "sku": "BT40-ER32-70",
+          "uom": "Pc",
+          "brand": "",
+          "desc": ""
+        }
+      ],
+      "subtotal": 35300,
+      "quotePrice": 35300,
+      "total": 41654,
+      "techReq": "",
+      "deliveryReq": "",
+      "companyName": "Apex CNC Components Ltd",
+      "contact": "Rajesh Verma",
+      "mobile": "98220 12345",
+      "email": "purchase@apexcnc.in",
+      "address": "Plot 72, Chakan Industrial Phase 2, Pune, Maharashtra - 410501",
+      "city": "Pune",
+      "state": "Maharashtra",
+      "pin": "410501",
+      "poRef": "PO/APEX/2026/089",
+      "status": "Pending",
+      "adminNote": ""
+    }
+  ],
   "settings": {
     "C-ARGUS": {
       "storeName": "Argus Industrial Store",
@@ -538,15 +778,59 @@
   },
   "audit_logs": [
     {
-      "id": "A-179250664682735",
-      "ts": "2026-10-20T14:30:46.827Z",
-      "actor": "Janani Mohan",
-      "role": "super_admin",
-      "action": "user.delete",
-      "entity": "user",
-      "entityId": "U-1792506644079",
-      "companyId": "",
-      "summary": "Deleted user Test Super Admin Updated (super_admin)"
+      "id": "A-179252397626782",
+      "ts": "2026-10-20T19:19:36.267Z",
+      "actor": "Argus User",
+      "role": "sales_user",
+      "action": "quote.raise_invoice",
+      "entity": "quotation",
+      "entityId": "Q-MVH2HQ3K3A",
+      "companyId": "C-ARGUS",
+      "summary": "Raised Tax Invoice INV/2026-27/1061 for Order ORD-MVH2HS2076"
+    },
+    {
+      "id": "A-179252397373138",
+      "ts": "2026-10-20T19:19:33.731Z",
+      "actor": "Argus User",
+      "role": "sales_user",
+      "action": "quote.create",
+      "entity": "quotation",
+      "entityId": "Q-MVH2HQ3K3A",
+      "companyId": "C-ARGUS",
+      "summary": "Created cart quotation with 2 items"
+    },
+    {
+      "id": "A-179252394028393",
+      "ts": "2026-10-20T19:19:00.283Z",
+      "actor": "Argus User",
+      "role": "sales_user",
+      "action": "quote.raise_invoice",
+      "entity": "quotation",
+      "entityId": "Q-MVH2GYSZ1W",
+      "companyId": "C-ARGUS",
+      "summary": "Raised Tax Invoice INV/2026-27/4533 for Order ORD-MVH2H08QRJ"
+    },
+    {
+      "id": "A-179252393835848",
+      "ts": "2026-10-20T19:18:58.358Z",
+      "actor": "Argus User",
+      "role": "sales_user",
+      "action": "quote.create",
+      "entity": "quotation",
+      "entityId": "Q-MVH2GYSZ1W",
+      "companyId": "C-ARGUS",
+      "summary": "Created cart quotation with 2 items"
+    },
+    {
+      "id": "A-179252391656928",
+      "ts": "2026-10-20T19:18:36.569Z",
+      "actor": "Argus User",
+      "role": "sales_user",
+      "action": "quote.create",
+      "entity": "quotation",
+      "entityId": "Q-MVH2GHZNSC",
+      "companyId": "C-ARGUS",
+      "summary": "Created cart quotation with 2 items"
     },
     {
       "id": "A-179250664579967",

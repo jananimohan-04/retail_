@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { api, fmt, getCart, setCart } from '../../api';
 import { Empty, Skeleton, toast } from '../../components/ui';
+import { downloadQuotationPdf } from '../../utils/quotationInvoiceTemplates';
 import { asList } from './Home';
 
 export default function Checkout() {
@@ -100,6 +101,52 @@ export default function Checkout() {
       toast(e.message || 'Failed to place order', '⚠️');
       setBusy(false);
     }
+  };
+
+  const handleDownloadQuotation = async () => {
+    const quoteItems = cart.map((c) => {
+      const p = prodById(c.pid) || { name: c.pid, sku: c.pid, price: 0, uom: 'Pc' };
+      return {
+        pid: c.pid,
+        name: p.name,
+        sku: p.sku || c.pid,
+        price: p.price || 0,
+        qty: c.qty,
+        uom: p.uom || 'Pc',
+        hsn: p.hsn || '8466'
+      };
+    });
+
+    const quoteData = {
+      customer: name || 'Valued Client',
+      contact: name || 'Valued Client',
+      companyName: company || 'Valued Enterprise',
+      mobile: mobile || '',
+      email: email || '',
+      address: addr ? `${addr}, ${city}, ${state} - ${pin}` : '',
+      city: city || 'Pune',
+      state: state || 'Maharashtra',
+      pin: pin || '',
+      poRef: po || '',
+      notes: notes || '',
+      items: quoteItems,
+      taxableAmount: sub,
+      gstAmount: Math.round(sub * 0.18),
+      total: Math.round(sub * 1.18)
+    };
+
+    try {
+      const res = await api.post('/api/quotations', quoteData);
+      if (res && res.id) {
+        quoteData.quoteNo = res.id;
+        quoteData.id = res.id;
+      }
+    } catch (e) {
+      console.warn('Could not save quote to backend:', e);
+    }
+
+    downloadQuotationPdf(quoteData);
+    toast('Official B2B Quotation PDF generated', '📄');
   };
 
   return (
@@ -291,11 +338,18 @@ export default function Checkout() {
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-5 border-t border-slate-100">
+            <div className="flex items-center justify-between gap-3 pt-5 border-t border-slate-100 flex-wrap">
+              <button 
+                type="button" 
+                onClick={handleDownloadQuotation}
+                className="inline-flex items-center gap-2 px-5 py-3 bg-white hover:bg-slate-50 border border-slate-300 text-slate-800 font-bold text-sm rounded-xl transition-all shadow-xs cursor-pointer"
+              >
+                <FileText className="w-4 h-4 text-blue-600" /> Download Quotation (PDF)
+              </button>
               <button 
                 type="button" 
                 onClick={() => goStep(2)}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-xl transition-all shadow-sm hover:shadow-md cursor-pointer"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-xl transition-all shadow-sm hover:shadow-md cursor-pointer ml-auto"
               >
                 Review Line Items <ArrowRight className="w-4 h-4" />
               </button>
@@ -427,6 +481,14 @@ export default function Checkout() {
                       <CheckCircle2 className="w-4 h-4" /> Confirm & Place Order ({fmt(sub)})
                     </>
                   )}
+                </button>
+
+                <button 
+                  type="button" 
+                  onClick={handleDownloadQuotation}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-white hover:bg-slate-50 border border-slate-200 hover:border-slate-300 text-slate-700 font-bold text-xs rounded-xl transition-all shadow-xs cursor-pointer"
+                >
+                  <FileText className="w-4 h-4 text-blue-600" /> Download Proforma Quotation (PDF)
                 </button>
 
                 <p className="text-[11px] text-slate-400 text-center flex items-center justify-center gap-1">

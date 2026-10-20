@@ -1,8 +1,10 @@
 /* Store cart — mirrors legacy vCart: MOQ-aware steppers, stock caps, order summary. */
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { FileText } from 'lucide-react';
 import { api, fmt, getCart, setCart } from '../../api';
 import { Empty, Skeleton, toast } from '../../components/ui';
+import { downloadQuotationPdf } from '../../utils/quotationInvoiceTemplates';
 import { asList } from './Home';
 
 export default function Cart() {
@@ -49,6 +51,39 @@ export default function Cart() {
   const count = cart.reduce((a, c) => a + c.qty, 0);
   const sub = cart.reduce((a, c) => { const p = prodById(c.pid); return a + (p && p.price != null ? p.price * c.qty : 0); }, 0);
 
+  const handleDownloadQuotation = async () => {
+    const quoteItems = cart.map((c) => {
+      const p = prodById(c.pid) || {};
+      return {
+        pid: c.pid,
+        qty: c.qty,
+        price: p.price != null ? p.price : 0,
+        name: p.name || c.pid,
+        sku: p.sku || c.pid,
+        uom: p.uom || 'Pc',
+        brand: p.brand || ''
+      };
+    });
+
+    const quoteData = {
+      customer: {
+        companyName: 'Direct Client Indent',
+        name: 'Procurement Department'
+      },
+      items: quoteItems
+    };
+
+    downloadQuotationPdf(quoteData);
+    toast('Generating official Proforma Quotation PDF…', '📄');
+
+    try {
+      await api.post('/api/quotations', {
+        items: quoteItems,
+        companyName: 'Direct Client Indent'
+      });
+    } catch {}
+  };
+
   return (
     <>
       <div className="section-head"><h2>Indent cart ({count} items)</h2><button className="btn btn-ghost btn-sm" onClick={clearCart}>Clear all</button></div>
@@ -80,7 +115,15 @@ export default function Cart() {
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 17, borderTop: '1px dashed var(--line)', paddingTop: 10 }}><span><b>Total</b></span><b>{fmt(sub)}</b></div>
           </div>
           <Link className="btn btn-primary" style={{ width: '100%', marginTop: 14 }} to="/store/checkout">Proceed to checkout →</Link>
-          <p className="hint">Stock revalidated on submit. GST as per invoice.</p>
+          <button
+            type="button"
+            onClick={handleDownloadQuotation}
+            className="btn btn-ghost btn-sm"
+            style={{ width: '100%', marginTop: 8, border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontWeight: 700 }}
+          >
+            <FileText className="w-4 h-4 text-[#8F2A0E]" /> Download Quotation (PDF)
+          </button>
+          <p className="hint" style={{ marginTop: 8 }}>Stock revalidated on submit. GST as per invoice.</p>
         </div></div>
       </div>
     </>

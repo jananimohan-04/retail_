@@ -874,7 +874,7 @@ function vQuotesAdmin(){
   return `<div class="section-head"><h2>Quotation requests (${qs.length})</h2><span class="hint">Reuses ERP quotation workflow</span></div>
   <div class="card"><div class="card-pad"><div class="toolbar"><select onchange="App.f(event,'qs')">${['all','Pending','Quoted','Accepted','Rejected','Cancelled'].map(s=>`<option ${st===s?'selected':''}>${s==='all'?'All statuses':s}</option>`).join('')}</select></div>
   <div class="table-wrap"><table><tr><th>RFQ</th><th>Product</th><th>Qty</th><th>Requested by</th><th>Quote</th><th>Status</th><th>Action</th></tr>
-  ${qs.length ? qs.map(q=>{const p=prodById(q.pid)||{name:q.pid,sku:q.pid};return `<tr><td><b>${q.id}</b><div class="hint">${q.date}</div></td><td><b>${p.name}</b><div class="hint">${p.sku||''} • ${q.companyName||''}</div><div class="hint">Tech: ${q.techReq||'—'}</div></td><td>${q.qty}</td><td>${q.requestedBy}<div class="hint">${q.mobile||''}</div></td><td>${q.quotePrice!=null?'<b>'+fmt(q.quotePrice)+'</b>':'—'}<div class="hint">${q.adminNote||''}</div></td><td>${statusBadge(q.status)}</td><td><button class="btn btn-ghost btn-sm" onclick="App.quoteRespond('${q.id}')">Respond</button></td></tr>`}).join('') : '<tr><td colspan=7><div class="empty">No quotation requests found for this company.</div></td></tr>'}</table></div></div></div>`;
+  ${qs.length ? qs.map(q=>{const p=prodById(q.pid)||{name:q.pid,sku:q.pid};const isInvoiced=q.invoiced||!!q.invoiceNo||q.status==='Accepted';return `<tr><td><b>${q.id}</b><div class="hint">${q.date}</div></td><td><b>${p.name}</b><div class="hint">${p.sku||''} • ${q.companyName||''}</div><div class="hint">Tech: ${q.techReq||'—'}</div></td><td>${q.qty}</td><td>${q.requestedBy}<div class="hint">${q.mobile||''}</div></td><td>${q.quotePrice!=null?'<b>'+fmt(q.quotePrice)+'</b>':'—'}<div class="hint">${q.adminNote||''}</div></td><td>${statusBadge(q.status)}</td><td><div style="display:flex;gap:4px;flex-wrap:wrap"><button class="btn btn-ghost btn-sm" title="Quotation PDF" onclick="App.downloadQuotePdf('${q.id}')">📄</button>${isInvoiced ? `<button class="btn btn-primary btn-sm" style="background:#059669;border-color:#059669" title="Tax Invoice PDF" onclick="App.downloadInvoicePdf('${q.id}')">🧾 Invoice</button>` : `<button class="btn btn-primary btn-sm" style="background:#7c3aed;border-color:#7c3aed" title="Raise Tax Invoice" onclick="App.raiseInvoiceForQuote('${q.id}')">🧾 Raise</button>`}<button class="btn btn-ghost btn-sm" onclick="App.quoteRespond('${q.id}')">Respond</button></div></td></tr>`}).join('') : '<tr><td colspan=7><div class="empty">No quotation requests found for this company.</div></td></tr>'}</table></div></div></div>`;
 }
 function orderDetail(id, back){
   const o=getOrders().find(x=>x.id===id);
@@ -1022,7 +1022,9 @@ function vCart(){
   <a class="btn btn-ghost btn-sm" href="#/store/listing">← Continue browsing</a></div>
   <div class="card" style="align-self:start"><div class="card-pad"><h3 style="margin-top:0">Order summary</h3>
   <div style="display:grid;gap:8px;font-size:14px"><div style="display:flex;justify-content:space-between"><span>Subtotal (excl. GST)</span><b>${fmt(sub)}</b></div><div style="display:flex;justify-content:space-between;font-size:17px;border-top:1px dashed var(--line);padding-top:10px"><span><b>Total</b></span><b>${fmt(sub)}</b></div></div>
-  <a class="btn btn-primary" style="width:100%;margin-top:14px" href="#/store/checkout">Proceed to checkout →</a><p class="hint">Stock revalidated on submit. GST as per invoice.</p></div></div></div>`;
+  <a class="btn btn-primary" style="width:100%;margin-top:14px" href="#/store/checkout">Proceed to checkout →</a>
+  <button class="btn btn-ghost" style="width:100%;margin-top:8px" onclick="App.downloadCartQuotation()">📄 Download Quotation (PDF)</button>
+  <p class="hint">Stock revalidated on submit. GST as per invoice.</p></div></div></div>`;
 }
 let ckStep=1;
 function vCheckout(){
@@ -1044,12 +1046,17 @@ function ckBody(sub){
     <div class="field full"><label>Delivery address *</label><textarea id="c_addr" rows="2" placeholder="Plot, area, landmark">${d.c_addr||''}</textarea></div>
     <div class="field"><label>City *</label><input id="c_city" value="${val('c_city')}" placeholder="e.g. Pune"></div><div class="field"><label>State *</label><input id="c_state" value="${val('c_state')}" placeholder="e.g. Maharashtra"></div>
     <div class="field full"><label>Delivery instructions (optional)</label><input id="c_note" value="${val('c_note')}" placeholder="e.g. Unloading bay 2, contact security"></div></div>
-    <button class="btn btn-primary" onclick="App.ck(2)">Review indent →</button></div></div>`;
+    <div style="display:flex;gap:10px;justify-content:space-between;flex-wrap:wrap;margin-top:12px">
+      <button class="btn btn-ghost" onclick="App.downloadCartQuotation()">📄 Download Quotation (PDF)</button>
+      <button class="btn btn-primary" onclick="App.ck(2)">Review indent →</button>
+    </div></div></div>`;
   return `<div style="display:grid;grid-template-columns:1.4fr .8fr;gap:14px" class="dash2"><div class="card"><div class="card-pad"><h3 style="margin-top:0">Review line items</h3>
     ${cart.map(c=>{const p=prodById(c.pid);return `<div class="cart-line"><img src="${img0(p)}" onerror="${NOIMG_ERR}" style="width:60px;height:60px;border-radius:8px;object-fit:cover"><div><b style="font-size:13px">${p.name}</b><div class="hint">${p.sku||''} • ${c.qty} ${p.uom||''} × ${fmt(p.price)}</div></div><b>${fmt(p.price*c.qty)}</b></div>`}).join('')}
     <div style="display:flex;gap:10px"><button class="btn btn-ghost btn-sm" onclick="App.ck(1)">← Edit details</button><a class="btn btn-ghost btn-sm" href="#/store/cart">Edit cart</a></div></div></div>
     <div class="card"><div class="card-pad"><h3 style="margin-top:0">Payable: ${fmt(sub)}</h3><p class="hint">Excl. GST — invoiced as per ERP. Order is recorded as <b>Pending</b>, not paid.</p>
-    <button class="btn btn-coral" id="ckSubmit" style="width:100%" onclick="App.placeOrder(event)">Submit order • ${fmt(sub)}</button><p class="hint">Double-click protected • server revalidates stock.</p></div></div></div>`;
+    <button class="btn btn-coral" id="ckSubmit" style="width:100%" onclick="App.placeOrder(event)">Submit order • ${fmt(sub)}</button>
+    <button class="btn btn-ghost" style="width:100%;margin-top:8px" onclick="App.downloadCartQuotation()">📄 Download Proforma Quotation (PDF)</button>
+    <p class="hint">Double-click protected • server revalidates stock.</p></div></div></div>`;
 }
 function vConfirm(id){
   const o=getOrders().find(x=>x.id===id)||getOrders()[0];
@@ -1067,7 +1074,29 @@ function vMyQuotes(){
   const myCoId = me?.companyId || 'C-ARGUS';
   const qs=getQuotes().filter(q=>q.companyId===myCoId);
   return `<div class="section-head"><h2>My quotation requests (${qs.length})</h2><a class="btn btn-ghost btn-sm" href="#/store/listing">Browse catalog</a></div>
-  <div class="card"><div class="card-pad">${qs.map(q=>{const p=prodById(q.pid)||{name:q.pid,sku:q.pid,images:[]};return `<div class="cart-line"><img src="${img0(p)}" onerror="${NOIMG_ERR}" style="width:64px;height:64px;border-radius:8px;object-fit:cover"><div><b>${q.id} — ${p.name}</b><div class="hint">${p.sku||''} • Qty ${q.qty} • ${q.date}</div><div class="hint">${q.quotePrice!=null?'Quoted: '+fmt(q.quotePrice):'Awaiting quote'}${q.adminNote?' • '+q.adminNote:''}</div></div><div>${statusBadge(q.status)}</div></div>`}).join('')||'<div class="empty">No RFQs yet.</div>'}</div></div>`;
+  <div class="card"><div class="card-pad">${qs.map(q=>{
+    const hasItems = Array.isArray(q.items) && q.items.length > 0;
+    const p = prodById(q.pid || (hasItems ? q.items[0].pid : '')) || {name:q.pid,sku:q.pid,images:[]};
+    const title = hasItems ? `${q.items.length} Indent Items` : p.name;
+    const isInvoiced = q.invoiced || !!q.invoiceNo || q.status === 'Accepted';
+    const totalEst = q.total || (q.quotePrice ? q.quotePrice * q.qty * 1.18 : 0);
+    return `<div class="cart-line" style="display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center">
+      <img src="${img0(p)}" onerror="${NOIMG_ERR}" style="width:64px;height:64px;border-radius:8px;object-fit:cover">
+      <div>
+        <b>${q.id} — ${title}</b>
+        <div class="hint">${q.companyName || p.sku || ''} • Date: ${q.date}</div>
+        <div class="hint">${q.quotePrice!=null?'Quoted: '+fmt(q.quotePrice):totalEst>0?'Est. Total: '+fmt(totalEst):'Awaiting quote'}${q.adminNote?' • Note: '+q.adminNote:''}</div>
+        ${isInvoiced ? `<div style="margin-top:4px"><span class="status s-active">🧾 Invoiced: ${q.invoiceNo || 'INV-Generated'}</span></div>` : ''}
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+        <div>${statusBadge(q.status)}</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">
+          <button class="btn btn-ghost btn-sm" onclick="App.downloadQuotePdf('${q.id}')">📄 Quote PDF</button>
+          ${isInvoiced ? `<button class="btn btn-primary btn-sm" style="background:#059669;border-color:#059669" onclick="App.downloadInvoicePdf('${q.id}')">🧾 Tax Invoice</button>` : `<button class="btn btn-primary btn-sm" onclick="App.raiseInvoiceForQuote('${q.id}')">🧾 Raise Invoice</button>`}
+        </div>
+      </div>
+    </div>`;
+  }).join('')||'<div class="empty">No RFQs yet.</div>'}</div></div>`;
 }
 function vProfile(){
   const meRow = getUsers().find(u=>me.email && (u.email||'').toLowerCase()===me.email.toLowerCase()) || {};
@@ -1093,10 +1122,15 @@ function rfqModal(pid){
   <p class="hint">Maps to the ERP Quotations module. No stock is reserved by an RFQ.</p></div></div></div>`;
 }
 function quoteModal(q){
+  const isInvoiced = q.invoiced || !!q.invoiceNo || q.status === 'Accepted';
   return `<div class="modal-bg" id="rfqBg" onclick="if(event.target===this)App.rfqClose()"><div class="modal"><div class="modal-head"><span>Respond — ${q.id}</span><button class="btn btn-ghost btn-sm" onclick="App.rfqClose()">✕</button></div>
   <div class="modal-body"><div class="field"><label>Status</label><select id="qr_st">${['Pending','Quoted','Accepted','Rejected','Cancelled'].map(s=>`<option ${q.status===s?'selected':''}>${s}</option>`).join('')}</select></div>
   <div class="field"><label>Quoted unit price (₹, optional)</label><input id="qr_price" type="number" value="${q.quotePrice??''}"></div>
   <div class="field"><label>Note for requester</label><input id="qr_note" value="${q.adminNote||''}" placeholder="e.g. Imported, 3-week lead time"></div>
+  <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+    <button class="btn btn-ghost btn-sm" style="flex:1" onclick="App.downloadQuotePdf('${q.id}')">📄 Download Quotation</button>
+    ${isInvoiced ? `<button class="btn btn-primary btn-sm" style="background:#059669;border-color:#059669;flex:1" onclick="App.downloadInvoicePdf('${q.id}')">🧾 Tax Invoice PDF</button>` : `<button class="btn btn-primary btn-sm" style="background:#7c3aed;border-color:#7c3aed;flex:1" onclick="App.raiseInvoiceForQuote('${q.id}');App.rfqClose()">🧾 Raise Tax Invoice</button>`}
+  </div>
   <button class="btn btn-primary" style="width:100%" onclick="App.quoteSave('${q.id}')">Save response</button></div></div></div>`;
 }
 
@@ -1365,6 +1399,159 @@ window.App={
     if(B()?.enabled){ try{ await B().api.patch('/api/quotations/'+id,body); await B().refresh(); App.rfqClose(); toast(id+' updated','📝'); render(); }catch(e){ toast(e.message,'⚠️'); } return; }
     const all=[...(OV.quotes||[]),...window.MOCK.QUOTES]; const q=all.find(x=>x.id===id); Object.assign(q,body);
     OV.quotes=all.filter(x=>!(window.MOCK.QUOTES||[]).find(b=>b.id===x.id&&JSON.stringify(b)===JSON.stringify(x))); saveOv(OV); App.rfqClose(); toast(id+' updated','📝'); render();
+  },
+  _prepQuoteData(q){
+    let items = [];
+    if (Array.isArray(q.items) && q.items.length > 0) {
+      items = q.items.map(it => {
+        const p = prodById(it.pid) || { name: it.name || it.pid, sku: it.sku || it.pid, price: 0 };
+        return {
+          pid: it.pid,
+          name: it.name || p.name,
+          sku: it.sku || p.sku || it.pid,
+          price: it.price != null ? it.price : (p.price || 0),
+          qty: it.qty || 1,
+          uom: it.uom || p.uom || 'Pc',
+          hsn: it.hsn || '8466'
+        };
+      });
+    } else {
+      const p = prodById(q.pid) || { name: q.pid, sku: q.pid, price: 0 };
+      const unitPrice = q.quotePrice != null ? q.quotePrice : (p.price || 0);
+      items = [{
+        pid: q.pid,
+        name: p.name,
+        sku: p.sku || q.pid,
+        price: unitPrice,
+        qty: q.qty || 1,
+        uom: p.uom || 'Pc',
+        hsn: p.hsn || '8466'
+      }];
+    }
+    const taxable = q.taxableAmount || items.reduce((acc, it) => acc + (it.price * it.qty), 0);
+    const gst = q.gstAmount || Math.round(taxable * 0.18);
+    const total = q.total || (taxable + gst);
+    return {
+      quoteNo: q.id,
+      date: q.date || new Date().toISOString().slice(0, 10),
+      validUntil: q.validUntil,
+      customer: q.requestedBy || q.customer || q.contact || 'Valued Client',
+      companyName: q.companyName || 'Valued Enterprise',
+      mobile: q.mobile || '',
+      email: q.email || '',
+      address: q.address || '',
+      city: q.city || 'Pune',
+      state: q.state || 'Maharashtra',
+      pin: q.pin || '',
+      poRef: q.poRef || '',
+      notes: q.techReq || q.notes || q.adminNote || '',
+      items,
+      taxableAmount: taxable,
+      gstAmount: gst,
+      total
+    };
+  },
+  _prepInvoiceData(q){
+    const qd = App._prepQuoteData(q);
+    return {
+      ...qd,
+      invoiceNo: q.invoiceNo || `INV/2026-27/${q.id.replace(/\D/g, '').slice(-4) || '1001'}`,
+      date: q.invoiceDate || new Date().toISOString().slice(0, 10),
+      dueDate: q.invoiceDueDate || new Date(Date.now() + 15 * 86400000).toISOString().slice(0, 10),
+      orderId: q.orderId || q.id,
+      paymentStatus: 'Pending (Net 15)',
+      paymentMethod: 'Bank Wire / RTGS'
+    };
+  },
+  downloadQuotePdf(id){
+    const q = getQuotes().find(x=>x.id===id);
+    if (!q) { toast('Quotation not found', '⚠️'); return; }
+    if (window.QuotationInvoice) {
+      window.QuotationInvoice.downloadQuotationPdf(App._prepQuoteData(q));
+      toast('Quotation PDF generated', '📄');
+    }
+  },
+  downloadInvoicePdf(id){
+    const q = getQuotes().find(x=>x.id===id);
+    if (!q) { toast('Quotation not found', '⚠️'); return; }
+    if (window.QuotationInvoice) {
+      window.QuotationInvoice.downloadTaxInvoicePdf(App._prepInvoiceData(q));
+      toast('Tax Invoice PDF generated', '🧾');
+    }
+  },
+  async raiseInvoiceForQuote(id){
+    const q = getQuotes().find(x=>x.id===id);
+    if (!q) { toast('Quotation not found', '⚠️'); return; }
+    if (B()?.enabled) {
+      try {
+        const res = await B().api.post('/api/quotations/' + id + '/raise-invoice');
+        await B().refresh();
+        toast('Tax Invoice ' + res.invoiceNo + ' generated & order confirmed!', '🧾');
+        render();
+        const updatedQ = getQuotes().find(x=>x.id===id) || { ...q, ...res.quotation, invoiceNo: res.invoiceNo };
+        if (window.QuotationInvoice) {
+          window.QuotationInvoice.downloadTaxInvoicePdf(App._prepInvoiceData(updatedQ));
+        }
+      } catch(e) {
+        toast(e.message || 'Failed to raise invoice', '⚠️');
+      }
+    } else {
+      q.status = 'Accepted';
+      q.invoiced = true;
+      q.invoiceNo = 'INV/2026-27/' + (q.id.replace(/\D/g, '').slice(-4) || '1001');
+      q.invoiceDate = new Date().toISOString().slice(0, 10);
+      toast('Tax Invoice ' + q.invoiceNo + ' generated (demo)!', '🧾');
+      render();
+      if (window.QuotationInvoice) {
+        window.QuotationInvoice.downloadTaxInvoicePdf(App._prepInvoiceData(q));
+      }
+    }
+  },
+  downloadCartQuotation(){
+    const cart = getCart().filter(c=>prodById(c.pid));
+    if (!cart.length) { toast('Cart is empty', '⚠️'); return; }
+    const d = ui.ck || {};
+    const items = cart.map(c => {
+      const p = prodById(c.pid) || { name: c.pid, sku: c.pid, price: 0, uom: 'Pc' };
+      return {
+        pid: c.pid,
+        name: p.name,
+        sku: p.sku || c.pid,
+        price: p.price || 0,
+        qty: c.qty,
+        uom: p.uom || 'Pc',
+        hsn: p.hsn || '8466'
+      };
+    });
+    const sub = cartSubtotal();
+    const gst = Math.round(sub * 0.18);
+    const quoteData = {
+      customer: d.c_name || me?.name || 'Valued Client',
+      contact: d.c_name || me?.name || 'Valued Client',
+      companyName: d.c_company || (me?.companyId ? coName(me.companyId) : 'Valued Enterprise'),
+      mobile: d.c_mob || me?.mobile || '',
+      email: d.c_email || me?.email || '',
+      address: [d.c_addr, d.c_city, d.c_state, d.c_pin].filter(Boolean).join(', '),
+      city: d.c_city || 'Pune',
+      state: d.c_state || 'Maharashtra',
+      pin: d.c_pin || '',
+      poRef: d.c_po || '',
+      notes: d.c_note || '',
+      items: items,
+      taxableAmount: sub,
+      gstAmount: gst,
+      total: sub + gst
+    };
+    if (B()?.enabled) {
+      B().api.post('/api/quotations', quoteData).then(res => {
+        if (res && res.id) quoteData.quoteNo = res.id;
+        B().refresh().catch(()=>{});
+      }).catch(()=>{});
+    }
+    if (window.QuotationInvoice) {
+      window.QuotationInvoice.downloadQuotationPdf(quoteData);
+      toast('Quotation PDF generated', '📄');
+    }
   },
   ck(n){ const req=[['c_company','Company'],['c_name','Contact'],['c_mob','Mobile'],['c_pin','PIN'],['c_addr','Address'],['c_city','City'],['c_state','State']];
     if(n===2){
