@@ -14,11 +14,9 @@ import { StageBadge, ytId } from '../content/ContentWriter';
 const fmtDate = (s) => (s ? new Date(s).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—');
 
 const TABS = [
-  { id: 'queue', label: 'Awaiting my review', stages: 'submitted_to_finance' },
-  { id: 'finance_review', label: 'In review', stages: 'finance_review' },
+  { id: 'queue', label: 'Awaiting my review', stages: 'submitted_to_finance,finance_review' },
   { id: 'pricing_saved', label: 'Priced, not published', stages: 'pricing_saved' },
   { id: 'published', label: 'Published', stages: 'published' },
-  { id: 'returned', label: 'Returned to Content', stages: 'returned_for_correction' },
   { id: 'all', label: 'All', stages: 'all' }
 ];
 
@@ -55,11 +53,9 @@ function FinanceQueue() {
   const rows = (data && data.rows) || [];
   const tabCount = (t) => {
     if (t.id === 'all') return (data && data.total) || 0;
-    if (t.id === 'queue' || t.id === 'submitted_to_finance') return counts.submitted_to_finance || 0;
-    if (t.id === 'finance_review') return counts.finance_review || 0;
+    if (t.id === 'queue') return (counts.submitted_to_finance || 0) + (counts.finance_review || 0);
     if (t.id === 'pricing_saved') return counts.pricing_saved || 0;
     if (t.id === 'published') return counts.published || 0;
-    if (t.id === 'returned' || t.id === 'returned_for_correction') return counts.returned_for_correction || 0;
     return 0;
   };
 
