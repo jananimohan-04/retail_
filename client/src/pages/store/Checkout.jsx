@@ -5,11 +5,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Building2, User, Phone, Mail, MapPin, FileText, 
   ArrowRight, ArrowLeft, CheckCircle2, ShoppingBag, ShieldCheck,
-  PackageCheck, Truck, AlertCircle, Loader2
+  PackageCheck, Truck, AlertCircle, Loader2, Receipt
 } from 'lucide-react';
 import { api, fmt, getCart, setCart } from '../../api';
 import { Empty, Skeleton, toast } from '../../components/ui';
-import { downloadQuotationPdf } from '../../utils/quotationInvoiceTemplates';
+import { downloadQuotationPdf, downloadTaxInvoicePdf } from '../../utils/quotationInvoiceTemplates';
 import { asList } from './Home';
 
 export default function Checkout() {
@@ -99,6 +99,85 @@ export default function Checkout() {
       nav('/store/confirmation/' + o.id);
     } catch (e) {
       toast(e.message || 'Failed to place order', '⚠️');
+      setBusy(false);
+    }
+  };
+
+  const placeOrderAndGenerateInvoice = async () => {
+    const req = [
+      [company, 'Company name'], 
+      [name, 'Contact person'], 
+      [mobile, 'Mobile number'], 
+      [pin, 'PIN code'], 
+      [addr, 'Delivery address']
+    ];
+    for (const [v, l] of req) {
+      if (!String(v || '').trim()) { 
+        toast(l + ' is required to generate Tax Invoice', '⚠️'); 
+        setStep(1);
+        return; 
+      }
+    }
+
+    setBusy(true);
+    const quoteItems = cart.map((c) => {
+      const p = prodById(c.pid) || { name: c.pid, sku: c.pid, price: 0, uom: 'Pc' };
+      return {
+        pid: c.pid,
+        name: p.name,
+        sku: p.sku || c.pid,
+        price: p.price || 0,
+        qty: c.qty,
+        uom: p.uom || 'Pc',
+        hsn: p.hsn || '8466.93.90',
+        brand: p.brand || ''
+      };
+    });
+
+    const payload = {
+      customer: name, 
+      contact: name, 
+      companyName: company, 
+      mobile, 
+      address: addr ? `${addr}, ${city}, ${state} - ${pin}` : (addr || '—'),
+      city, 
+      poRef: po, 
+      items: cart.map((c) => ({ pid: c.pid, qty: c.qty })),
+      generateInvoice: true
+    };
+
+    try {
+      const o = await api.post('/api/orders', payload);
+      setCart([]);
+
+      const invoiceData = {
+        invoiceNo: o.invoiceNo,
+        orderId: o.id,
+        date: o.invoiceDate || new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
+        dueDate: o.invoiceDueDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
+        poRef: po || '',
+        customer: {
+          name: name || o.customer,
+          companyName: company || o.companyName,
+          mobile: mobile || o.mobile,
+          email: email || '',
+          address: addr ? `${addr}, ${city}, ${state} - ${pin}` : (o.address || ''),
+          city: city || 'Pune',
+          state: state || 'Maharashtra',
+          pin: pin || ''
+        },
+        items: quoteItems,
+        notes: notes || '',
+        taxableAmount: sub,
+        gstAmount: Math.round(sub * 0.18),
+        total: Math.round(sub * 1.18)
+      };
+
+      downloadTaxInvoicePdf(invoiceData);
+      toast(`Tax Invoice ${o.invoiceNo} generated & Order #${o.id} confirmed!`, '🧾');
+      nav('/store/confirmation/' + o.id);
+    } catch (e) {
+      toast(e.message || 'Failed to place order and generate invoice', '⚠️');
       setBusy(false);
     }
   };
@@ -469,8 +548,25 @@ export default function Checkout() {
                 <button 
                   type="button" 
                   disabled={busy} 
+                  onClick={placeOrderAndGenerateInvoice}
+                  className="w-full flex items-center justify-center gap-2 py-3 px-5 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 disabled:opacity-50 text-white font-black text-sm rounded-xl transition-all shadow-md hover:shadow-lg cursor-pointer"
+                >
+                  {busy ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" /> Generating Tax Invoice…
+                    </>
+                  ) : (
+                    <>
+                      <Receipt className="w-4 h-4 text-emerald-200" /> Confirm & Generate Tax Invoice (PDF)
+                    </>
+                  )}
+                </button>
+
+                <button 
+                  type="button" 
+                  disabled={busy} 
                   onClick={placeOrder}
-                  className="w-full flex items-center justify-center gap-2 py-3 px-5 bg-orange-600 hover:bg-orange-700 disabled:opacity-50 text-white font-extrabold text-sm rounded-xl transition-all shadow-md hover:shadow-lg cursor-pointer"
+                  className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-orange-600 hover:bg-orange-700 disabled:opacity-50 text-white font-extrabold text-xs rounded-xl transition-all shadow-xs hover:shadow-md cursor-pointer"
                 >
                   {busy ? (
                     <>
@@ -478,7 +574,7 @@ export default function Checkout() {
                     </>
                   ) : (
                     <>
-                      <CheckCircle2 className="w-4 h-4" /> Confirm & Place Order ({fmt(sub)})
+                      <CheckCircle2 className="w-4 h-4" /> Place Standard Indent Order ({fmt(sub)})
                     </>
                   )}
                 </button>

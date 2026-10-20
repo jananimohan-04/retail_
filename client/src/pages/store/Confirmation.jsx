@@ -7,7 +7,8 @@ import {
   ShieldCheck, MapPin, Receipt, ArrowLeft, ShoppingBag 
 } from 'lucide-react';
 import { api, fmt } from '../../api';
-import { Empty, Skeleton, statusBadge } from '../../components/ui';
+import { Empty, Skeleton, statusBadge, toast } from '../../components/ui';
+import { downloadTaxInvoicePdf } from '../../utils/quotationInvoiceTemplates';
 
 export default function Confirmation() {
   const { id } = useParams();
@@ -80,6 +81,12 @@ export default function Confirmation() {
             <span>Total: <b className="text-white font-mono">{fmt(o.total)}</b></span>
             <span className="text-white/30">•</span>
             <span>Status: <b className="text-amber-300 font-bold">{o.status}</b></span>
+            {o.invoiceNo && (
+              <>
+                <span className="text-white/30">•</span>
+                <span>Tax Invoice: <b className="text-emerald-300 font-mono font-bold">{o.invoiceNo}</b></span>
+              </>
+            )}
             {o.poRef && (
               <>
                 <span className="text-white/30">•</span>
@@ -107,9 +114,19 @@ export default function Confirmation() {
               <div className="font-bold text-slate-800 flex items-center gap-1.5 mb-2">
                 <ShieldCheck className="w-4 h-4 text-emerald-600" /> Commercial Status
               </div>
-              <div className="text-slate-600">
-                ERP status recorded as <b className="text-slate-900">{o.status}</b>. GST invoice will be generated upon dispatch.
-              </div>
+              {o.invoiceNo ? (
+                <div className="text-emerald-800 bg-emerald-50/80 border border-emerald-200 rounded-lg p-2.5 space-y-1">
+                  <div className="font-bold flex items-center gap-1.5 text-emerald-900">
+                    <Receipt className="w-3.5 h-3.5 text-emerald-600" /> GST Tax Invoice Assigned
+                  </div>
+                  <div>Tax Invoice No: <b className="font-mono text-emerald-950 font-bold">{o.invoiceNo}</b></div>
+                  <div className="text-[11px] text-emerald-700">Official Rule 46 GST tax invoice generated for immediate dispatch.</div>
+                </div>
+              ) : (
+                <div className="text-slate-600">
+                  ERP status recorded as <b className="text-slate-900">{o.status}</b>. GST invoice will be generated upon dispatch.
+                </div>
+              )}
             </div>
             <div className="text-[11px] text-slate-400 mt-2">
               Items reserved: {(o.items || []).reduce((a, i) => a + (i.qty || 0), 0)} unit(s)
@@ -119,6 +136,45 @@ export default function Confirmation() {
 
         {/* Action Buttons */}
         <div className="flex items-center justify-center gap-3 flex-wrap pt-2 border-t border-slate-100">
+          {o.invoiceNo && (
+            <button 
+              type="button" 
+              onClick={() => {
+                const sub = (o.items || []).reduce((a, c) => a + (Number(c.price) || 0) * (Number(c.qty) || 1), 0);
+                downloadTaxInvoicePdf({
+                  invoiceNo: o.invoiceNo,
+                  orderId: o.id,
+                  date: o.invoiceDate || (o.date ? o.date.slice(0, 10) : new Date().toLocaleDateString('en-IN')),
+                  dueDate: o.invoiceDueDate,
+                  poRef: o.poRef || '',
+                  customer: {
+                    name: o.customer,
+                    companyName: o.companyName || o.customer,
+                    mobile: o.mobile,
+                    address: o.address
+                  },
+                  items: (o.items || []).map(it => ({
+                    pid: it.pid,
+                    name: it.name || it.pid,
+                    sku: it.sku || it.pid,
+                    price: it.price || 0,
+                    qty: it.qty || 1,
+                    uom: it.uom || 'Pc',
+                    hsn: it.hsn || '8466.93.90',
+                    brand: it.brand || ''
+                  })),
+                  taxableAmount: sub,
+                  gstAmount: Math.round(sub * 0.18),
+                  total: o.total || Math.round(sub * 1.18)
+                });
+                toast('Tax Invoice PDF downloaded', '🧾');
+              }}
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white font-extrabold text-xs rounded-xl transition-all shadow-sm hover:shadow cursor-pointer"
+            >
+              <Receipt className="w-4 h-4 text-emerald-200" /> Download Tax Invoice (PDF)
+            </button>
+          )}
+
           <Link 
             to={'/store/orders/' + o.id}
             className="inline-flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl transition-all shadow-sm cursor-pointer"
@@ -126,17 +182,23 @@ export default function Confirmation() {
             Track Order Details <ArrowRight className="w-4 h-4" />
           </Link>
           <Link 
-            to="/store/listing"
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-all cursor-pointer"
+            to="/store/invoices"
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-all cursor-pointer"
           >
-            <ShoppingBag className="w-4 h-4" /> Continue Catalog Browsing
+            <Receipt className="w-3.5 h-3.5 text-emerald-600" /> View All Invoices
+          </Link>
+          <Link 
+            to="/store/listing"
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-all cursor-pointer"
+          >
+            <ShoppingBag className="w-4 h-4" /> Browse Catalog
           </Link>
           <button 
             type="button" 
             onClick={() => window.print()}
-            className="inline-flex items-center gap-2 px-4 py-2.5 border border-slate-200 hover:bg-slate-50 text-slate-600 font-bold text-xs rounded-xl transition-all cursor-pointer"
+            className="inline-flex items-center gap-2 px-3.5 py-2.5 border border-slate-200 hover:bg-slate-50 text-slate-600 font-bold text-xs rounded-xl transition-all cursor-pointer"
           >
-            <Printer className="w-4 h-4" /> Print Requisition
+            <Printer className="w-4 h-4" /> Print
           </button>
         </div>
       </div>

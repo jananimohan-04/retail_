@@ -39,6 +39,7 @@ import StoreConfirmation from './pages/store/Confirmation';
 import StoreOrders from './pages/store/Orders';
 import StoreOrderDetail from './pages/store/OrderDetail';
 import StoreQuotes from './pages/store/Quotes';
+import StoreInvoices from './pages/store/Invoices';
 import StoreProfile from './pages/store/Profile';
 import ContentWriter from './pages/content/ContentWriter';
 import FinanceReview from './pages/finance/Finance';
@@ -250,6 +251,8 @@ export default function App() {
           <Route path="/store/confirmation/:id" element={<Gate perm="store_orders" roles={R.store}><StoreConfirmation /></Gate>} />
           <Route path="/store/orders" element={<Gate perm="store_orders" roles={R.store}><StoreOrders /></Gate>} />
           <Route path="/store/orders/:id" element={<Gate perm="store_orders" roles={R.store}><StoreOrderDetail /></Gate>} />
+          <Route path="/store/invoices" element={<Gate perm="store_invoices" roles={R.store}><StoreInvoices /></Gate>} />
+          <Route path="/admin/invoices" element={<Gate perm="store_invoices" roles={R.admin}><StoreInvoices /></Gate>} />
           <Route path="/store/quotes" element={<Gate perm="store_quotes" roles={R.store}><StoreQuotes /></Gate>} />
           <Route path="/store/profile" element={<Gate perm="store_profile" roles={R.store}><StoreProfile /></Gate>} />
           <Route path="/" element={<RoleRedirect />} />

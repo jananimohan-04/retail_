@@ -511,6 +511,22 @@ export const MENU_CATALOG = [
         }
       },
       {
+        id: 'store_invoices',
+        label: 'Invoice History',
+        path: '/store/invoices',
+        icon: 'Receipt',
+        defaultRoles: ['super_admin', 'company_admin', 'sales_user', 'sales_regional_partner', 'sales_channel_partner', 'sales_referral_partner'],
+        theme: {
+          name: 'emerald',
+          gradient: 'from-emerald-600 via-teal-600 to-cyan-600',
+          activeLink: 'bg-emerald-50/90 text-emerald-900 font-bold border-emerald-200/80 shadow-xs shadow-emerald-100',
+          activeIcon: 'text-emerald-600',
+          indicator: 'bg-emerald-600',
+          badge: 'bg-emerald-600 text-white',
+          glow: 'shadow-emerald-500/20'
+        }
+      },
+      {
         id: 'store_profile',
         label: 'My Profile',
         path: '/store/profile',

@@ -1447,7 +1447,7 @@ app.get('/api/orders/:id', scopeCompany, (req, res) => {
   ok(res, o);
 });
 app.post('/api/orders', scopeCompany, (req, res) => {
-  const { customer, contact, companyName, mobile, address, city, poRef, items } = req.body;
+  const { customer, contact, companyName, mobile, address, city, poRef, items, generateInvoice } = req.body;
   if (!customer || !mobile || !address || !Array.isArray(items) || !items.length) return res.status(400).json({ error: 'customer, mobile, address, items[] required' });
   const cid = req.companyId;
   let total = 0; const lines = [];
@@ -1458,17 +1458,216 @@ app.post('/api/orders', scopeCompany, (req, res) => {
     if (p.price == null) return res.status(400).json({ error: p.name + ' is quotation-only — submit a quotation request instead' });
     if (!(it.qty > 0) || it.qty > p.stock) return res.status(400).json({ error: p.name + ' (' + (p.sku || p.id) + '): only ' + p.stock + ' ' + (p.uom || 'pcs') + ' in stock' });
     const finalPrice = isSalesUser(req) ? (applyRolePricing(p, req.ctx.role).price) : p.price;
-    total += finalPrice * it.qty; lines.push({ pid: p.id, qty: it.qty, price: finalPrice });
+    total += finalPrice * it.qty;
+    lines.push({
+      pid: p.id,
+      qty: it.qty,
+      price: finalPrice,
+      name: p.name,
+      sku: p.sku || p.id,
+      uom: p.uom || 'Pc',
+      hsn: p.hsn || '8466.93.90',
+      brand: p.brand || ''
+    });
   }
+
+  let invoiceNo = null;
+  let invoiceDate = null;
+  let invoiceDueDate = null;
+  if (generateInvoice) {
+    const year = new Date().getFullYear();
+    const nextNum = Math.floor(1000 + Math.random() * 9000);
+    invoiceNo = `INV/${year}-${String(year + 1).slice(2)}/${nextNum}`;
+    invoiceDate = new Date().toISOString().slice(0, 10);
+    invoiceDueDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  }
+
   const id = uid('ORD-', db.orders);
-  const order = { id, companyId: cid, date: new Date().toISOString().slice(0, 16).replace('T', ' '), salesUser: req.ctx.name, partnerRole: req.ctx.role, customer, contact: contact || customer, companyName: companyName || '', mobile, city: city || '', address, poRef: poRef || '', total, status: 'Pending', items: lines, history: [['Pending', new Date().toLocaleString()]] };
+  const status = invoiceNo ? 'Confirmed' : 'Pending';
+  const history = [['Pending', new Date().toLocaleString()]];
+  if (invoiceNo) {
+    history.push(['Confirmed', new Date().toLocaleString()]);
+  }
+
+  const order = {
+    id,
+    companyId: cid,
+    date: new Date().toISOString().slice(0, 16).replace('T', ' '),
+    salesUser: req.ctx.name,
+    partnerRole: req.ctx.role,
+    customer,
+    contact: contact || customer,
+    companyName: companyName || '',
+    mobile,
+    city: city || '',
+    address,
+    poRef: poRef || '',
+    total,
+    status,
+    invoiceNo: invoiceNo || undefined,
+    invoiceDate: invoiceDate || undefined,
+    invoiceDueDate: invoiceDueDate || undefined,
+    items: lines,
+    history
+  };
+
   for (const l of lines) { const p = db.products.find(x => x.id === l.pid); p.stock -= l.qty; p.sold = (p.sold || 0) + l.qty; } // single atomic write
   db.orders.unshift(order); save();
   if (typeof triggerErpOrderDeduction === 'function') {
     triggerErpOrderDeduction(order, lines);
   }
+  if (invoiceNo) {
+    audit(req, 'order.create_with_invoice', 'order', order.id, order.companyId, `Created order with Tax Invoice ${invoiceNo}`);
+  }
   ok(res, order);
 });
+
+app.post('/api/orders/:id/raise-invoice', scopeCompany, (req, res) => {
+  const o = db.orders.find(x => x.id === req.params.id);
+  if (!o) return res.status(404).json({ error: 'Order not found' });
+  if (req.ctx.role !== 'super_admin' && o.companyId !== req.companyId) return res.status(403).json({ error: 'denied' });
+
+  if (o.invoiceNo) {
+    return ok(res, { success: true, order: o, invoiceNo: o.invoiceNo, invoiceDate: o.invoiceDate });
+  }
+
+  const year = new Date().getFullYear();
+  const nextNum = Math.floor(1000 + Math.random() * 9000);
+  const invoiceNo = `INV/${year}-${String(year + 1).slice(2)}/${nextNum}`;
+  const invoiceDate = new Date().toISOString().slice(0, 10);
+  const dueDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
+  o.invoiceNo = invoiceNo;
+  o.invoiceDate = invoiceDate;
+  o.invoiceDueDate = dueDate;
+  if (o.status === 'Pending') {
+    o.status = 'Confirmed';
+    o.history.push(['Confirmed', new Date().toLocaleString()]);
+  }
+  save();
+  audit(req, 'order.raise_invoice', 'order', o.id, o.companyId, `Generated Tax Invoice ${invoiceNo}`);
+
+  ok(res, {
+    success: true,
+    order: o,
+    invoiceNo,
+    invoiceDate,
+    invoiceDueDate: dueDate
+  });
+});
+
+app.get('/api/invoices', scopeCompany, (req, res) => {
+  const cid = req.ctx.role === 'super_admin' ? (req.query.companyId && req.query.companyId !== 'all' ? req.query.companyId : null) : req.companyId;
+
+  // Gather orders with invoiceNo
+  const invoicedOrders = (db.orders || []).filter(o => o.invoiceNo && (!cid || o.companyId === cid));
+
+  const invoices = invoicedOrders.map(o => {
+    const items = (o.items || []).map(it => {
+      const p = (db.products || []).find(x => x.id === it.pid) || {};
+      return {
+        pid: it.pid,
+        qty: it.qty,
+        price: it.price,
+        name: it.name || p.name || it.pid,
+        sku: it.sku || p.sku || it.pid,
+        uom: it.uom || p.uom || 'Pc',
+        hsn: it.hsn || p.hsn || '8466.93.90',
+        brand: it.brand || p.brand || ''
+      };
+    });
+    const subtotal = items.reduce((acc, it) => acc + (Number(it.price) || 0) * (Number(it.qty) || 1), 0);
+    const gstAmount = Math.round(subtotal * 0.18);
+    const total = o.total || Math.round(subtotal * 1.18);
+
+    return {
+      id: o.invoiceNo,
+      invoiceNo: o.invoiceNo,
+      orderId: o.id,
+      companyId: o.companyId,
+      companyName2: (companyById(o.companyId) || {}).name || o.companyId,
+      date: o.invoiceDate || (o.date ? o.date.slice(0, 10) : new Date().toISOString().slice(0, 10)),
+      dueDate: o.invoiceDueDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+      customer: o.customer,
+      contact: o.contact || o.customer,
+      companyName: o.companyName || '',
+      mobile: o.mobile,
+      address: o.address,
+      city: o.city || '',
+      poRef: o.poRef || '',
+      status: o.status === 'Cancelled' ? 'Cancelled' : 'Issued',
+      subtotal,
+      taxableAmount: subtotal,
+      gstAmount,
+      total,
+      items
+    };
+  });
+
+  // Also include any quotations that were invoiced but not yet linked to an order in invoices list
+  const invoicedQuotes = (db.quotations || []).filter(q => q.invoiceNo && (!cid || q.companyId === cid));
+  for (const q of invoicedQuotes) {
+    if (!invoices.some(inv => inv.invoiceNo === q.invoiceNo || (q.orderId && inv.orderId === q.orderId))) {
+      const items = (q.items || []).map(it => {
+        const p = (db.products || []).find(x => x.id === it.pid) || {};
+        return {
+          pid: it.pid,
+          qty: it.qty || 1,
+          price: it.price != null ? it.price : (q.quotePrice || 0),
+          name: it.name || p.name || it.pid,
+          sku: it.sku || p.sku || it.pid,
+          uom: it.uom || p.uom || 'Pc',
+          hsn: it.hsn || p.hsn || '8466.93.90',
+          brand: it.brand || p.brand || ''
+        };
+      });
+      const subtotal = items.reduce((acc, it) => acc + (Number(it.price) || 0) * (Number(it.qty) || 1), 0);
+      const gstAmount = Math.round(subtotal * 0.18);
+      const total = Math.round(subtotal * 1.18);
+      invoices.push({
+        id: q.invoiceNo,
+        invoiceNo: q.invoiceNo,
+        orderId: q.orderId || '—',
+        quotationId: q.id,
+        companyId: q.companyId,
+        companyName2: (companyById(q.companyId) || {}).name || q.companyId,
+        date: q.invoiceDate || (q.date ? q.date.slice(0, 10) : new Date().toISOString().slice(0, 10)),
+        dueDate: q.invoiceDueDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+        customer: q.contact || q.requestedBy || 'Industrial Client',
+        contact: q.contact || q.requestedBy || '',
+        companyName: q.companyName || '',
+        mobile: q.mobile || '',
+        address: q.address || '—',
+        city: q.city || '',
+        poRef: q.poRef || '',
+        status: 'Issued',
+        subtotal,
+        taxableAmount: subtotal,
+        gstAmount,
+        total,
+        items
+      });
+    }
+  }
+
+  // Search filter
+  let list = invoices;
+  if (req.query.q) {
+    const q = req.query.q.toLowerCase();
+    list = list.filter(inv =>
+      (inv.invoiceNo + (inv.orderId || '') + (inv.customer || '') + (inv.companyName || '') + (inv.mobile || '') + (inv.poRef || '')).toLowerCase().includes(q)
+    );
+  }
+
+  // Sort newest first
+  list.sort((a, b) => (b.date || '').localeCompare(a.date || '') || (b.invoiceNo || '').localeCompare(a.invoiceNo || ''));
+
+  if (req.query.page || req.query.limit) {
+    return ok(res, pageOf(list, req));
+  }
+  ok(res, list);
+});
+
 app.patch('/api/orders/:id/status', scopeCompany, (req, res) => {
   if (!isAdmin(req)) return res.status(403).json({ error: 'admin only' });
   const o = db.orders.find(x => x.id === req.params.id);

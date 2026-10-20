@@ -504,7 +504,7 @@
     },
     {
       "id": "P-MVCEPL6DHG",
-      "sold": 0,
+      "sold": 4,
       "featured": false,
       "visible": true,
       "active": true,
@@ -516,12 +516,94 @@
       "sku": "ARG-CH20-01",
       "brand": "ArgusCNC",
       "price": 1850,
-      "stock": 45,
+      "stock": 41,
       "category": "workholding",
       "companyId": "C-ARGUS"
     }
   ],
   "orders": [
+    {
+      "id": "ORD-MVH5N7PTNN",
+      "companyId": "C-ARGUS",
+      "date": "2026-10-20 20:47",
+      "salesUser": "test",
+      "partnerRole": "sales_user",
+      "customer": "Priya Sharma",
+      "contact": "Priya Sharma",
+      "companyName": "Sharma Auto Components Pvt Ltd",
+      "mobile": "98765 43210",
+      "city": "Pune",
+      "address": "Plot 44, MIDC Bhosari, Pune, Pune, Maharashtra - 411026",
+      "poRef": "",
+      "total": 3700,
+      "status": "Confirmed",
+      "invoiceNo": "INV/2026-27/2306",
+      "invoiceDate": "2026-10-20",
+      "invoiceDueDate": "2026-11-19",
+      "items": [
+        {
+          "pid": "P-MVCEPL6DHG",
+          "qty": 2,
+          "price": 1850,
+          "name": "Argus High-Precision Collet CH-20",
+          "sku": "ARG-CH20-01",
+          "uom": "Pc",
+          "hsn": "8466.93.90",
+          "brand": "ArgusCNC"
+        }
+      ],
+      "history": [
+        [
+          "Pending",
+          "21/10/2026, 2:17:48 am"
+        ],
+        [
+          "Confirmed",
+          "21/10/2026, 2:17:48 am"
+        ]
+      ]
+    },
+    {
+      "id": "ORD-MVH5KCT24G",
+      "companyId": "C-ARGUS",
+      "date": "2026-10-20 20:45",
+      "salesUser": "test",
+      "partnerRole": "sales_user",
+      "customer": "Priya Sharma",
+      "contact": "Priya Sharma",
+      "companyName": "Sharma Auto Components Pvt Ltd",
+      "mobile": "98765 43210",
+      "city": "Pune",
+      "address": "Plot 44, MIDC Bhosari, Pune, Pune, Maharashtra - 411026",
+      "poRef": "",
+      "total": 3700,
+      "status": "Confirmed",
+      "invoiceNo": "INV/2026-27/6436",
+      "invoiceDate": "2026-10-20",
+      "invoiceDueDate": "2026-11-19",
+      "items": [
+        {
+          "pid": "P-MVCEPL6DHG",
+          "qty": 2,
+          "price": 1850,
+          "name": "Argus High-Precision Collet CH-20",
+          "sku": "ARG-CH20-01",
+          "uom": "Pc",
+          "hsn": "8466.93.90",
+          "brand": "ArgusCNC"
+        }
+      ],
+      "history": [
+        [
+          "Pending",
+          "21/10/2026, 2:15:35 am"
+        ],
+        [
+          "Confirmed",
+          "21/10/2026, 2:15:35 am"
+        ]
+      ]
+    },
     {
       "id": "ORD-MVH358VSC0",
       "companyId": "C-ARGUS",
@@ -913,6 +995,28 @@
     "admin_settings"
   ],
   "audit_logs": [
+    {
+      "id": "A-179252926872120",
+      "ts": "2026-10-20T20:47:48.722Z",
+      "actor": "test",
+      "role": "sales_user",
+      "action": "order.create_with_invoice",
+      "entity": "order",
+      "entityId": "ORD-MVH5N7PTNN",
+      "companyId": "C-ARGUS",
+      "summary": "Created order with Tax Invoice INV/2026-27/2306"
+    },
+    {
+      "id": "A-179252913552276",
+      "ts": "2026-10-20T20:45:35.523Z",
+      "actor": "test",
+      "role": "sales_user",
+      "action": "order.create_with_invoice",
+      "entity": "order",
+      "entityId": "ORD-MVH5KCT24G",
+      "companyId": "C-ARGUS",
+      "summary": "Created order with Tax Invoice INV/2026-27/6436"
+    },
     {
       "id": "A-179252679111089",
       "ts": "2026-10-20T20:06:31.111Z",
