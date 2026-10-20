@@ -101,6 +101,7 @@ export function PageHero({
   badgeColor = 'blue',
   gradient = 'from-blue-600 to-indigo-600',
   actions,
+  tabs,
   className = ''
 }) {
   const BADGE_COLORS = {
@@ -124,15 +125,15 @@ export function PageHero({
       className={`relative overflow-hidden ${className ? className : 'bg-gradient-to-r from-[#EFE4D6] via-[#E8DCCF] to-[#DECDBE] border-[#BAA794]'} rounded-xl border px-4 py-2.5 sm:px-5 sm:py-3 shadow-xs mb-3.5`}
     >
       <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-orange-500 via-amber-500 to-transparent" />
-      <div className="relative flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3 min-w-0">
+      <div className="relative flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-fit">
           {IconComponent && (
             <div className={`p-2 rounded-xl bg-gradient-to-br ${gradient} text-white shadow-xs flex-shrink-0`}>
               <IconComponent className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
           )}
           <div className="flex items-center gap-2.5 min-w-0 flex-wrap">
-            <h1 className="text-base sm:text-lg font-black text-[#1A0A03] tracking-tight truncate">{title}</h1>
+            <h1 className="text-base sm:text-lg font-black text-[#1A0A03] tracking-tight">{title}</h1>
             {badgeText && (
               <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide border flex-shrink-0 ${BADGE_COLORS[badgeColor] || BADGE_COLORS.blue}`}>
                 {badgeText}
@@ -142,11 +143,17 @@ export function PageHero({
         </div>
 
         {actions && (
-          <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="flex items-center gap-2 flex-wrap">
             {actions}
           </div>
         )}
       </div>
+
+      {tabs && (
+        <div className="relative mt-2.5 pt-2.5 border-t border-[#BAA794]/40 flex items-center justify-between gap-3 overflow-x-auto">
+          {tabs}
+        </div>
+      )}
     </motion.div>
   );
 }

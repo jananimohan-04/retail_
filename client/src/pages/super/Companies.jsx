@@ -207,8 +207,6 @@ export default function Companies({ tab: tabProp }) {
         badgeColor="sky"
         gradient="from-sky-500 via-cyan-500 to-blue-600"
         actions={<>
-          <Tabs compact className="mb-0" tabs={MG_TABS} active={tab} onTab={(k) => goTab(k)} />
-          <div className="h-6 w-px bg-slate-200 hidden sm:block" />
           <button className="btn btn-ghost btn-sm" onClick={mgExport}>⤓ Export</button>
           <button className="btn btn-ghost btn-sm" onClick={refresh}>↻ Refresh</button>
           {tab === 'superadmins' ? (
@@ -217,9 +215,6 @@ export default function Companies({ tab: tabProp }) {
             </button>
           ) : tab === 'users' ? (
             <>
-              <button className="btn btn-ghost btn-sm" onClick={() => setRolesModal(true)} title="View existing roles, edit % markup, and Terms & Conditions">
-                👁️ View Existing Roles
-              </button>
               <button className="btn btn-ghost btn-sm" onClick={() => setAddRoleModal(true)} title="Create new role">
                 + Add Role
               </button>
@@ -231,11 +226,9 @@ export default function Companies({ tab: tabProp }) {
               </button>
             </>
           ) : tab === 'roles' ? (
-            <>
-              <button className="btn btn-primary btn-sm bg-sky-600 hover:bg-sky-700 border-none shadow-sm shadow-sky-600/30 text-white" onClick={() => setAddRoleModal(true)} title="Create new role">
-                + Add Role
-              </button>
-            </>
+            <button className="btn btn-primary btn-sm bg-sky-600 hover:bg-sky-700 border-none shadow-sm shadow-sky-600/30 text-white" onClick={() => setAddRoleModal(true)} title="Create new role">
+              + Add Role
+            </button>
           ) : (
             <>
               <button className="btn btn-ghost btn-sm" onClick={() => setUserModal({ preset: { role: 'company_admin' } })}>
@@ -247,6 +240,7 @@ export default function Companies({ tab: tabProp }) {
             </>
           )}
         </>}
+        tabs={<Tabs compact className="mb-0" tabs={MG_TABS} active={tab} onTab={(k) => goTab(k)} />}
       />
       {activeCompanyObj && (
         <div className="flex items-center justify-between gap-3 p-3.5 mb-3 bg-sky-50/90 border border-sky-200/90 rounded-2xl shadow-2xs">
