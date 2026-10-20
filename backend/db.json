@@ -895,17 +895,40 @@
   "_meta": {
     "version": 11
   },
+  "globalDisabledMenus": [],
   "audit_logs": [
     {
-      "id": "A-179252522221057",
-      "ts": "2026-10-20T19:40:22.211Z",
+      "id": "A-179252651130449",
+      "ts": "2026-10-20T20:01:51.304Z",
       "actor": "Janani Mohan",
       "role": "super_admin",
-      "action": "permissions.role_update",
-      "entity": "role",
-      "entityId": "super_admin",
+      "action": "permissions.global_disabled_update",
+      "entity": "system",
+      "entityId": "global_menus",
       "companyId": "",
-      "summary": "Updated role permissions for \"Super Admin\": 14 pages enabled (was 23)"
+      "summary": "Updated globally disabled menus: 0 menus disabled globally (was 1)"
+    },
+    {
+      "id": "A-179252650753082",
+      "ts": "2026-10-20T20:01:47.530Z",
+      "actor": "Janani Mohan",
+      "role": "super_admin",
+      "action": "permissions.global_disabled_update",
+      "entity": "system",
+      "entityId": "global_menus",
+      "companyId": "",
+      "summary": "Updated globally disabled menus: 1 menus disabled globally (was 0)"
+    },
+    {
+      "id": "A-179252626848147",
+      "ts": "2026-10-20T19:57:48.481Z",
+      "actor": "ARGUS TECHNOLOGIES",
+      "role": "super_admin",
+      "action": "permissions.global_disabled_update",
+      "entity": "system",
+      "entityId": "global_menus",
+      "companyId": "",
+      "summary": "Updated globally disabled menus: 1 menus disabled globally (was 0)"
     },
     {
       "id": "A-179252507116454",
@@ -1842,7 +1865,16 @@
         "store_cart",
         "store_orders",
         "store_profile",
-        "store_quotes"
+        "store_quotes",
+        "cat_cnc_machines",
+        "cat_cutting_tools",
+        "cat_spares",
+        "cat_workholding",
+        "cat_electrical",
+        "cat_raw_materials",
+        "cat_consumables",
+        "cat_measuring",
+        "cat_safety"
       ],
       "updatedAt": "2026-10-20T19:40:22.199Z"
     }

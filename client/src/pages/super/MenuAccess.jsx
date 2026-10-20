@@ -4,7 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   ShieldCheck, Users, History, KeyRound, Check, X, RotateCcw,
   Save, Search, ChevronDown, ChevronRight, Lock, Eye, AlertCircle,
-  Sparkles, CheckCircle2, SlidersHorizontal, Info, RefreshCw
+  Sparkles, CheckCircle2, SlidersHorizontal, Info, RefreshCw,
+  Globe, Power, Ban
 } from 'lucide-react';
 import { api } from '../../api';
 import { useAuth } from '../../auth';
@@ -29,7 +30,7 @@ const isPartnerRole = (r) => r === 'sales_user' || r === 'sales_partner' || (typ
 export default function MenuAccess() {
   const { me, refreshPermissions } = useAuth();
   const { activeCompany, activeCompanyObj, setActiveCompany } = useCompany();
-  const [activeTab, setActiveTab] = useState('roles'); // 'roles' | 'users' | 'audit'
+  const [activeTab, setActiveTab] = useState('roles'); // 'roles' | 'users' | 'global' | 'audit'
   const [loading, setLoading] = useState(true);
 
   // Role management state
@@ -47,6 +48,12 @@ export default function MenuAccess() {
   const [savingUser, setSavingUser] = useState(false);
   const [resettingUser, setResettingUser] = useState(false);
 
+  // Global kill-switch state
+  const [globalDisabled, setGlobalDisabled] = useState([]); // string[]
+  const [stagedGlobalDisabled, setStagedGlobalDisabled] = useState([]); // string[]
+  const [globalSearch, setGlobalSearch] = useState('');
+  const [savingGlobal, setSavingGlobal] = useState(false);
+
   // Audit logs state
   const [auditLogs, setAuditLogs] = useState([]);
   const [auditLoading, setAuditLoading] = useState(false);
@@ -58,10 +65,15 @@ export default function MenuAccess() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [rRoles, rUsers] = await Promise.all([
+      const [rRoles, rUsers, rGlobal] = await Promise.all([
         api.get('/api/permissions/roles'),
-        api.get('/api/users')
+        api.get('/api/users'),
+        api.get('/api/permissions/global-disabled').catch(() => ({ ok: true, disabled: [] }))
       ]);
+
+      const gList = (rGlobal && rGlobal.disabled) || [];
+      setGlobalDisabled(gList);
+      setStagedGlobalDisabled(gList);
 
       setRoles(rRoles || []);
       const rPermsMap = {};
@@ -335,6 +347,85 @@ export default function MenuAccess() {
     );
   }, [users, userSearch, activeCompany]);
 
+  /* =========================================================================
+     GLOBAL MENU KILL-SWITCH HANDLERS
+     ========================================================================= */
+  const isGlobalDirty = useMemo(() => {
+    const s1 = [...stagedGlobalDisabled].sort().join(',');
+    const s2 = [...globalDisabled].sort().join(',');
+    return s1 !== s2;
+  }, [stagedGlobalDisabled, globalDisabled]);
+
+  const handleToggleGlobalPage = (pageId) => {
+    if (pageId === 'super_access') {
+      toast('Dynamic Menu Access Control cannot be disabled globally to ensure platform recoverability.', '🔒');
+      return;
+    }
+    setStagedGlobalDisabled(prev => {
+      if (prev.includes(pageId)) {
+        return prev.filter(id => id !== pageId);
+      } else {
+        return [...prev, pageId];
+      }
+    });
+  };
+
+  const handleToggleCategoryGlobal = (cat) => {
+    const targetPageIds = cat.items.map(i => i.id).filter(id => id !== 'super_access');
+    const allDisabled = targetPageIds.every(id => stagedGlobalDisabled.includes(id));
+
+    setStagedGlobalDisabled(prev => {
+      if (allDisabled) {
+        return prev.filter(id => !targetPageIds.includes(id));
+      } else {
+        const set = new Set([...prev, ...targetPageIds]);
+        return Array.from(set);
+      }
+    });
+  };
+
+  const handleEnableAllGlobal = () => {
+    setStagedGlobalDisabled([]);
+    toast('All menus staged to ENABLED (Active). Click "Save Global Settings" to apply.', '✨');
+  };
+
+  const handleDiscardGlobal = () => {
+    setStagedGlobalDisabled([...globalDisabled]);
+    toast('Discarded unsaved global kill-switch changes.', '↩️');
+  };
+
+  const handleSaveGlobal = async () => {
+    setSavingGlobal(true);
+    try {
+      const res = await api.post('/api/permissions/global-disabled', {
+        disabled: stagedGlobalDisabled
+      });
+      const updated = (res && res.disabled) || stagedGlobalDisabled;
+      setGlobalDisabled(updated);
+      setStagedGlobalDisabled(updated);
+      toast(`Global menu settings saved! ${updated.length} menus disabled platform-wide.`, '✅');
+      await refreshPermissions();
+    } catch (err) {
+      toast(err.message || 'Failed to save global menu settings', '❌');
+    } finally {
+      setSavingGlobal(false);
+    }
+  };
+
+  const filteredCatalogForGlobal = useMemo(() => {
+    if (!globalSearch.trim()) return MENU_CATALOG;
+    const q = globalSearch.toLowerCase().trim();
+    return MENU_CATALOG.map(cat => ({
+      ...cat,
+      items: cat.items.filter(item =>
+        item.label.toLowerCase().includes(q) ||
+        item.path.toLowerCase().includes(q) ||
+        item.id.toLowerCase().includes(q) ||
+        cat.label.toLowerCase().includes(q)
+      )
+    })).filter(cat => cat.items.length > 0);
+  }, [globalSearch]);
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] gap-3">
@@ -376,6 +467,24 @@ export default function MenuAccess() {
             >
               <Users className="w-3.5 h-3.5" />
               <span>User Overrides</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('global')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                activeTab === 'global'
+                  ? 'bg-gradient-to-r from-rose-600 to-red-600 text-white shadow-xs shadow-rose-500/30'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+              }`}
+            >
+              <Globe className="w-3.5 h-3.5" />
+              <span>Disable Menus Globally</span>
+              {stagedGlobalDisabled.length > 0 && (
+                <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-black ${
+                  activeTab === 'global' ? 'bg-white/25 text-white' : 'bg-rose-100 text-rose-700'
+                }`}>
+                  {stagedGlobalDisabled.length} OFF
+                </span>
+              )}
             </button>
             <button
               onClick={() => setActiveTab('audit')}
@@ -898,7 +1007,303 @@ export default function MenuAccess() {
     )}
 
       {/* =========================================================================
-          TAB 3: AUDIT & CHANGE HISTORY
+          TAB 3: DISABLE MENUS GLOBALLY (PLATFORM KILL-SWITCH)
+          ========================================================================= */}
+      {activeTab === 'global' && (
+        <div className="space-y-4">
+          {/* Top Banner & Stat Cards */}
+          <div className="bg-gradient-to-r from-slate-900 via-rose-950 to-slate-900 text-white rounded-2xl p-5 border border-rose-900/40 shadow-sm relative overflow-hidden">
+            <div className="absolute right-0 top-0 translate-x-8 -translate-y-8 w-64 h-64 bg-rose-600/10 rounded-full blur-3xl pointer-events-none" />
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
+              <div className="space-y-1 max-w-2xl">
+                <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30">
+                  <Globe className="w-3.5 h-3.5" />
+                  <span>Platform-Wide Master Switch</span>
+                </div>
+                <h2 className="text-base font-extrabold text-white">Disable Menus Globally Across Entire ERP Platform</h2>
+                <p className="text-xs text-rose-200/80 leading-relaxed">
+                  Turn OFF any menu or entire module platform-wide. When toggled OFF, the page is immediately hidden from navigation and blocked from direct URL access for <span className="text-white font-bold">ALL roles and users</span>.
+                </p>
+                <div className="text-[11px] font-semibold text-rose-300/90 pt-0.5">
+                  Precedence: <span className="underline decoration-rose-400 font-bold">Global Disabled</span> &gt; User Overrides &gt; Role Defaults
+                </div>
+              </div>
+
+              {/* Status Counters */}
+              <div className="flex items-center gap-2 self-start md:self-auto flex-wrap">
+                <div className="px-3.5 py-2 rounded-xl bg-white/10 backdrop-blur-xs border border-white/10 text-center">
+                  <div className="text-lg font-black text-white">{getAllPageIds().length}</div>
+                  <div className="text-[10px] uppercase tracking-wider font-bold text-slate-300">Total Menus</div>
+                </div>
+                <div className="px-3.5 py-2 rounded-xl bg-emerald-500/20 backdrop-blur-xs border border-emerald-500/30 text-center">
+                  <div className="text-lg font-black text-emerald-400">
+                    {getAllPageIds().length - stagedGlobalDisabled.length}
+                  </div>
+                  <div className="text-[10px] uppercase tracking-wider font-bold text-emerald-300">Active (ON)</div>
+                </div>
+                <div className="px-3.5 py-2 rounded-xl bg-rose-500/20 backdrop-blur-xs border border-rose-500/30 text-center">
+                  <div className="text-lg font-black text-rose-400">
+                    {stagedGlobalDisabled.length}
+                  </div>
+                  <div className="text-[10px] uppercase tracking-wider font-bold text-rose-300">Disabled (OFF)</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Action Toolbar */}
+          <div className="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            {/* Search Input */}
+            <div className="relative flex-1 max-w-md">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={globalSearch}
+                onChange={e => setGlobalSearch(e.target.value)}
+                placeholder="Search menus globally by label, path, category..."
+                className="w-full pl-9 pr-3.5 py-1.5 text-xs rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition-all"
+              />
+              {globalSearch && (
+                <button
+                  type="button"
+                  onClick={() => setGlobalSearch('')}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs cursor-pointer"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+
+            {/* Quick Actions */}
+            <div className="flex items-center gap-2 self-end sm:self-auto flex-wrap">
+              <button
+                type="button"
+                onClick={handleEnableAllGlobal}
+                className="px-3 py-1.5 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer"
+                title="Stage all menus to Active (ON)"
+              >
+                Enable All Menus
+              </button>
+
+              {isGlobalDirty && (
+                <button
+                  type="button"
+                  onClick={handleDiscardGlobal}
+                  className="px-3 py-1.5 rounded-xl text-xs font-bold text-slate-600 hover:text-slate-900 bg-white border border-slate-200 transition-colors cursor-pointer"
+                >
+                  Discard Changes
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={handleSaveGlobal}
+                disabled={savingGlobal || !isGlobalDirty}
+                className={`flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-bold text-white transition-all cursor-pointer ${
+                  isGlobalDirty
+                    ? 'bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-700 hover:to-red-700 shadow-md shadow-rose-500/25 ring-2 ring-rose-400/30'
+                    : 'bg-slate-300 text-slate-500 cursor-not-allowed'
+                }`}
+              >
+                {savingGlobal ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>Saving...</span>
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-3.5 h-3.5" />
+                    <span>Save Global Kill-Switch</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* Categories & Pages Accordion / List */}
+          <div className="space-y-3.5">
+            {filteredCatalogForGlobal.map(cat => {
+              const catItems = cat.items;
+              const disabledInCat = catItems.filter(i => stagedGlobalDisabled.includes(i.id)).length;
+              const isCatFullyDisabled = disabledInCat === catItems.length && catItems.length > 0;
+              const isCollapsed = !!collapsedCats[cat.id];
+
+              return (
+                <div
+                  key={cat.id}
+                  className={`bg-white rounded-2xl border transition-all duration-150 shadow-2xs overflow-hidden ${
+                    isCatFullyDisabled ? 'border-rose-300 bg-rose-50/20' : 'border-slate-200/80'
+                  }`}
+                >
+                  {/* Category Header */}
+                  <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/70 border-b border-slate-100">
+                    <div
+                      className="flex items-center gap-3 cursor-pointer select-none flex-1"
+                      onClick={() => toggleCatCollapse(cat.id)}
+                    >
+                      <button
+                        type="button"
+                        className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-200/50 cursor-pointer"
+                      >
+                        {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                      </button>
+                      <span className={`w-3 h-3 rounded-full ${cat.dotClass || 'bg-slate-400'}`} />
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-black uppercase tracking-wider text-slate-900">{cat.label}</span>
+                          <span className="text-[11px] font-mono text-slate-400">({catItems.length} items)</span>
+                          {disabledInCat > 0 ? (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700 border border-rose-200">
+                              {disabledInCat} of {catItems.length} Disabled
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-200">
+                              All Active
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-slate-500 mt-0.5">{cat.description}</p>
+                      </div>
+                    </div>
+
+                    {/* Category Bulk Toggle */}
+                    <div className="flex items-center gap-2 self-end sm:self-auto">
+                      <button
+                        type="button"
+                        onClick={() => handleToggleCategoryGlobal(cat)}
+                        className={`px-3 py-1 rounded-xl text-xs font-bold transition-colors cursor-pointer border ${
+                          isCatFullyDisabled
+                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+                            : 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100'
+                        }`}
+                      >
+                        {isCatFullyDisabled ? 'Enable Entire Category' : 'Disable Entire Category'}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Items List */}
+                  {!isCollapsed && (
+                    <div className="p-3 divide-y divide-slate-100">
+                      {catItems.map(item => {
+                        const IconComp = ICON_MAP[item.icon] || Boxes;
+                        const isOff = stagedGlobalDisabled.includes(item.id);
+                        const isProtected = item.id === 'super_access';
+
+                        return (
+                          <div
+                            key={item.id}
+                            className={`py-3 px-3 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-colors ${
+                              isOff ? 'bg-rose-50/60' : 'hover:bg-slate-50/80'
+                            }`}
+                          >
+                            {/* Left: Icon, Label, Path, Roles */}
+                            <div className="flex items-start sm:items-center gap-3">
+                              <div
+                                className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors ${
+                                  isOff ? 'bg-rose-100 text-rose-600' : 'bg-slate-100 text-slate-700'
+                                }`}
+                              >
+                                {item.emoji ? (
+                                  <span className="text-base">{item.emoji}</span>
+                                ) : (
+                                  <IconComp className="w-4 h-4" />
+                                )}
+                              </div>
+                              <div>
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className={`text-xs font-bold ${isOff ? 'text-slate-500 line-through' : 'text-slate-900'}`}>
+                                    {item.label}
+                                  </span>
+                                  <span className="font-mono text-[10px] text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">
+                                    {item.path}
+                                  </span>
+                                  {isProtected && (
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                                      <Lock className="w-2.5 h-2.5" />
+                                      Safety Lock
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-1.5 mt-1 flex-wrap text-[11px] text-slate-500">
+                                  <span>Default roles:</span>
+                                  {(item.defaultRoles || []).map(r => (
+                                    <span key={r} className="px-1.5 py-0.2 rounded text-[10px] font-medium bg-slate-100 text-slate-600">
+                                      {ROLE_LABELS[r] || r}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Right: Status Pill & ON/OFF Toggle Switch */}
+                            <div className="flex items-center gap-3 self-end sm:self-auto flex-shrink-0">
+                              {isProtected ? (
+                                <span className="text-[11px] font-bold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-xl border border-amber-200 flex items-center gap-1.5">
+                                  <Lock className="w-3.5 h-3.5 text-amber-600" />
+                                  <span>Always Active (Lockout Guard)</span>
+                                </span>
+                              ) : (
+                                <>
+                                  <span
+                                    className={`px-2.5 py-1 rounded-xl text-[11px] font-extrabold flex items-center gap-1.5 border transition-all ${
+                                      isOff
+                                        ? 'bg-rose-100/90 text-rose-800 border-rose-300 shadow-2xs'
+                                        : 'bg-emerald-100/90 text-emerald-800 border-emerald-300 shadow-2xs'
+                                    }`}
+                                  >
+                                    {isOff ? (
+                                      <>
+                                        <Ban className="w-3 h-3 text-rose-600" />
+                                        <span>Disabled Globally</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                                        <span>Active Everywhere</span>
+                                      </>
+                                    )}
+                                  </span>
+
+                                  {/* Toggle Switch */}
+                                  <button
+                                    type="button"
+                                    onClick={() => handleToggleGlobalPage(item.id)}
+                                    title={isOff ? `Click to re-enable "${item.label}" globally` : `Click to disable "${item.label}" globally`}
+                                    className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors cursor-pointer focus:outline-hidden ${
+                                      isOff ? 'bg-rose-600' : 'bg-emerald-600'
+                                    }`}
+                                  >
+                                    <span
+                                      className={`text-[9px] font-black uppercase tracking-wider absolute transition-opacity ${
+                                        isOff ? 'right-2 text-white' : 'left-2 text-white'
+                                      }`}
+                                    >
+                                      {isOff ? 'OFF' : 'ON'}
+                                    </span>
+                                    <span
+                                      className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-md transition-transform ${
+                                        isOff ? 'translate-x-1' : 'translate-x-8'
+                                      }`}
+                                    />
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          TAB 4: AUDIT & CHANGE HISTORY
           ========================================================================= */}
       {activeTab === 'audit' && (
         <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-6 space-y-4">

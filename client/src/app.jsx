@@ -173,6 +173,14 @@ function Gate({ children, noSide, roles, perm }) {
   if (!me) return <Navigate to="/login" replace />;
   if (me.role === 'pending' || me.role === 'disabled') return <Pending />;
 
+  /* global disabled killswitch check */
+  const globalDisabled = me.globalDisabledMenus || [];
+  if (perm && globalDisabled.includes(perm)) {
+    if (!(me.role === 'super_admin' && perm === 'super_access')) {
+      return <Navigate to={homeFor(me.role)} replace />;
+    }
+  }
+
   /* dynamic permission check: if a specific page perm is specified */
   if (perm) {
     const effective = me.effectivePermissions;

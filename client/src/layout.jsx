@@ -79,6 +79,12 @@ export function Sidebar({ counts, onItemClick, mini = false }) {
   const effective = me && me.effectivePermissions;
 
   const hasPermission = (pageId) => {
+    const globalDisabled = me && me.globalDisabledMenus;
+    if (Array.isArray(globalDisabled) && globalDisabled.includes(pageId)) {
+      if (!(role === 'super_admin' && pageId === 'super_access')) {
+        return false;
+      }
+    }
     if (Array.isArray(effective)) {
       return effective.includes(pageId);
     }

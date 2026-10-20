@@ -51,7 +51,8 @@ export function AuthProvider({ children }) {
             ...(prev || cur),
             ...u,
             effectivePermissions: u.effectivePermissions || [],
-            menuOverrides: u.menuOverrides || {}
+            menuOverrides: u.menuOverrides || {},
+            globalDisabledMenus: u.globalDisabledMenus || []
           };
           setSession(updated);
           return updated;
@@ -78,7 +79,8 @@ export function AuthProvider({ children }) {
       markupPct: u.markupPct,
       termsAccepted: u.termsAccepted,
       effectivePermissions: u.effectivePermissions || [],
-      menuOverrides: u.menuOverrides || {}
+      menuOverrides: u.menuOverrides || {},
+      globalDisabledMenus: u.globalDisabledMenus || []
     };
     setSession(s);
     setMe(s);

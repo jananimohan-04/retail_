@@ -266,7 +266,17 @@ function getEffectivePermissionsForUser(uOrCtx) {
     }
   }
 
-  // 3. Absolute system safety: Super Admin role ALWAYS has super_access
+  // 3. Global Disabled Menus - HIGHEST PRECEDENCE (Global Disabled > User Overrides > Role Defaults)
+  const globalDisabled = Array.isArray(db.globalDisabledMenus) ? db.globalDisabledMenus : [];
+  for (const pageId of globalDisabled) {
+    // Critical safeguard: never disable super_access for super_admin to prevent lockout
+    if (roleId === 'super_admin' && pageId === 'super_access') {
+      continue;
+    }
+    effective.delete(pageId);
+  }
+
+  // 4. Absolute system safety: Super Admin role ALWAYS has super_access
   if (roleId === 'super_admin') {
     effective.add('super_access');
   }
@@ -279,6 +289,7 @@ try { db = JSON.parse(fs.readFileSync(DB_FILE, 'utf8')); }
 catch { db = seed(); try { fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2)); } catch(e){} }
 if (!Array.isArray(db.quotations)) { db.quotations = []; }
 if (!Array.isArray(db.roles)) { db.roles = defaultRoles(); }
+if (!Array.isArray(db.globalDisabledMenus)) { db.globalDisabledMenus = []; }
 ensureRolePermissions();
 
 let lastSyncTime = 0;
@@ -620,7 +631,8 @@ app.get('/api/me', (req, res) => {
       markupPct: (roleObj && typeof roleObj.markupPct === 'number') ? roleObj.markupPct : 0,
       termsAccepted: (u && u.termsAccepted) || false,
       effectivePermissions,
-      menuOverrides: (u && u.menuOverrides) || {}
+      menuOverrides: (u && u.menuOverrides) || {},
+      globalDisabledMenus: db.globalDisabledMenus || []
     }
   });
 });
@@ -974,6 +986,34 @@ app.get('/api/permissions/audit', (req, res) => {
   if (!isAdmin(req)) return res.status(403).json({ error: 'admin only' });
   const logs = (db.audit_logs || []).filter(a => a.action && a.action.startsWith('permissions.'));
   ok(res, logs);
+});
+
+// 8. Global Disabled Menus (Kill-Switch)
+app.get('/api/permissions/global-disabled', (req, res) => {
+  ok(res, { ok: true, disabled: Array.isArray(db.globalDisabledMenus) ? db.globalDisabledMenus : [] });
+});
+
+app.post('/api/permissions/global-disabled', (req, res) => {
+  if (req.ctx.role !== 'super_admin') {
+    return res.status(403).json({ error: 'Only Super Admin can configure global menu status' });
+  }
+  const { disabled } = req.body;
+  if (!Array.isArray(disabled)) {
+    return res.status(400).json({ error: 'disabled must be an array of page IDs' });
+  }
+  // Safeguard: Never allow super_access to be globally disabled
+  const cleanDisabled = disabled.filter(id => id !== 'super_access');
+  const prevCount = (db.globalDisabledMenus || []).length;
+  db.globalDisabledMenus = cleanDisabled;
+  save();
+
+  audit(req, 'permissions.global_disabled_update', 'system', 'global_menus', req.companyId,
+    `Updated globally disabled menus: ${cleanDisabled.length} menus disabled globally (was ${prevCount})`);
+
+  ok(res, {
+    ok: true,
+    disabled: db.globalDisabledMenus
+  });
 });
 
 /* users — super_admin manages across companies; company_admin only own company */
