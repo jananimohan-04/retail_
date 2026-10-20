@@ -1688,15 +1688,51 @@ window.App={
             <b>Ready to Generate High-Res Catalog PDF</b>
             <p style="margin:4px 0 0">Generates a clean, professional print-ready A4 datasheet containing high-resolution product photos, pricing, MOQ, stock availability, full technical specifications, and download links for attached documents.</p>
           </div>
-          <div style="max-height:180px;overflow-y:auto;border:1px solid #BAA794;border-radius:8px;padding:8px;background:#fff;margin-bottom:14px">
+          <div style="max-height:360px;overflow-y:auto;border:1px solid #BAA794;border-radius:8px;padding:8px;background:#fff;margin-bottom:14px;display:flex;flex-direction:column;gap:10px">
             ${products.map(p => {
-              const media = window.ProductShare ? window.ProductShare.getProductMedia(p) : { images: [], docs: [] };
-              return `<div style="display:flex;align-items:center;justify-content:space-between;padding:6px;border-bottom:1px solid #FAF6F1;font-size:12px">
-                <div style="display:flex;align-items:center;gap:8px">
-                  <img src="${img0(p)}" style="width:36px;height:36px;object-fit:cover;border-radius:5px" onerror="${NOIMG_ERR}">
-                  <div><b>${p.name}</b><div class="hint">SKU: ${p.sku||p.id} • ${p.brand||'Argus'} • ${p.price!=null?fmt(p.price):'RFQ'}</div></div>
+              const media = window.ProductShare ? window.ProductShare.getProductMedia(p) : { images: [], docs: [], youtube: [] };
+              return `<div style="background:#FAF6F1;border:1px solid #DECDBE;border-radius:8px;padding:10px;font-size:12px">
+                <div style="display:flex;align-items:start;justify-content:space-between;gap:8px">
+                  <div style="display:flex;align-items:center;gap:10px">
+                    <img src="${img0(p)}" style="width:44px;height:44px;object-fit:cover;border-radius:6px;border:1px solid #DECDBE;background:#fff" onerror="${NOIMG_ERR}">
+                    <div>
+                      <b style="color:#2E1508;font-size:13px">${p.name}</b>
+                      <div class="hint" style="margin-top:2px">SKU: <span style="font-family:monospace;color:#8F2A0E;font-weight:700">${p.sku||p.id}</span> • ${p.brand||'Argus'} • ${p.price!=null?fmt(p.price):'RFQ'}</div>
+                    </div>
+                  </div>
+                  <div style="display:flex;gap:4px;flex-shrink:0">
+                    ${media.docs.length ? `<span class="badge in" style="font-size:10px;background:#FFE4E6;color:#9F1239">📄 ${media.docs.length} PDF${media.docs.length>1?'s':''}</span>` : ''}
+                    ${media.youtube.length ? `<span class="badge in" style="font-size:10px;background:#FEF2F2;color:#DC2626">▶ Video</span>` : ''}
+                    ${media.images.length > 1 ? `<span class="badge in" style="font-size:10px;background:#E4D5C7;color:#2E1508">${media.images.length} photos</span>` : ''}
+                  </div>
                 </div>
-                ${media.docs.length ? `<span class="badge in" style="font-size:10px;background:#FFE4E6;color:#9F1239">📄 ${media.docs.length} PDF${media.docs.length>1?'s':''}</span>` : ''}
+
+                ${media.images.length ? `
+                  <div style="margin-top:8px;padding-top:8px;border-top:1px solid #DECDBE">
+                    <div style="font-size:10.5px;font-weight:700;color:#6B503E;margin-bottom:4px">🖼️ Product Photos (${media.images.length}):</div>
+                    <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:2px">
+                      ${media.images.map((img, i) => `<a href="${img}" target="_blank" rel="noopener noreferrer" style="border:1px solid #DECDBE;border-radius:6px;overflow:hidden;display:inline-block;flex-shrink:0"><img src="${img}" style="width:48px;height:48px;object-fit:cover;display:block"></a>`).join('')}
+                    </div>
+                  </div>
+                ` : ''}
+
+                ${media.youtube.length ? `
+                  <div style="margin-top:8px;padding-top:8px;border-top:1px solid #DECDBE">
+                    <div style="font-size:10.5px;font-weight:700;color:#6B503E;margin-bottom:4px">▶ YouTube Video Demonstration:</div>
+                    <div style="display:flex;flex-direction:column;gap:4px">
+                      ${media.youtube.map(y => `<a href="${y.url}" target="_blank" rel="noopener noreferrer" style="display:flex;align-items:center;justify-content:space-between;background:#FEF2F2;border:1px solid #FECACA;border-radius:6px;padding:6px 10px;color:#991B1B;text-decoration:none;font-weight:600"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">▶ ${y.title || (p.name + ' Demo')}</span><span style="font-weight:700;color:#DC2626;flex-shrink:0;margin-left:8px">Watch Demo ↗</span></a>`).join('')}
+                    </div>
+                  </div>
+                ` : ''}
+
+                ${media.docs.length ? `
+                  <div style="margin-top:8px;padding-top:8px;border-top:1px solid #DECDBE">
+                    <div style="font-size:10.5px;font-weight:700;color:#6B503E;margin-bottom:4px">📄 Attached Documents & Drawings (${media.docs.length}):</div>
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));gap:6px">
+                      ${media.docs.map(d => `<a href="${d.url}" target="_blank" rel="noopener noreferrer" style="display:flex;align-items:center;justify-content:space-between;background:#fff;border:1px solid #DECDBE;border-radius:6px;padding:6px 8px;color:#2E1508;text-decoration:none;font-weight:600"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">📄 ${d.title}</span><span style="font-size:10px;color:#9F1239;flex-shrink:0;margin-left:6px">PDF ↗</span></a>`).join('')}
+                    </div>
+                  </div>
+                ` : ''}
               </div>`;
             }).join('')}
           </div>

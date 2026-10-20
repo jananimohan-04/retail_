@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   FileDown,
   Mail,
@@ -30,12 +30,20 @@ export default function ProductShareModal({
   const [email, setEmail] = useState('');
   const [copied, setCopied] = useState(false);
 
-  const emailData = formatProductsEmail(products, companyName);
-  const whatsAppData = formatProductsWhatsApp(products, companyName);
+  const initialEmail = formatProductsEmail(products, companyName);
+  const initialWhatsApp = formatProductsWhatsApp(products, companyName);
 
-  const [subject, setSubject] = useState(emailData.subject);
-  const [emailBody, setEmailBody] = useState(emailData.body);
-  const [whatsAppText, setWhatsAppText] = useState(whatsAppData);
+  const [subject, setSubject] = useState(initialEmail.subject);
+  const [emailBody, setEmailBody] = useState(initialEmail.body);
+  const [whatsAppText, setWhatsAppText] = useState(initialWhatsApp);
+
+  useEffect(() => {
+    const eData = formatProductsEmail(products, companyName);
+    const wData = formatProductsWhatsApp(products, companyName);
+    setSubject(eData.subject);
+    setEmailBody(eData.body);
+    setWhatsAppText(wData);
+  }, [products, companyName]);
 
   const handleCopyText = (text, typeLabel) => {
     if (!text) return;
@@ -165,79 +173,166 @@ export default function ProductShareModal({
               </p>
             </div>
 
-            {/* Product summary chips */}
-            <div className="max-h-56 overflow-y-auto space-y-2 p-2 rounded-xl bg-white border border-[#BAA794]">
+            {/* Product cards with all media grouped directly under each product */}
+            <div className="max-h-[380px] overflow-y-auto space-y-3 p-2.5 rounded-xl bg-white border border-[#BAA794]">
               <div className="text-[11px] font-bold text-[#6B503E] uppercase tracking-wider px-1">
-                Included Products ({products.length})
+                Selected Products ({products.length})
               </div>
               {products.map((p) => {
                 const media = getProductMedia(p);
                 return (
                   <div
                     key={p.id}
-                    className="flex items-center justify-between p-2 rounded-lg bg-[#FAF6F1] border border-[#DECDBE] text-xs"
+                    className="p-3 rounded-xl bg-[#FAF6F1] border border-[#DECDBE] text-xs space-y-2.5 shadow-2xs"
                   >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <img
-                        src={media.images[0] || ''}
-                        alt=""
-                        className="w-9 h-9 rounded object-cover border border-[#DECDBE] flex-shrink-0"
-                        onError={(e) => {
-                          e.currentTarget.src = `https://picsum.photos/seed/${p.sku || p.id}/100/100`;
-                        }}
-                      />
-                      <div className="truncate">
-                        <div className="font-bold text-[#2E1508] truncate">{p.name}</div>
-                        <div className="text-[11px] text-[#6B503E]">
-                          SKU: {p.sku || p.id} • {p.brand || 'Argus'} • {p.price != null ? `₹${p.price.toLocaleString('en-IN')}` : 'RFQ'}
+                    {/* Top Product Header Row */}
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <img
+                          src={media.images[0] || ''}
+                          alt=""
+                          className="w-12 h-12 rounded-lg object-cover border border-[#DECDBE] flex-shrink-0 bg-white"
+                          onError={(e) => {
+                            e.currentTarget.src = `https://picsum.photos/seed/${p.sku || p.id}/120/120`;
+                          }}
+                        />
+                        <div className="min-w-0">
+                          <div className="font-bold text-[#2E1508] text-sm truncate">{p.name || 'Industrial SKU'}</div>
+                          <div className="text-[11px] text-[#6B503E] mt-0.5 flex items-center gap-1.5 flex-wrap">
+                            <span>SKU: <b className="font-mono text-[#8F2A0E]">{p.sku || p.id}</b></span>
+                            {p.brand && <span>• Brand: <b>{p.brand}</b></span>}
+                            {p.category && <span>• <b>{p.category}</b></span>}
+                          </div>
+                          <div className="text-xs font-bold text-[#2E1508] mt-0.5">
+                            {p.price != null && p.price !== ''
+                              ? `${Number(p.price).toLocaleString('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 })} / ${p.uom || 'Pc'}`
+                              : 'Quotation On Request (RFQ)'}
+                          </div>
                         </div>
                       </div>
+
+                      {/* Header badges */}
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                        {media.docs.length > 0 && (
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-rose-100 text-rose-800 border border-rose-300">
+                            {media.docs.length} PDF{media.docs.length > 1 ? 's' : ''}
+                          </span>
+                        )}
+                        {media.youtube.length > 0 && (
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-red-100 text-red-800 border border-red-300">
+                            ▶ Video
+                          </span>
+                        )}
+                        {media.images.length > 1 && (
+                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-[#E4D5C7] text-[#2E1508]">
+                            {media.images.length} photos
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1.5 flex-shrink-0 ml-2">
-                      {media.docs.length > 0 && (
-                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-100 text-rose-800 border border-rose-300">
-                          {media.docs.length} PDF{media.docs.length > 1 ? 's' : ''}
-                        </span>
-                      )}
-                      {media.images.length > 1 && (
-                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-[#E4D5C7] text-[#2E1508]">
-                          {media.images.length} photos
-                        </span>
-                      )}
-                    </div>
+
+                    {/* ALL UNDER THE PRODUCT: Images, YouTube Link, Documents */}
+
+                    {/* 1. All Product Images Strip */}
+                    {media.images.length > 0 && (
+                      <div className="pt-2 border-t border-[#DECDBE]/80">
+                        <div className="text-[10.5px] font-bold text-[#6B503E] uppercase tracking-wide mb-1.5 flex items-center gap-1.5">
+                          <span>🖼️ Product Images ({media.images.length})</span>
+                          <span className="text-[10px] font-normal text-slate-500 lowercase">(click to view)</span>
+                        </div>
+                        <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                          {media.images.map((imgUrl, i) => (
+                            <a
+                              key={i}
+                              href={imgUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="relative group rounded-lg overflow-hidden border border-[#DECDBE] hover:border-[#8F2A0E] flex-shrink-0 transition-all bg-white"
+                              title={`Open Photo ${i + 1} in new tab`}
+                            >
+                              <img
+                                src={imgUrl}
+                                alt={`Photo ${i + 1}`}
+                                className="w-13 h-13 object-cover group-hover:scale-105 transition-transform"
+                              />
+                              <span className="absolute bottom-0 inset-x-0 bg-black/60 text-white text-[8px] text-center py-0.5 font-bold">
+                                #{i + 1}
+                              </span>
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 2. YouTube Demonstration Link */}
+                    {media.youtube.length > 0 && (
+                      <div className="pt-2 border-t border-[#DECDBE]/80">
+                        <div className="text-[10.5px] font-bold text-[#6B503E] uppercase tracking-wide mb-1 flex items-center gap-1">
+                          <span className="text-red-600 font-black">▶</span>
+                          <span>YouTube Video Demonstration ({media.youtube.length})</span>
+                        </div>
+                        <div className="space-y-1.5">
+                          {media.youtube.map((yt, i) => (
+                            <a
+                              key={yt.id || i}
+                              href={yt.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center justify-between p-2 rounded-lg bg-red-50 border border-red-200 hover:bg-red-100/80 transition-colors text-xs text-red-950 group"
+                            >
+                              <div className="flex items-center gap-2 min-w-0">
+                                <span className="w-5 h-5 rounded bg-red-600 text-white flex items-center justify-center text-[10px] font-black flex-shrink-0">
+                                  ▶
+                                </span>
+                                <div className="min-w-0 truncate">
+                                  <div className="font-bold text-red-900 truncate">
+                                    {yt.title || `${p.name} Demonstration`}
+                                  </div>
+                                  <div className="text-[10px] text-red-700 font-mono truncate">
+                                    {yt.url}
+                                  </div>
+                                </div>
+                              </div>
+                              <span className="text-[11px] font-bold text-red-700 flex items-center gap-1 flex-shrink-0 ml-2 group-hover:underline">
+                                Watch Demo <ExternalLink className="w-3 h-3 ml-0.5" />
+                              </span>
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 3. Attached PDF Documents & Drawings */}
+                    {media.docs.length > 0 && (
+                      <div className="pt-2 border-t border-[#DECDBE]/80">
+                        <div className="text-[10.5px] font-bold text-[#6B503E] uppercase tracking-wide mb-1 flex items-center gap-1">
+                          <FileText className="w-3.5 h-3.5 text-rose-700 flex-shrink-0" />
+                          <span>Attached Documents & Technical Drawings ({media.docs.length})</span>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                          {media.docs.map((doc, i) => (
+                            <a
+                              key={doc.id || i}
+                              href={doc.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center justify-between p-2 rounded-lg bg-white border border-[#DECDBE] hover:bg-[#F2E5D8] transition-colors text-xs text-[#2E1508] group"
+                            >
+                              <span className="truncate font-semibold flex items-center gap-1.5 min-w-0">
+                                <FileText className="w-3.5 h-3.5 text-rose-600 flex-shrink-0" />
+                                <span className="truncate">{doc.title}</span>
+                              </span>
+                              <span className="text-[10.5px] font-bold text-rose-800 flex items-center gap-1 flex-shrink-0 ml-1.5">
+                                PDF <ExternalLink className="w-3 h-3 text-[#78350F]" />
+                              </span>
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 );
               })}
-
-              {/* PDF Documents Attached */}
-              {(() => {
-                const allDocs = products.flatMap((p) => getProductMedia(p).docs);
-                if (!allDocs.length) return null;
-                return (
-                  <div className="mt-3 pt-3 border-t border-[#EAE0D5]">
-                    <div className="text-xs font-bold text-[#2E1508] mb-2">
-                      Attached PDF Documents & Drawings ({allDocs.length}):
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {allDocs.map((doc, idx) => (
-                        <a
-                          key={doc.id || idx}
-                          href={doc.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center justify-between p-2 rounded-lg bg-[#FAF6F1] border border-[#DECDBE] hover:bg-[#F2E5D8] transition-colors text-xs text-[#2E1508]"
-                        >
-                          <span className="truncate font-semibold flex items-center gap-1.5">
-                            <FileText className="w-3.5 h-3.5 text-rose-600 flex-shrink-0" />
-                            {doc.title}
-                          </span>
-                          <ExternalLink className="w-3 h-3 text-[#78350F] flex-shrink-0 ml-1.5" />
-                        </a>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })()}
             </div>
 
             <div className="flex items-center justify-end gap-2 pt-2">

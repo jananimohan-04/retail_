@@ -6,47 +6,82 @@
 */
 
 export function getProductMedia(p) {
-  if (!p) return { images: [], docs: [], videos: [] };
+  if (!p) return { images: [], docs: [], videos: [], youtube: [] };
 
   const rawImages = Array.isArray(p.images) ? [...p.images] : [];
   const mediaList = Array.isArray(p.media) ? p.media : [];
 
   const docs = [];
   const videos = [];
+  const youtube = [];
 
+  // 1. Check direct product fields
+  if (p.youtube && typeof p.youtube === 'string' && p.youtube.trim()) {
+    youtube.push({
+      id: 'yt-direct',
+      title: p.name ? `${p.name} - Video Demo` : 'Product Video Demo',
+      url: p.youtube.trim()
+    });
+  }
+
+  if (p.video && typeof p.video === 'string' && p.video.trim()) {
+    videos.push({
+      id: 'vid-direct',
+      title: p.name ? `${p.name} - Video` : 'Product Video',
+      url: p.video.trim()
+    });
+  }
+
+  // 2. Iterate mediaList
   mediaList.forEach(m => {
     if (!m || !m.url) return;
-    const url = String(m.url);
+    const url = String(m.url).trim();
+    if (!url) return;
     const type = String(m.type || '').toLowerCase();
+    const isYt = type === 'youtube' || /youtube\.com|youtu\.be/i.test(url);
+    const isDoc = type === 'document' || type === 'pdf' || /\.pdf($|\?)/i.test(url);
+    const isImg = type === 'image' || /\.(jpe?g|png|gif|webp|avif|svg)($|\?)/i.test(url);
 
-    if (type === 'document' || type === 'pdf' || /\.pdf($|\?)/i.test(url)) {
-      docs.push({
-        id: m.id || url,
-        title: m.title || m.name || url.split('/').pop().replace(/\.pdf$/i, '') || 'Datasheet',
-        url: m.url,
-        description: m.description || ''
-      });
-    } else if (type === 'video' || type === 'youtube' || /\.(mp4|webm)($|\?)/i.test(url) || /youtube\.com|youtu\.be/i.test(url)) {
-      videos.push({
-        id: m.id || url,
-        title: m.title || 'Video',
-        url: m.url
-      });
-    } else if (type === 'image' || /\.(jpe?g|png|gif|webp|avif|svg)($|\?)/i.test(url)) {
+    if (isYt) {
+      if (!youtube.some(y => y.url === url)) {
+        youtube.push({
+          id: m.id || url,
+          title: m.title || (p.name ? `${p.name} - YouTube Demo` : 'YouTube Video Demo'),
+          url
+        });
+      }
+    } else if (isDoc) {
+      if (!docs.some(d => d.url === url)) {
+        docs.push({
+          id: m.id || url,
+          title: m.title || m.name || url.split('/').pop().replace(/\.pdf$/i, '') || 'Technical Datasheet',
+          url,
+          description: m.description || ''
+        });
+      }
+    } else if (isImg) {
       if (!rawImages.includes(url)) rawImages.push(url);
+    } else {
+      if (!videos.some(v => v.url === url)) {
+        videos.push({
+          id: m.id || url,
+          title: m.title || 'Product Video',
+          url
+        });
+      }
     }
   });
 
-  // Also check if p.documents or p.files exist
+  // 3. Check p.documents or p.files
   if (Array.isArray(p.documents)) {
     p.documents.forEach(d => {
-      const u = typeof d === 'string' ? d : d.url;
+      const u = typeof d === 'string' ? d.trim() : (d && d.url ? String(d.url).trim() : '');
       if (u && !docs.some(x => x.url === u)) {
         docs.push({
-          id: d.id || u,
-          title: d.title || d.name || u.split('/').pop() || 'Document',
+          id: (typeof d === 'object' && d.id) || u,
+          title: (typeof d === 'object' && (d.title || d.name)) || u.split('/').pop().replace(/\.pdf$/i, '') || 'Document',
           url: u,
-          description: d.description || ''
+          description: (typeof d === 'object' && d.description) || ''
         });
       }
     });
@@ -55,7 +90,8 @@ export function getProductMedia(p) {
   return {
     images: rawImages.filter(Boolean),
     docs,
-    videos
+    videos,
+    youtube
   };
 }
 
@@ -79,7 +115,7 @@ export function formatProductsWhatsApp(products, companyName = 'ARGUS CNC') {
   msg += `─────────────────────────\n\n`;
 
   products.forEach((p, idx) => {
-    const { images, docs } = getProductMedia(p);
+    const { images, docs, youtube } = getProductMedia(p);
     msg += `*${idx + 1}. ${p.name || 'Industrial Product'}*\n`;
     msg += `• *SKU:* \`${p.sku || p.id || 'N/A'}\`\n`;
     if (p.brand) msg += `• *Brand:* ${p.brand}\n`;
@@ -111,14 +147,29 @@ export function formatProductsWhatsApp(products, companyName = 'ARGUS CNC') {
       }
     }
 
-    // Primary Image preview URL
+    // All Images under this product
     if (images.length) {
-      msg += `• *Image Preview:* ${images[0]}\n`;
+      if (images.length === 1) {
+        msg += `• *Product Photo:* ${images[0]}\n`;
+      } else {
+        msg += `• *Product Photos (${images.length}):*\n`;
+        images.forEach((img, i) => {
+          msg += `   🖼️ Photo ${i + 1}: ${img}\n`;
+        });
+      }
     }
 
-    // Attached PDF Datasheets
+    // YouTube Demo Link under this product
+    if (youtube.length) {
+      msg += `• *YouTube Video / Demo:*\n`;
+      youtube.forEach((y, i) => {
+        msg += `   ▶️ ${y.title || 'Watch Demo'}: ${y.url}\n`;
+      });
+    }
+
+    // Attached Documents & Datasheets under this product
     if (docs.length) {
-      msg += `• *Technical PDF / Datasheet:*\n`;
+      msg += `• *Attached Documents & Datasheets (${docs.length}):*\n`;
       docs.forEach(d => {
         msg += `   📄 ${d.title}: ${d.url}\n`;
       });
@@ -145,7 +196,7 @@ export function formatProductsEmail(products, companyName = 'ARGUS CNC') {
   body += `============================================================\n`;
 
   products.forEach((p, idx) => {
-    const { images, docs } = getProductMedia(p);
+    const { images, docs, youtube } = getProductMedia(p);
     body += `[${idx + 1}] ${p.name || 'Industrial SKU'}\n`;
     body += `SKU: ${p.sku || p.id || 'N/A'}\n`;
     if (p.brand) body += `Brand: ${p.brand}\n`;
@@ -173,15 +224,25 @@ export function formatProductsEmail(products, companyName = 'ARGUS CNC') {
       }
     }
 
+    // Product Images under this product
     if (images.length) {
-      body += `Product Images:\n`;
+      body += `Product Images (${images.length}):\n`;
       images.forEach((img, i) => {
-        body += `  - Image ${i + 1}: ${img}\n`;
+        body += `  - Photo ${i + 1}: ${img}\n`;
       });
     }
 
+    // YouTube Demo Link under this product
+    if (youtube.length) {
+      body += `YouTube Video / Demonstration:\n`;
+      youtube.forEach((y, i) => {
+        body += `  - [YouTube] ${y.title || 'Watch Demo'}: ${y.url}\n`;
+      });
+    }
+
+    // Attached Documents & Drawings under this product
     if (docs.length) {
-      body += `Attached PDF Datasheets / Drawings:\n`;
+      body += `Attached PDF Datasheets / Drawings (${docs.length}):\n`;
       docs.forEach(d => {
         body += `  - [PDF] ${d.title}: ${d.url}\n`;
       });
@@ -202,9 +263,9 @@ export function generateCatalogHtml(products, companyInfo = {}) {
   const dateStr = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
 
   const productCardsHtml = products.map((p, idx) => {
-    const { images, docs } = getProductMedia(p);
+    const { images, docs, youtube } = getProductMedia(p);
     const mainImg = images[0] || 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=600&q=80';
-    const subImages = images.slice(1, 4);
+    const subImages = images.slice(1, 7);
 
     let priceHtml = '';
     if (p.price != null && p.price !== '') {
@@ -231,6 +292,23 @@ export function generateCatalogHtml(products, companyInfo = {}) {
           </div>
         `;
       }
+    }
+
+    let ytHtml = '';
+    if (youtube.length) {
+      const ytChips = youtube.map(y => `
+        <a class="yt-chip" href="${escapeHtml(y.url)}" target="_blank" rel="noopener noreferrer">
+          <svg class="yt-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+          <span class="yt-title">${escapeHtml(y.title || 'Product Video Demo')}</span>
+          <span class="yt-link">Watch on YouTube &rarr;</span>
+        </a>
+      `).join('');
+      ytHtml = `
+        <div class="yt-section">
+          <div class="section-title">Video Demonstration</div>
+          <div class="yt-grid">${ytChips}</div>
+        </div>
+      `;
     }
 
     let docsHtml = '';
@@ -308,6 +386,7 @@ export function generateCatalogHtml(products, companyInfo = {}) {
             </div>
 
             ${specsHtml}
+            ${ytHtml}
             ${docsHtml}
           </div>
         </div>
@@ -596,6 +675,51 @@ export function generateCatalogHtml(products, companyInfo = {}) {
     }
     .spec-v {
       color: #1A0A03;
+    }
+
+    /* Video Demonstration Section */
+    .yt-section {
+      margin-top: 10px;
+      margin-bottom: 6px;
+    }
+    .yt-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .yt-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #FEF2F2;
+      border: 1px solid #FECACA;
+      padding: 5px 10px;
+      border-radius: 4px;
+      color: #991B1B;
+      text-decoration: none;
+      font-size: 8pt;
+      font-weight: 600;
+    }
+    .yt-chip:hover {
+      background: #FEE2E2;
+    }
+    .yt-icon {
+      width: 16px;
+      height: 16px;
+      color: #DC2626;
+      flex-shrink: 0;
+    }
+    .yt-title {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .yt-link {
+      color: #DC2626;
+      font-size: 7.5pt;
+      font-weight: 700;
+      flex-shrink: 0;
     }
 
     /* Attached PDF Documents & Datasheets */

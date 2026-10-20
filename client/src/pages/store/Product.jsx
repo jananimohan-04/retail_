@@ -9,8 +9,9 @@ import { Empty, Skeleton } from '../../components/ui';
 import { ProdCard, RfqModal, addToCart, asList, availBadge, priceHtml } from './Home';
 import {
   ArrowLeft, Check, Copy, Download, ExternalLink, FileText,
-  Film, Layers, MonitorPlay, Package, ShieldCheck, Sparkles, BookOpen
+  Film, Layers, MonitorPlay, Package, ShieldCheck, Sparkles, BookOpen, Share2
 } from 'lucide-react';
+import ProductShareModal from '../../components/ProductShareModal';
 
 /* youtube watch/shorts/embed url → video id (null when not a YouTube link) */
 const ytId = (u) => {
@@ -33,6 +34,7 @@ export default function Product() {
   const [rfq, setRfq] = useState(null);
   const [activeTab, setActiveTab] = useState('specs'); // 'specs' | 'docs' | 'videos' | 'overview'
   const [copiedSku, setCopiedSku] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
 
   useEffect(() => { window.scrollTo(0, 0); }, [id]);
 
@@ -171,9 +173,20 @@ export default function Product() {
         <Link className="btn btn-ghost btn-sm text-xs text-slate-600 hover:text-slate-900 flex items-center gap-1.5" to="/store/listing">
           <ArrowLeft className="w-3.5 h-3.5 text-orange-500" /> Back to industrial catalog
         </Link>
-        <span className="text-xs text-slate-400 hidden sm:inline">
-          Catalog SKU: <code className="font-mono text-slate-700 font-bold">{p.sku || p.id}</code>
-        </span>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setShareOpen(true)}
+            className="btn btn-ghost btn-sm text-xs font-bold text-[#2E1508] bg-[#FAF6F1] hover:bg-[#F2E5D8] border border-[#DECDBE] flex items-center gap-1.5 cursor-pointer shadow-2xs"
+            title="Share this product with images, video demo, and PDF datasheets"
+          >
+            <Share2 className="w-3.5 h-3.5 text-[#8F2A0E]" />
+            <span>Share Product</span>
+          </button>
+          <span className="text-xs text-slate-400 hidden sm:inline">
+            Catalog SKU: <code className="font-mono text-slate-700 font-bold">{p.sku || p.id}</code>
+          </span>
+        </div>
       </div>
 
       {/* Main Industrial Catalog Hero Card */}
@@ -607,6 +620,14 @@ export default function Product() {
           me={me}
           onClose={() => setRfq(null)}
           onDone={() => { setRfq(null); nav('/store/quotes'); }}
+        />
+      )}
+
+      {/* Share Modal */}
+      {shareOpen && (
+        <ProductShareModal
+          products={[p]}
+          onClose={() => setShareOpen(false)}
         />
       )}
     </div>
