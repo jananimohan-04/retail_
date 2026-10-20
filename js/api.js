@@ -19,7 +19,7 @@
     if (!r.ok) throw new Error(j.error || ('HTTP ' + r.status));
     return j.data;
   }
-  B.api = { get: (u) => req('GET', u), post: (u, b) => req('POST', u, b), put: (u, b) => req('PUT', u, b), patch: (u, b) => req('PATCH', u, b), delete: (u) => req('DELETE', u) };
+  B.api = { get: (u) => req('GET', u), post: (u, b) => req('POST', u, b), put: (u, b) => req('PUT', u, b), patch: (u, b) => req('PATCH', u, b), delete: (u) => req('DELETE', u), del: (u) => req('DELETE', u) };
   /* upload straight to Supabase Storage via signed URLs (works on Vercel, where request bodies are
      capped at 4.5 MB and the disk is wiped); falls back to the server upload when Storage isn't set up */
   const MAX_MB = 50;

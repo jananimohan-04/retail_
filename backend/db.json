@@ -538,6 +538,39 @@
   },
   "audit_logs": [
     {
+      "id": "A-179250664682735",
+      "ts": "2026-10-20T14:30:46.827Z",
+      "actor": "Janani Mohan",
+      "role": "super_admin",
+      "action": "user.delete",
+      "entity": "user",
+      "entityId": "U-1792506644079",
+      "companyId": "",
+      "summary": "Deleted user Test Super Admin Updated (super_admin)"
+    },
+    {
+      "id": "A-179250664579967",
+      "ts": "2026-10-20T14:30:45.799Z",
+      "actor": "Janani Mohan",
+      "role": "super_admin",
+      "action": "user.update",
+      "entity": "user",
+      "entityId": "U-1792506644079",
+      "companyId": "",
+      "summary": "Updated Test Super Admin Updated: name, mobile"
+    },
+    {
+      "id": "A-179250664408489",
+      "ts": "2026-10-20T14:30:44.084Z",
+      "actor": "Janani Mohan",
+      "role": "super_admin",
+      "action": "user.create",
+      "entity": "user",
+      "entityId": "U-1792506644079",
+      "companyId": "",
+      "summary": "Created Test Super Admin (super_admin)"
+    },
+    {
       "id": "A-179247583407771",
       "ts": "2026-10-20T05:57:14.077Z",
       "actor": "Janani Mohan",

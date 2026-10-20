@@ -8,13 +8,14 @@ import { api } from '../../api';
 import { useCompany } from '../../companyContext';
 import { Building2 } from 'lucide-react';
 import {
-  PageHead, PageHero, Kpi, DataTable, Tabs, Modal, Field, Pager, Empty, Skeleton, statusBadge, toast
+  PageHead, PageHero, Kpi, DataTable, Tabs, Modal, Field, Pager, Empty, Skeleton, statusBadge, toast, Confirm
 } from '../../components/ui';
 import { CompanyFormFields, emptyCompany, companyFromDetail, validateCompany, companyPayload } from './CompanyForm';
 import { asRows, csvDownload, fetchCompanyOptions, UserModal, UserView, RoleButton, SuspendConfirm, toggleUserActive } from './_shared';
 
 const MG_TABS = [
   ['companies', '🏢 Companies'],
+  ['superadmins', '👑 Super Admins'],
   ['admins', '👔 Company Admins'],
   ['users', '👥 Company Users'],
   ['roles', '🛡️ Existing Roles']
@@ -31,7 +32,7 @@ export default function Companies({ tab: tabProp }) {
   const { activeCompany, activeCompanyObj, setActiveCompany } = useCompany();
   const [sp, setSp] = useSearchParams();
   const nav = useNavigate();
-  const tab = tabProp || (['admins', 'users', 'roles'].includes(sp.get('tab')) ? sp.get('tab') : 'companies');
+  const tab = tabProp || (['superadmins', 'admins', 'users', 'roles'].includes(sp.get('tab')) ? sp.get('tab') : 'companies');
 
   const [stats, setStats] = useState(null);
   const [statsErr, setStatsErr] = useState('');
@@ -49,6 +50,7 @@ export default function Companies({ tab: tabProp }) {
   const [coStatus, setCoStatus] = useState('all');
   const [coInd, setCoInd] = useState('all');
   const [coCity, setCoCity] = useState('all');
+  const [superQ, setSuperQ] = useState('');
   const [admQ, setAdmQ] = useState('');
   const [admCo, setAdmCo] = useState(activeCompany || 'all');
   const [admSt, setAdmSt] = useState('all');
@@ -67,7 +69,7 @@ export default function Companies({ tab: tabProp }) {
     }
   }, [activeCompany]);
 
-  const dCoQ = useDebounced(coQ), dAdmQ = useDebounced(admQ), dUsrQ = useDebounced(usrQ);
+  const dCoQ = useDebounced(coQ), dSuperQ = useDebounced(superQ), dAdmQ = useDebounced(admQ), dUsrQ = useDebounced(usrQ);
 
   const [data, setData] = useState({ rows: [], total: 0 });
   const [loading, setLoading] = useState(true);
@@ -77,6 +79,8 @@ export default function Companies({ tab: tabProp }) {
   const [coModal, setCoModal] = useState(null); // { id } — '' = create
   const [detailId, setDetailId] = useState(null);
   const [userModal, setUserModal] = useState(null); // { preset, editId }
+  const [superAdminModal, setSuperAdminModal] = useState(null); // { user }
+  const [deleteSuperTarget, setDeleteSuperTarget] = useState(null);
   const [viewUser, setViewUser] = useState(null);
   const [suspendCo, setSuspendCo] = useState(null);
 
@@ -118,6 +122,10 @@ export default function Companies({ tab: tabProp }) {
         if (coInd !== 'all') p.set('industry', coInd);
         if (coCity !== 'all') p.set('city', coCity);
         url = '/api/companies?' + p;
+      } else if (tab === 'superadmins') {
+        const p = new URLSearchParams({ page, limit: LIMIT, role: 'super_admin' });
+        if (dSuperQ) p.set('q', dSuperQ);
+        url = '/api/users?' + p;
       } else if (tab === 'admins') {
         const p = new URLSearchParams({ page, limit: LIMIT, role: 'company_admin' });
         if (dAdmQ) p.set('q', dAdmQ);
@@ -141,7 +149,7 @@ export default function Companies({ tab: tabProp }) {
     } finally {
       setLoading(false);
     }
-  }, [tab, page, dCoQ, coStatus, coInd, coCity, dAdmQ, admCo, admSt, dUsrQ, usrCo, usrRole, usrSt]);
+  }, [tab, page, dCoQ, coStatus, coInd, coCity, dSuperQ, dAdmQ, admCo, admSt, dUsrQ, usrCo, usrRole, usrSt]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -163,6 +171,10 @@ export default function Companies({ tab: tabProp }) {
       const cols = ['id', 'code', 'name', 'industry', 'email', 'phone', 'city', 'state', 'pin', 'status', 'plan', 'createdAt'];
       csvDownload(`company-mgCompanies-${new Date().toISOString().slice(0, 10)}.csv`, cols,
         data.rows.map((c) => [c.id, c.code || c.id, c.name, c.industry || '', c.email || '', c.phone || '', c.city || '', c.state || '', c.pin || '', c.storeStatus || c.status || '', c.plan || '', c.createdAt || '']));
+    } else if (tab === 'superadmins') {
+      const cols = ['id', 'name', 'email', 'mobile', 'role', 'status', 'created'];
+      csvDownload(`super-admins-${new Date().toISOString().slice(0, 10)}.csv`, cols,
+        data.rows.map((u) => [u.id, u.name, u.email, u.mobile || '', u.role, u.active !== false ? 'active' : 'inactive', u.createdAt || '']));
     } else {
       const cols = ['id', 'name', 'email', 'mobile', 'role', 'company', 'status', 'created'];
       csvDownload(`company-${tab === 'admins' ? 'mgAdmins' : 'mgUsers'}-${new Date().toISOString().slice(0, 10)}.csv`, cols,
@@ -175,6 +187,7 @@ export default function Companies({ tab: tabProp }) {
     setPage(1);
     if (kind === 'all') { setCoStatus('all'); goTab('companies'); }
     else if (kind === 'active' || kind === 'suspended') { setCoStatus(kind); goTab('companies'); }
+    else if (kind === 'superadmins') goTab('superadmins');
     else if (kind === 'admins') goTab('admins');
     else if (kind === 'users') goTab('users');
     else if (kind === 'products') nav('/super/catalog');
@@ -198,7 +211,11 @@ export default function Companies({ tab: tabProp }) {
           <div className="h-6 w-px bg-slate-200 hidden sm:block" />
           <button className="btn btn-ghost btn-sm" onClick={mgExport}>⤓ Export</button>
           <button className="btn btn-ghost btn-sm" onClick={refresh}>↻ Refresh</button>
-          {tab === 'users' ? (
+          {tab === 'superadmins' ? (
+            <button className="btn btn-primary btn-sm bg-sky-600 hover:bg-sky-700 border-none shadow-sm shadow-sky-600/30 text-white" onClick={() => setSuperAdminModal({ user: null })}>
+              + Add Super Admin
+            </button>
+          ) : tab === 'users' ? (
             <>
               <button className="btn btn-ghost btn-sm" onClick={() => setRolesModal(true)} title="View existing roles, edit % markup, and Terms & Conditions">
                 👁️ View Existing Roles
@@ -270,6 +287,16 @@ export default function Companies({ tab: tabProp }) {
               onDetails={setDetailId} onEdit={(id) => setCoModal({ id })} onToggle={(c) => askSuspend(c)}
             />
           )}
+          {tab === 'superadmins' && (
+            <SuperAdminsTab
+              q={superQ} setQ={(x) => { setSuperQ(x); setPage(1); }}
+              data={data} loading={loading} err={err} page={page} setPage={setPage}
+              onAdd={() => setSuperAdminModal({ user: null })}
+              onEdit={(u) => setSuperAdminModal({ user: u })}
+              onToggle={(u) => toggleUserActive(u, load)}
+              onDelete={(u) => setDeleteSuperTarget(u)}
+            />
+          )}
           {tab === 'admins' && (
             <AdminsTab
               q={admQ} setQ={(x) => { setAdmQ(x); setPage(1); }} co={admCo} setCo={(x) => { setAdmCo(x); setPage(1); }}
@@ -323,6 +350,33 @@ export default function Companies({ tab: tabProp }) {
           role={editTcRole}
           onClose={() => setEditTcRole(null)}
           onSaved={() => { setEditTcRole(null); load(); }}
+        />
+      )}
+
+      {superAdminModal && (
+        <SuperAdminModal
+          user={superAdminModal.user}
+          onClose={() => setSuperAdminModal(null)}
+          onSaved={() => { setSuperAdminModal(null); load(); }}
+        />
+      )}
+      {deleteSuperTarget && (
+        <Confirm
+          title="Delete Super Administrator"
+          body={`Are you sure you want to permanently remove <b>${deleteSuperTarget.name || deleteSuperTarget.email}</b> (${deleteSuperTarget.email}) from Super Administrators? They will immediately lose platform root access.`}
+          okLabel="Delete Super Admin"
+          danger
+          onCancel={() => setDeleteSuperTarget(null)}
+          onOk={async () => {
+            try {
+              await api.del(`/api/users/${deleteSuperTarget.id}`);
+              toast('Super administrator removed', '🗑️');
+              setDeleteSuperTarget(null);
+              load();
+            } catch (err) {
+              toast(err.message || 'Failed to delete super admin', '⚠️');
+            }
+          }}
         />
       )}
 
@@ -1030,3 +1084,163 @@ function RoleEditModal({ role, onClose, onSaved }) {
     </Modal>
   );
 }
+
+/* ---------------- super admins tab ---------------- */
+function SuperAdminsTab({ q, setQ, data, loading, err, page, setPage, onAdd, onEdit, onToggle, onDelete }) {
+  if (loading) return <Skeleton h={220} />;
+  if (err) return <Empty title={'⚠️ ' + err} />;
+  return (
+    <>
+      <div className="flex items-center justify-between gap-3 mb-3">
+        <div className="flex items-center gap-2">
+          <input
+            className="input input-sm"
+            style={{ width: 240 }}
+            placeholder="Search super admins..."
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+          />
+        </div>
+        <div className="text-xs text-slate-500 font-medium">
+          Total: <b className="text-slate-800">{data.total || data.rows.length}</b> Super {data.total === 1 ? 'Admin' : 'Admins'}
+        </div>
+      </div>
+      <DataTable
+        rowKey={(r) => r.id}
+        empty="No super administrators found."
+        cols={[
+          {
+            key: 'name',
+            label: 'Administrator',
+            render: (u) => (
+              <div className="flex items-center gap-2">
+                <span className="text-base">👑</span>
+                <div>
+                  <div className="font-bold text-slate-900">{u.name}</div>
+                  <div className="text-[11px] text-slate-500 font-mono">{u.id}</div>
+                </div>
+              </div>
+            )
+          },
+          { key: 'email', label: 'Email Address', render: (u) => <span className="font-mono text-xs">{u.email}</span> },
+          { key: 'mobile', label: 'Mobile', render: (u) => u.mobile || '—' },
+          {
+            key: 'status',
+            label: 'Status',
+            render: (u) => statusBadge(u.active !== false ? 'Delivered' : 'Cancelled')
+          },
+          { key: 'createdAt', label: 'Added Date', render: (u) => <span className="hint">{u.createdAt || '—'}</span> },
+          {
+            key: 'act',
+            label: 'Actions',
+            render: (u) => (
+              <span style={{ whiteSpace: 'nowrap' }}>
+                <button className="btn btn-ghost btn-sm" onClick={() => onEdit(u)}>Edit</button>{' '}
+                <button className="btn btn-ghost btn-sm" onClick={() => onToggle(u)}>
+                  {u.active !== false ? 'Suspend' : 'Activate'}
+                </button>{' '}
+                <button className="btn btn-ghost btn-sm text-red-600 hover:text-red-700" onClick={() => onDelete(u)}>
+                  Delete
+                </button>
+              </span>
+            )
+          }
+        ]}
+        rows={data.rows}
+      />
+      <Pager total={data.total} page={page} limit={LIMIT} onPage={setPage} />
+    </>
+  );
+}
+
+/* ---------------- super admin add/edit modal ---------------- */
+function SuperAdminModal({ user, onClose, onSaved }) {
+  const isEdit = !!user;
+  const [name, setName] = useState(user?.name || '');
+  const [email, setEmail] = useState(user?.email || '');
+  const [mobile, setMobile] = useState(user?.mobile || '');
+  const [active, setActive] = useState(user ? user.active !== false : true);
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState('');
+
+  const save = async () => {
+    if (!name.trim()) { setErr('Full name is required'); return; }
+    if (!email.trim()) { setErr('Email address is required'); return; }
+    setSaving(true);
+    setErr('');
+    try {
+      if (isEdit) {
+        await api.patch(`/api/users/${user.id}`, {
+          name: name.trim(),
+          mobile: mobile.trim(),
+          active
+        });
+        toast('Super administrator updated', '👑');
+      } else {
+        await api.post('/api/users', {
+          name: name.trim(),
+          email: email.trim().toLowerCase(),
+          mobile: mobile.trim(),
+          role: 'super_admin'
+        });
+        toast('Super administrator created', '👑');
+      }
+      onSaved();
+    } catch (e) {
+      setErr(e.message || 'Failed to save super administrator');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Modal title={isEdit ? `👑 Edit Super Admin: ${user.name}` : '👑 Add Super Administrator'} onClose={onClose}>
+      <Field label="Full Name" req>
+        <input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="e.g. System Admin"
+          autoFocus
+        />
+      </Field>
+      <Field label="Email Address" req hint={isEdit ? "Email address cannot be changed." : "Authorized Google / SSO / local sign-in email address."}>
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          disabled={isEdit}
+          placeholder="admin@example.com"
+        />
+      </Field>
+      <Field label="Mobile / Contact">
+        <input
+          type="tel"
+          value={mobile}
+          onChange={(e) => setMobile(e.target.value)}
+          placeholder="+91 98765 43210"
+        />
+      </Field>
+      {isEdit && (
+        <div style={{ marginTop: 8, marginBottom: 12 }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontWeight: 600, fontSize: 13 }}>
+            <input
+              type="checkbox"
+              checked={active}
+              onChange={(e) => setActive(e.target.checked)}
+              style={{ accentColor: '#2563EB' }}
+            />
+            <span>Active Super Admin account</span>
+          </label>
+        </div>
+      )}
+      {err && <div className="hint" style={{ color: '#DC2626', marginTop: 8 }}>{err}</div>}
+      <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 14 }}>
+        <button className="btn btn-ghost btn-sm" onClick={onClose} disabled={saving}>Cancel</button>
+        <button className="btn btn-primary btn-sm bg-sky-600 hover:bg-sky-700 text-white" disabled={saving} onClick={save}>
+          💾 {saving ? 'Saving…' : (isEdit ? 'Save Changes' : 'Create Super Admin')}
+        </button>
+      </div>
+    </Modal>
+  );
+}
+

@@ -378,14 +378,15 @@ function vSuperDash(){
   <p class="hint">Every metric on this page is computed from live database rows${B()?.enabled?'':' (offline seed fallback)'}.</p></div></div>`;
 }
 /* ---------- unified Company Management (companies + admins + users, one page) ---------- */
-const MG_TABS = [['companies','🏢 Companies'],['admins','👔 Company Admins'],['users','👥 Company Users']];
+const MG_TABS = [['companies','🏢 Companies'],['superadmins','👑 Super Admins'],['admins','👔 Company Admins'],['users','👥 Company Users']];
 function vCompanyMgmt(tab){
-  tab = (tab==='admins'||tab==='users') ? tab : 'companies';
+  tab = (tab==='superadmins'||tab==='admins'||tab==='users') ? tab : 'companies';
   const s = pstats();
   const totalUsers = s.admins + s.salesUsers;
   const mcard=(val,label,sub,grad,act)=>`<button class="kpi ${grad}" onclick="App.mgCard('${act}')"><h3>${val}</h3><p>${label}</p><small>${sub}</small></button>`;
   let body = '';
   if (tab==='companies') body = coTable();
+  else if (tab==='superadmins') body = superAdminTable();
   else if (tab==='admins') body = admTable();
   else body = usrTable();
   if (typeof body === 'string' && body.startsWith('__LOADING__')) {
@@ -405,6 +406,22 @@ function vCompanyMgmt(tab){
   </div>
   <div class="tabs">${MG_TABS.map(([k,l])=>`<a class="tab ${tab===k?'active':''}" href="#/super/companies?tab=${k}" onclick="App.goMgmt('${k}');return false;">${l}</a>`).join('')}</div>
   <div class="card" style="margin-top:0;border-top-left-radius:0"><div class="card-pad">${body}</div></div>`;
+}
+/* --- superadmins tab: all platform Super Administrators --- */
+function superAdminTable(){
+  const P = { q: ui.superFQ||'', role: 'super_admin' };
+  const off = () => { let l=getUsers().filter(u=>u.role==='super_admin');
+    if(ui.superFQ) l=l.filter(u=>(u.name+' '+u.email).toLowerCase().includes(ui.superFQ.toLowerCase()));
+    return l; };
+  const t = tPager('mgSuperAdmins', '/api/users', P, off);
+  if (typeof t === 'string') return '__LOADING__';
+  return `<div class="section-head" style="margin-top:0"><h2 style="font-size:16px">Platform Super Admins (${t.total})</h2><button class="btn btn-primary btn-sm" onclick="App.superAdminNew()">+ Add Super Admin</button></div>
+  <div class="toolbar">
+  <input placeholder="🔍 Search name, email…" value="${ui.superFQ||''}" oninput="App.superF(event,'q')"></div>
+  <div class="table-wrap"><table><tr><th>Administrator</th><th>Email</th><th>Mobile</th><th>Status</th><th>Added</th><th>Actions</th></tr>
+  ${t.rows.map(u=>`<tr><td><b>👑 ${u.name}</b></td><td>${u.email}</td><td>${u.mobile||'—'}</td>
+  <td>${statusBadge(u.active!==false?'Delivered':'Cancelled')}</td><td class="hint">${u.createdAt||'—'}</td>
+  <td style="white-space:nowrap"><button class="btn btn-ghost btn-sm" onclick="App.superAdminEdit('${u.id}')">Edit</button> <button class="btn btn-ghost btn-sm" onclick="App.superAdminToggle('${u.id}',${!!u.active})">${u.active!==false?'Suspend':'Activate'}</button> <button class="btn btn-ghost btn-sm" style="color:#DC2626" onclick="App.superAdminDelete('${u.id}')">Delete</button></td></tr>`).join('')||'<tr><td colspan=6><div class="empty">No super administrators match.</div></td></tr>'}</table></div>${t.pager}`;
 }
 /* --- companies tab table (reuses /api/companies server pagination + filters) --- */
 function coTable(){
@@ -1115,8 +1132,9 @@ function render(){
   if ((seg[0]==='super' && me.role!=='super_admin') || (seg[0]==='admin' && me.role==='sales_user')) { location.hash = homeFor; return; }
 
   if(R==='super/dashboard')html=vSuperDash();
-  else if(R==='super/companies'){ const tab=(qp.tab==='admins'||qp.tab==='users')?qp.tab:'companies'; html=vCompanyMgmt(tab); if(qp.new==='1'){ ui._modal=()=>App.openCoModal(''); history.replaceState(null,'','#/super/companies?tab='+tab); location.hash='#/super/companies?tab='+tab; } }
+  else if(R==='super/companies'){ const tab=(qp.tab==='superadmins'||qp.tab==='admins'||qp.tab==='users')?qp.tab:'companies'; html=vCompanyMgmt(tab); if(qp.new==='1'){ ui._modal=()=>App.openCoModal(''); history.replaceState(null,'','#/super/companies?tab='+tab); location.hash='#/super/companies?tab='+tab; } }
   else if(R==='super/companies/new')html=vCompanyNew();
+  else if(R==='super/superadmins'){ location.hash='#/super/companies?tab=superadmins'; return; }
   else if(R==='super/admins'){ location.hash='#/super/companies?tab=admins'; return; }
   else if(R==='super/users'){ location.hash='#/super/companies?tab=users'; return; }
   else if(seg[0]==='super'&&seg[1]==='companies'&&seg[3]==='edit'){ html=vCompanyForm(seg[2]); }
@@ -1537,6 +1555,7 @@ window.App={
     let h;
     if (kind==='all') { ui.coFStatus='all'; h='#/super/companies?tab=companies'; }
     else if (kind==='active'||kind==='suspended') { ui.coFStatus=kind; h='#/super/companies?tab=companies'; }
+    else if (kind==='superadmins') h='#/super/companies?tab=superadmins';
     else if (kind==='admins') h='#/super/companies?tab=admins';
     else if (kind==='users') h='#/super/companies?tab=users';
     else if (kind==='products') h='#/super/catalog';
@@ -1546,6 +1565,7 @@ window.App={
   tPage(d){ const t=ui.t; ui.tPage = Math.max(1, (t&&t.page||1) + d); render(); },
   _deb(){ clearTimeout(window._mt); window._mt=setTimeout(render, 280); },
   coF(e,k){ const v=e.target.value; ui.tPage=1; if(k==='q')ui.coFQ=v; if(k==='status')ui.coFStatus=v; if(k==='industry')ui.coFInd=v; if(k==='city')ui.coFCity=v; App._deb(); },
+  superF(e,k){ const v=e.target.value; ui.tPage=1; if(k==='q')ui.superFQ=v; App._deb(); },
   admF(e,k){ const v=e.target.value; ui.tPage=1; if(k==='q')ui.admFQ=v; if(k==='co')ui.admFCo=v; if(k==='status')ui.admFStatus=v; App._deb(); },
   usrF(e,k){ const v=e.target.value; ui.tPage=1; if(k==='q')ui.usrFQ=v; if(k==='co')ui.usrFCo=v; if(k==='role')ui.usrFRole=v; if(k==='status')ui.usrFStatus=v; App._deb(); },
   mgRefresh(){ if(B()?.enabled){ B().refresh().then(()=>{ toast('Refreshed from database','↻'); render(); }).catch(e=>toast(e.message,'⚠️')); } else { render(); toast('Refreshed','↻'); } },
@@ -1555,6 +1575,7 @@ window.App={
     const key = t.key || 'export';
     let cols, rows;
     if (key === 'mgCompanies') { cols = ['id','code','name','industry','email','phone','city','state','pin','status','plan','createdAt']; rows = t.rows.map(c => cols.map(k => c[k] ?? '')); }
+    else if (key === 'mgSuperAdmins') { cols = ['id','name','email','mobile','role','status','created']; rows = t.rows.map(u => [u.id, u.name, u.email, u.mobile||'', u.role, u.active!==false?'active':'inactive', u.createdAt||'']); }
     else { cols = ['id','name','email','mobile','role','company','status','created']; rows = t.rows.map(u => [u.id, u.name, u.email, u.mobile||'', u.role, u.companyName||coName(u.companyId), u.active!==false?'active':'inactive', u.createdAt||'']); }
     const esc = v => `"${String(v).replace(/"/g, '""')}"`;
     const csv = [cols.join(','), ...rows.map(r => r.map(esc).join(','))].join('\n');
@@ -1751,6 +1772,80 @@ window.App={
         else { const ex = [...getUsers()].find(x => x.id === id); if (ex) ex.role = to; saveOv(OV); }
         if (B()?.enabled) { try { await B().refresh(); } catch(e){} }
         App.closeModal(); toast('Role updated to ' + to.replace('_',' '), '👥'); render();
+      }
+    });
+  },
+  /* ----- super admin create/edit/toggle/delete ----- */
+  superAdminNew(){
+    App.openModal(`<div class="modal-head"><span>👑 Add Super Administrator</span><button class="btn btn-ghost btn-sm" onclick="App.closeModal()">✕</button></div>
+    <div class="modal-body"><input type="hidden" id="msa_id" value="">
+      <div class="field"><label>Full Name *</label><input id="msa_name" placeholder="e.g. System Admin"></div>
+      <div class="field"><label>Email Address *</label><input id="msa_email" type="email" placeholder="admin@example.com"><span class="hint">Authorized Google OAuth or local sign-in email address.</span></div>
+      <div class="field"><label>Mobile / Contact</label><input id="msa_mobile" placeholder="+91 …"></div>
+      <div id="msaErr" class="hint" style="color:#DC2626"></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px"><button class="btn btn-ghost btn-sm" onclick="App.closeModal()">Cancel</button><button class="btn btn-primary btn-sm" id="msaSaveBtn" onclick="App.saveSuperAdminModal()">💾 Create Super Admin</button></div>
+    </div>`);
+  },
+  superAdminEdit(id){
+    const u = getUsers().find(x => x.id === id);
+    if (!u) { toast('User not found', '⚠️'); return; }
+    App.openModal(`<div class="modal-head"><span>👑 Edit Super Admin — ${u.name}</span><button class="btn btn-ghost btn-sm" onclick="App.closeModal()">✕</button></div>
+    <div class="modal-body"><input type="hidden" id="msa_id" value="${u.id}">
+      <div class="field"><label>Full Name *</label><input id="msa_name" value="${u.name}"></div>
+      <div class="field"><label>Email Address</label><input id="msa_email" value="${u.email}" disabled><span class="hint">Email address cannot be changed.</span></div>
+      <div class="field"><label>Mobile / Contact</label><input id="msa_mobile" value="${u.mobile||''}" placeholder="+91 …"></div>
+      <div id="msaErr" class="hint" style="color:#DC2626"></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px"><button class="btn btn-ghost btn-sm" onclick="App.closeModal()">Cancel</button><button class="btn btn-primary btn-sm" id="msaSaveBtn" onclick="App.saveSuperAdminModal()">💾 Save Changes</button></div>
+    </div>`);
+  },
+  async saveSuperAdminModal(){
+    const err = m => { const e = $('#msaErr'); if (e) e.textContent = m||''; };
+    const btn = $('#msaSaveBtn');
+    const id = $('#msa_id')?.value || '';
+    const name = ($('#msa_name')?.value || '').trim();
+    const email = ($('#msa_email')?.value || '').trim().toLowerCase();
+    const mobile = ($('#msa_mobile')?.value || '').trim();
+    err('');
+    if (!name) return err('Full name is required.');
+    if (!id && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return err('A valid email address is required.');
+    if (btn) { btn.disabled = true; btn.innerText = 'Saving…'; }
+    const reset = () => { if (btn) { btn.disabled = false; btn.innerText = id ? '💾 Save Changes' : '💾 Create Super Admin'; } };
+    try {
+      if (id) {
+        await B().api.patch('/api/users/' + id, { name, mobile });
+      } else {
+        await B().api.post('/api/users', { name, email, mobile, role: 'super_admin' });
+      }
+      try { await B().refresh(); } catch(e){}
+      App.closeModal();
+      toast(id ? 'Super Admin updated' : 'Super Admin created', '👑');
+      render();
+    } catch(e) {
+      reset();
+      return err(e.message || 'Operation failed');
+    }
+  },
+  superAdminToggle(id, active){
+    App.coUserToggle(id, active);
+  },
+  superAdminDelete(id){
+    const u = getUsers().find(x => x.id === id);
+    if (!u) { toast('User not found', '⚠️'); return; }
+    App.confirmDlg({
+      title: 'Delete Super Admin',
+      danger: true,
+      body: `Are you sure you want to permanently remove <b>${u.name}</b> (${u.email}) from Super Administrators? They will immediately lose platform root access.`,
+      okLabel: 'Delete Super Admin',
+      onOk: async () => {
+        try {
+          await B().api.del('/api/users/' + id);
+          try { await B().refresh(); } catch(e){}
+          App.closeModal();
+          toast('Super administrator removed', '🗑️');
+          render();
+        } catch(e) {
+          toast(e.message || 'Delete failed', '⚠️');
+        }
       }
     });
   },

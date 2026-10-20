@@ -217,10 +217,14 @@ function ensureRolePermissions() {
   if (Array.isArray(db.users)) {
     const superEmails = (SB.superEmails || ['jananimohan44@gmail.com', 'technologiesargus@gmail.com']).map(e => e.toLowerCase());
     db.users.forEach(u => {
+      if (u.role === 'super_admin' && u.email) {
+        const em = String(u.email).toLowerCase();
+        if (!superEmails.includes(em)) superEmails.push(em);
+        if (SB.superEmails && !SB.superEmails.includes(em)) SB.superEmails.push(em);
+      }
       if (u.email && superEmails.includes(String(u.email).toLowerCase())) {
         u.role = 'super_admin';
         u.companyId = null;
-        u.active = true;
       }
       if (!u.menuOverrides || typeof u.menuOverrides !== 'object') {
         u.menuOverrides = {};
@@ -1024,6 +1028,9 @@ app.post('/api/users', scopeCompany, (req, res) => {
     active: true,
     createdAt: new Date().toISOString().slice(0, 10)
   };
+  if (targetRole === 'super_admin' && SB.superEmails && !SB.superEmails.includes(cleanEmail)) {
+    SB.superEmails.push(cleanEmail);
+  }
   db.users.unshift(u); save();
   audit(req, 'user.create', 'user', u.id, targetCompany, `Created ${name} (${targetRole})`);
   ok(res, u);
@@ -1065,6 +1072,21 @@ app.patch('/api/users/:id', scopeCompany, (req, res) => {
   Object.assign(u, req.body); save();
   audit(req, 'user.update', 'user', u.id, u.companyId, `Updated ${u.name}: ${Object.keys(req.body).join(', ')}`);
   ok(res, u);
+});
+app.delete('/api/users/:id', scopeCompany, (req, res) => {
+  if (req.ctx.role !== 'super_admin') return res.status(403).json({ error: 'super_admin only' });
+  const u = db.users.find(x => x.id === req.params.id);
+  if (!u) return res.status(404).json({ error: 'not found' });
+  if (u.role === 'super_admin') {
+    const totalSuper = db.users.filter(x => x.role === 'super_admin').length;
+    if (totalSuper <= 1) return res.status(400).json({ error: 'Cannot remove the last remaining Super Admin' });
+    if (req.ctx.id && req.ctx.id === u.id) return res.status(400).json({ error: 'Cannot remove your own logged-in Super Admin account' });
+    if (req.ctx.email && (u.email || '').toLowerCase() === req.ctx.email.toLowerCase()) return res.status(400).json({ error: 'Cannot remove your own logged-in Super Admin account' });
+  }
+  db.users = db.users.filter(x => x.id !== req.params.id);
+  save();
+  audit(req, 'user.delete', 'user', u.id, u.companyId, `Deleted user ${u.name} (${u.role})`);
+  ok(res, { deleted: true });
 });
 
 /* categories — global (super) + company-specific; assignments link global cats to companies */
