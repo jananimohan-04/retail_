@@ -203,8 +203,6 @@ export default function Companies({ tab: tabProp }) {
         title="Company Hub"
         subtitle="Manage registered enterprises, tenant administrators, user accounts, and tier permissions."
         icon={Building2}
-        badgeText="Multi-Tenant Hub"
-        badgeColor="sky"
         gradient="from-sky-500 via-cyan-500 to-blue-600"
         actions={<>
           <button className="btn btn-ghost btn-sm" onClick={mgExport}>⤓ Export</button>
