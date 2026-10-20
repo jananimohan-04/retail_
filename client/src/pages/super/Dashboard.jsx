@@ -41,14 +41,14 @@ export default function Dashboard() {
         title="Platform Executive Dashboard"
         subtitle="Real-time multi-tenant health, cross-company operations, order pipeline status, and manufacturing fulfillment metrics."
         badgeText="Platform Core"
-        badgeColor="indigo"
-        gradient="from-indigo-600 via-blue-600 to-cyan-500"
+        badgeColor="amber"
+        gradient="from-[#2B1704] via-[#4A2E1B] to-[#6E422A]"
         actions={
           <>
             <Link className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors" to="/super/audit">
               Audit Trail
             </Link>
-            <Link className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-xs shadow-blue-500/30 transition-all" to="/super/companies/new">
+            <Link className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#2B1704] to-[#4A2E1B] hover:from-[#1E100A] hover:to-[#381F12] shadow-xs shadow-[#2B1704]/30 transition-all" to="/super/companies/new">
               + New Company
             </Link>
           </>
@@ -77,7 +77,7 @@ export default function Dashboard() {
         </div>
       )}
       <div className="stat-grid">
-        <Kpi to="#/super/companies?tab=companies" value={companiesCount} label={co ? "Company" : "Total companies"} sub={companiesSub} grad="linear-gradient(135deg,#172554,#2563EB)" />
+        <Kpi to="#/super/companies?tab=companies" value={companiesCount} label={co ? "Company" : "Total companies"} sub={companiesSub} grad="linear-gradient(135deg,#2B1704,#5C3826)" />
         <Kpi to="#/super/companies?tab=admins" value={co ? (co.admin || '1') : s.admins} label="Company admins" sub={co ? "Lead administrator" : "across all companies"} grad="linear-gradient(135deg,#6D28D9,#7C3AED)" />
         <Kpi to="#/super/companies?tab=users" value={usersCount} label="Sales users" sub={co ? "Assigned team users" : "procurement teams"} grad="linear-gradient(135deg,#0E7490,#0EA5E9)" />
         <Kpi to="#/super/categories" value={s.categories} label="Global categories" sub="CNC catalog taxonomy" grad="linear-gradient(135deg,#92400E,#D97706)" />

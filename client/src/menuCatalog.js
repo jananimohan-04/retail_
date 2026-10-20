@@ -41,13 +41,13 @@ export const MENU_CATALOG = [
         icon: 'LayoutDashboard',
         defaultRoles: ['super_admin'],
         theme: {
-          name: 'indigo',
-          gradient: 'from-indigo-600 via-blue-600 to-cyan-500',
-          activeLink: 'bg-indigo-50/90 text-indigo-700 font-bold border-indigo-200/80 shadow-xs shadow-indigo-100',
-          activeIcon: 'text-indigo-600',
-          indicator: 'bg-indigo-600',
-          badge: 'bg-indigo-600 text-white',
-          glow: 'shadow-indigo-500/20'
+          name: 'coffee',
+          gradient: 'from-[#2B1704] via-[#4A2E1B] to-[#6E422A]',
+          activeLink: 'bg-gradient-to-r from-[#2B1704] to-[#4A2E1B] text-amber-100 font-bold border-[#6E422A]/50 shadow-xs shadow-[#2B1704]/40',
+          activeIcon: 'text-amber-300',
+          indicator: 'bg-[#6E422A]',
+          badge: 'bg-[#4A2E1B] text-white',
+          glow: 'shadow-[#2B1704]/40'
         }
       },
       {
