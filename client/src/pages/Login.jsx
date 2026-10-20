@@ -7,13 +7,7 @@ import {
   ShieldCheck,
   ChevronLeft,
   ChevronRight,
-  UserCheck,
   Sparkles,
-  Building,
-  Edit3,
-  Receipt,
-  ShoppingCart,
-  Users,
   AlertCircle
 } from 'lucide-react';
 
@@ -69,7 +63,7 @@ export const rolePath = (role) => {
 };
 
 export default function Login() {
-  const { me, loginAs, googleLogin } = useAuth();
+  const { me, googleLogin } = useAuth();
   const nav = useNavigate();
   const [slide, setSlide] = useState(0);
   const [paused, setPaused] = useState(false);
@@ -98,11 +92,6 @@ export default function Login() {
     } finally {
       setIsLoggingIn(false);
     }
-  };
-
-  const demo = (role) => {
-    loginAs(role);
-    nav(rolePath(role), { replace: true });
   };
 
   const prevSlide = () => setSlide((s) => (s - 1 + CNC_SLIDES.length) % CNC_SLIDES.length);
@@ -278,114 +267,19 @@ export default function Login() {
 
           {/* Setup Alert Message if OAuth not configured yet */}
           {setupMsg && (
-            <div className="mt-3.5 p-3 rounded-xl bg-amber-50 border border-amber-200 text-left text-xs text-amber-900">
+            <div className="mt-4 p-3 rounded-xl bg-amber-50 border border-amber-200 text-left text-xs text-amber-900">
               <div className="font-bold flex items-center gap-1.5 text-amber-800 mb-1">
                 <AlertCircle size={14} className="text-amber-600 flex-shrink-0" />
                 <span>Google OAuth Credentials Pending</span>
               </div>
-              <p className="text-[11px] text-amber-700 leading-relaxed mb-1.5">
-                Use the instant role shortcuts below to test every permission level, or configure Supabase Auth in backend/.env.
+              <p className="text-[11px] text-amber-700 leading-relaxed">
+                Please configure Supabase Google OAuth in backend/.env to sign in with your company account.
               </p>
             </div>
           )}
 
-          {/* Divider */}
-          <div className="relative my-5">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-200" />
-            </div>
-            <div className="relative flex justify-center text-[10px] uppercase font-bold tracking-wider">
-              <span className="bg-white px-2.5 text-slate-400">Instant Demo Role Access</span>
-            </div>
-          </div>
-
-          {/* Role Access Buttons Grid */}
-          <div className="space-y-2">
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => demo('super_admin')}
-                className="flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg bg-slate-900 hover:bg-slate-800 text-white shadow-xs transition-colors cursor-pointer"
-              >
-                <UserCheck size={13} className="text-orange-400 flex-shrink-0" />
-                <span>Super Admin</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => demo('company_admin')}
-                className="flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 text-white shadow-xs transition-colors cursor-pointer"
-              >
-                <Building size={13} className="text-blue-200 flex-shrink-0" />
-                <span>Argus Admin</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => demo('content_writer')}
-                className="flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition-colors cursor-pointer"
-              >
-                <Edit3 size={13} className="text-emerald-200 flex-shrink-0" />
-                <span>Content Writer</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => demo('finance')}
-                className="flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg bg-purple-600 hover:bg-purple-700 text-white shadow-xs transition-colors cursor-pointer"
-              >
-                <Receipt size={13} className="text-purple-200 flex-shrink-0" />
-                <span>Finance</span>
-              </button>
-            </div>
-
-            {/* Direct Sales Full-Width Button */}
-            <button
-              type="button"
-              onClick={() => demo('sales_user')}
-              className="w-full flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg bg-[#FF6500] hover:bg-[#EA580C] text-white shadow-xs transition-colors cursor-pointer"
-            >
-              <ShoppingCart size={13} className="text-orange-100 flex-shrink-0" />
-              <span>Direct Sales User (Storefront)</span>
-            </button>
-
-            {/* Partner Sales Tier Pills */}
-            <div className="pt-2 border-t border-slate-100">
-              <div className="flex items-center justify-center gap-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
-                <Users size={11} className="text-slate-400" />
-                <span>Partner Sales Tiers</span>
-              </div>
-              <div className="grid grid-cols-3 gap-1.5 text-center">
-                <button
-                  type="button"
-                  onClick={() => demo('sales_regional_partner')}
-                  className="px-1.5 py-1 text-[11px] font-semibold rounded-md bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 transition-colors cursor-pointer truncate"
-                  title="Regional Partner (+10% markup)"
-                >
-                  Regional (+10%)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => demo('sales_channel_partner')}
-                  className="px-1.5 py-1 text-[11px] font-semibold rounded-md bg-purple-50 hover:bg-purple-100 text-purple-800 border border-purple-200 transition-colors cursor-pointer truncate"
-                  title="Channel Partner (+15% markup)"
-                >
-                  Channel (+15%)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => demo('sales_referral_partner')}
-                  className="px-1.5 py-1 text-[11px] font-semibold rounded-md bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 transition-colors cursor-pointer truncate"
-                  title="Referral Partner (+5% markup)"
-                >
-                  Referral (+5%)
-                </button>
-              </div>
-            </div>
-          </div>
-
           {/* Micro Footer */}
-          <div className="text-center text-[10.5px] text-slate-400 mt-5 pt-3 border-t border-slate-100">
+          <div className="text-center text-[10.5px] text-slate-400 mt-6 pt-4 border-t border-slate-100">
             <span>ARGUSCNC Enterprise • Industrial Store & ERP Platform</span>
           </div>
         </div>
