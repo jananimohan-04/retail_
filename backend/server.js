@@ -489,6 +489,13 @@ function attachTierBreakdown(p) {
   };
 }
 
+function attachProductMedia(p) {
+  if (!p) return p;
+  const media = (db.product_media || []).filter(m => m.productId === p.id && m.visible !== false)
+    .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+  return { ...p, media };
+}
+
 /* --- product publishing workflow (ERP → Content Writer → Finance → Sales) --- */
 const WF = {
   PENDING: 'content_pending',
@@ -1125,9 +1132,9 @@ app.get('/api/products', (req, res) => {
   if (req.query.q) { const q = req.query.q.toLowerCase(); list = list.filter(p => prodText(p).includes(q)); }
   if (req.query.archived && req.query.archived !== 'all') list = list.filter(p => String(!!p.archived) === req.query.archived);
   if (isSalesUser(req)) {
-    list = list.filter(salesVisible).map(p => applyRolePricing(p, req.ctx.role));
+    list = list.filter(salesVisible).map(p => attachProductMedia(applyRolePricing(p, req.ctx.role)));
   } else {
-    list = list.map(p => attachTierBreakdown(p));
+    list = list.map(p => attachProductMedia(attachTierBreakdown(p)));
   }
   if (req.query.page || req.query.limit) return ok(res, pageOf(list, req));
   ok(res, list);
@@ -1264,7 +1271,7 @@ app.get('/api/catalog', (req, res) => {
   if (req.query.archived && req.query.archived !== 'all') list = list.filter(p => String(!!p.archived) === req.query.archived);
   if (req.query.q) { const q = req.query.q.toLowerCase(); list = list.filter(p => prodText(p).includes(q)); }
   list.sort((a, b) => String(b.created).localeCompare(String(a.created)));
-  const withCo = l => l.map(p => ({ ...p, companyName: (companyById(p.companyId) || {}).name || p.companyId }));
+  const withCo = l => l.map(p => attachProductMedia({ ...p, companyName: (companyById(p.companyId) || {}).name || p.companyId }));
   if (req.query.page || req.query.limit) { const pg = pageOf(list, req); pg.rows = withCo(pg.rows); return ok(res, pg); }
   ok(res, withCo(list));
 });
