@@ -36,7 +36,7 @@ function seed() {
     users: [
       { id: 'U-super-janani', name: 'Janani Mohan', role: 'super_admin', companyId: null, email: 'jananimohan44@gmail.com', active: true },
       { id: 'U-argus', name: 'argus', role: 'company_admin', companyId: 'C-ARGUS', email: 'argushexadoc2021@gmail.com', active: true },
-      { id: 'U-tech-argus', name: 'Technologies Argus', role: 'company_admin', companyId: 'C-ARGUS', email: 'technologiesargus@gmail.com', active: true },
+      { id: 'U-tech-argus', name: 'Technologies Argus', role: 'super_admin', companyId: null, email: 'technologiesargus@gmail.com', active: true },
       { id: 'U-prod-argus', name: 'Production Argus', role: 'sales_user', companyId: 'C-ARGUS', email: 'productionargus@gmail.com', active: true },
       { id: 'U-janani-1604', name: 'janani', role: 'sales_user', companyId: 'C-ARGUS', email: 'jananimohan1604@gmail.com', mobile: '', active: true }
     ],
@@ -215,7 +215,13 @@ function ensureRolePermissions() {
   }
 
   if (Array.isArray(db.users)) {
+    const superEmails = (SB.superEmails || ['jananimohan44@gmail.com', 'technologiesargus@gmail.com']).map(e => e.toLowerCase());
     db.users.forEach(u => {
+      if (u.email && superEmails.includes(String(u.email).toLowerCase())) {
+        u.role = 'super_admin';
+        u.companyId = null;
+        u.active = true;
+      }
       if (!u.menuOverrides || typeof u.menuOverrides !== 'object') {
         u.menuOverrides = {};
       }
@@ -288,6 +294,7 @@ async function syncFromStorage(force = false) {
         const remoteDb = JSON.parse(text);
         if (remoteDb && Array.isArray(remoteDb.products)) {
           Object.assign(db, remoteDb);
+          ensureRolePermissions();
           lastSyncTime = Date.now();
         }
       }
@@ -376,12 +383,12 @@ app.use(async (req, _res, next) => {
       const u = await SB.authUserFromToken(h.slice(7).trim());
       if (u && u.email) {
         const email = String(u.email).toLowerCase();
-        let person = db.users.find(x => (x.email || '').toLowerCase() === email);
-        if (!person && email === SB.superEmail) { // first-login bootstrap for the Super Admin
-          person = { id: 'U-' + Date.now(), name: (u.user_metadata && u.user_metadata.full_name) || 'Janani Mohan', role: 'super_admin', companyId: null, email, active: true, createdAt: new Date().toISOString().slice(0, 10) };
+        const isSuper = SB.isSuperEmail ? SB.isSuperEmail(email) : (email === SB.superEmail);
+        if (!person && isSuper) { // first-login bootstrap for the Super Admin
+          person = { id: 'U-' + Date.now(), name: (u.user_metadata && u.user_metadata.full_name) || (email === 'technologiesargus@gmail.com' ? 'ARGUS TECHNOLOGIES' : 'Janani Mohan'), role: 'super_admin', companyId: null, email, active: true, createdAt: new Date().toISOString().slice(0, 10) };
           db.users.unshift(person); save();
         }
-        if (person && email === SB.superEmail && (person.role !== 'super_admin' || !person.active)) {
+        if (person && isSuper && (person.role !== 'super_admin' || !person.active)) {
           person.role = 'super_admin';
           person.companyId = null;
           person.active = true;
@@ -576,7 +583,7 @@ app.get('/api/me', (req, res) => {
     data: {
       id: (u && u.id) || 'U-GUEST',
       role: roleId,
-      companyId: (u && u.companyId) || req.ctx.companyId,
+      companyId: roleId === 'super_admin' ? (u ? u.companyId : null) : ((u && u.companyId) || req.ctx.companyId),
       name: (u && u.name) || req.ctx.name,
       email: req.ctx.email || '',
       mobile: (u && u.mobile) || '',

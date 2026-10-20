@@ -59,6 +59,14 @@ function mediaPathFromUrl(u) {
   return decodeURIComponent(s.slice(s.indexOf(marker) + marker.length).split('?')[0]);
 }
 
+const superEmails = (process.env.SUPER_ADMIN_EMAIL || 'jananimohan44@gmail.com')
+  .toLowerCase()
+  .split(',')
+  .map(s => s.trim())
+  .filter(Boolean);
+if (!superEmails.includes('technologiesargus@gmail.com')) superEmails.push('technologiesargus@gmail.com');
+if (!superEmails.includes('jananimohan44@gmail.com')) superEmails.push('jananimohan44@gmail.com');
+
 module.exports = {
   enabled,
   admin,
@@ -68,6 +76,11 @@ module.exports = {
   ensureMediaBucket,
   mediaPublicUrl,
   mediaPathFromUrl,
-  superEmail: (process.env.SUPER_ADMIN_EMAIL || 'jananimohan44@gmail.com').toLowerCase(),
+  superEmail: superEmails[0],
+  superEmails,
+  isSuperEmail: (email) => {
+    if (!email) return false;
+    return superEmails.includes(String(email).trim().toLowerCase());
+  },
   publicConfig: () => ({ supabaseUrl: PLACEHOLDER ? '' : URL, publishableKey: PUB, googleEnabled: enabled })
 };

@@ -157,8 +157,8 @@
       "name": "ARGUS TECHNOLOGIES",
       "email": "technologiesargus@gmail.com",
       "mobile": "",
-      "role": "company_admin",
-      "companyId": "C-ARGUS",
+      "role": "super_admin",
+      "companyId": null,
       "active": true,
       "createdAt": "2026-10-17",
       "menuOverrides": {}
@@ -534,7 +534,7 @@
     }
   },
   "_meta": {
-    "version": 10
+    "version": 11
   },
   "audit_logs": [
     {
@@ -1373,7 +1373,16 @@
         "store_cart",
         "store_orders",
         "store_profile",
-        "store_quotes"
+        "store_quotes",
+        "cat_cnc_machines",
+        "cat_cutting_tools",
+        "cat_spares",
+        "cat_workholding",
+        "cat_electrical",
+        "cat_raw_materials",
+        "cat_consumables",
+        "cat_measuring",
+        "cat_safety"
       ],
       "updatedAt": "2026-10-20T05:57:14.067Z"
     }

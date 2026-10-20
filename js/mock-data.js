@@ -29,7 +29,7 @@ window.MOCK = (() => {
   const USERS = [
     { id:'U-super-janani', name:'Janani Mohan', role:'super_admin', companyId:null, email:'jananimohan44@gmail.com', active:true },
     { id:'U-argus', name:'argus', role:'company_admin', companyId:'C-ARGUS', email:'argushexadoc2021@gmail.com', active:true },
-    { id:'U-tech-argus', name:'Technologies Argus', role:'company_admin', companyId:'C-ARGUS', email:'technologiesargus@gmail.com', active:true },
+    { id:'U-tech-argus', name:'Technologies Argus', role:'super_admin', companyId:null, email:'technologiesargus@gmail.com', active:true },
     { id:'U-prod-argus', name:'Production Argus', role:'sales_user', companyId:'C-ARGUS', email:'productionargus@gmail.com', active:true },
     { id:'U-janani-1604', name:'janani', role:'sales_user', companyId:'C-ARGUS', email:'jananimohan1604@gmail.com', mobile:'', active:true },
   ];
