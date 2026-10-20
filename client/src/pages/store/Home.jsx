@@ -1,7 +1,7 @@
 /* Store home — mirrors legacy vHome: hero, category cards, conditional sections. */
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Share2 } from 'lucide-react';
+import { Share2, Check } from 'lucide-react';
 import { api, fmt, getCart, setCart } from '../../api';
 import { useAuth } from '../../auth';
 import { Field, Modal, Skeleton, toast } from '../../components/ui';
@@ -82,28 +82,27 @@ export function ProdCard({ p, catName, onAdd, onRfq, selected, onToggleSelect, o
       ? <button className="btn btn-ghost btn-sm" onClick={() => onRfq(p)}>Check Availability</button>
       : <button className="btn btn-primary btn-sm" onClick={() => onAdd(p)}>Add to Cart</button>;
   return (
-    <div className={`prod ${selected ? 'ring-2 ring-[#2E1508] bg-[#FAF6F1]' : ''}`}>
+    <div className={`prod relative ${selected ? 'ring-2 ring-[#2E1508] bg-[#FAF6F1]' : ''}`}>
+      {onToggleSelect && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onToggleSelect(p);
+          }}
+          className={`absolute top-2.5 left-2.5 z-30 w-7 h-7 rounded-lg flex items-center justify-center transition-all shadow-md border cursor-pointer ${
+            selected
+              ? 'bg-[#2E1508] text-white border-[#2E1508] ring-2 ring-white/90 scale-105'
+              : 'bg-white hover:bg-[#FAF6F1] border-[#8C7A6B] text-transparent hover:border-[#2E1508]'
+          }`}
+          title={selected ? 'Deselect SKU' : 'Select SKU to share / export'}
+          aria-label={selected ? 'Deselect SKU' : 'Select SKU'}
+        >
+          <Check className={`w-4 h-4 stroke-[3] transition-opacity ${selected ? 'text-white opacity-100' : 'opacity-0'}`} />
+        </button>
+      )}
       <Link className="prod-img" to={`/store/product/${p.id}`}>
-        {onToggleSelect && (
-          <div
-            className="absolute top-2.5 left-2.5 z-20"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              onToggleSelect(p);
-            }}
-          >
-            <label className="flex items-center justify-center p-1 bg-white/95 hover:bg-white rounded-md shadow-sm border border-[#BAA794] cursor-pointer">
-              <input
-                type="checkbox"
-                checked={!!selected}
-                onChange={() => onToggleSelect(p)}
-                className="w-4 h-4 rounded border-[#BAA794] text-[#2E1508] focus:ring-[#2E1508] cursor-pointer"
-                title="Select product to share or export"
-              />
-            </label>
-          </div>
-        )}
         <img loading="lazy" src={(p.images || [])[0] || ''} alt={p.name} onError={(e) => { e.currentTarget.src = `https://picsum.photos/seed/${p.sku || p.id}/700/525`; }} />
         {availBadge(p, onToggleSelect ? { left: 44 } : undefined)}<span className="badge cat">{catName(p.category)}</span>
       </Link>

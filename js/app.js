@@ -180,11 +180,7 @@ function prodCard(p){
     ? `<button class="btn btn-ghost btn-sm" onclick="App.rfq('${p.id}')">Check Availability</button>`
     : `<button class="btn btn-primary btn-sm" onclick="App.addCart('${p.id}')">Add to Cart</button>`;
   return `<div class="prod" style="position:relative;${isSel?'outline:2px solid #2E1508;background:#FAF6F1;':''}">
-    <div style="position:absolute;top:8px;left:8px;z-index:10" onclick="event.stopPropagation()">
-      <label style="display:flex;align-items:center;justify-content:center;padding:4px;background:rgba(255,255,255,.95);border:1px solid #BAA794;border-radius:5px;cursor:pointer" title="Select product to share or export">
-        <input type="checkbox" style="width:16px;height:16px;cursor:pointer" ${isSel?'checked':''} onchange="App.toggleProdSelect('${p.id}')">
-      </label>
-    </div>
+    <button type="button" style="position:absolute;top:8px;left:8px;z-index:20;width:26px;height:26px;border-radius:6px;border:1.5px solid ${isSel?'#2E1508':'#8C7A6B'};background:${isSel?'#2E1508':'#fff'};color:${isSel?'#fff':'transparent'};display:flex;align-items:center;justify-content:center;cursor:pointer;font-weight:bold;font-size:14px;box-shadow:0 1px 3px rgba(0,0,0,0.15);" onclick="event.preventDefault();event.stopPropagation();App.toggleProdSelect('${p.id}')" title="${isSel?'Deselect SKU':'Select SKU'}">${isSel?'✓':''}</button>
     <a class="prod-img" href="#/store/product/${p.id}">${!(p.images||[]).find(Boolean)&&p.video?`<video src="${p.video}" muted preload="metadata" style="width:100%;height:100%;object-fit:cover"></video>`:`<img loading="lazy" src="${img0(p)}" alt="${p.name}" onerror="${NOIMG_ERR}">`}
     ${availBadge(p, 44)}<span class="badge cat">${catName(p.category)}</span></a>
     <div class="prod-body"><span class="sku">SKU: ${p.sku||p.id}</span>
@@ -1748,9 +1744,10 @@ window.App={
           </div>
           <div style="display:flex;gap:8px;justify-content:space-between;align-items:center">
             <button class="btn btn-ghost btn-sm" style="border:1px solid #BAA794" onclick="App.exportCatalogPdfNow()">📄 Download PDF to Attach</button>
-            <div style="display:flex;gap:8px">
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
               <button class="btn btn-ghost btn-sm" style="border:1px solid #BAA794" onclick="App.copyTextFromEl('emBody','Email text')">📋 Copy Text</button>
-              <button class="btn btn-primary btn-sm" style="background:#075985;color:#fff;font-weight:700;padding:8px 16px" onclick="App.launchEmailNow()">✉️ Open Email Client (mailto:)</button>
+              <button class="btn btn-sm" style="background:#b91c1c;color:#fff;font-weight:700;padding:8px 14px;border:none;border-radius:6px;cursor:pointer" onclick="App.launchEmailNow('gmail')">✉️ Open in Gmail</button>
+              <button class="btn btn-primary btn-sm" style="background:#075985;color:#fff;font-weight:700;padding:8px 14px;border:none;border-radius:6px;cursor:pointer" onclick="App.launchEmailNow('default')">↗️ Default Mail App</button>
             </div>
           </div>
         ` : ''}
@@ -1784,11 +1781,36 @@ window.App={
     const url = phone ? `https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(text)}` : `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
     window.open(url, '_blank');
   },
-  launchEmailNow(){
+  launchEmailNow(provider = 'gmail'){
     const to = (document.getElementById('emTo')?.value || '').trim();
     const subj = document.getElementById('emSubj')?.value || '';
     const body = document.getElementById('emBody')?.value || '';
-    window.location.href = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subj)}&body=${encodeURIComponent(body)}`;
+    if (provider === 'gmail') {
+      const gUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(to)}&su=${encodeURIComponent(subj)}&body=${encodeURIComponent(body)}`;
+      window.open(gUrl, '_blank');
+      toast('Redirecting to Gmail…', '📧');
+      return;
+    }
+    if (provider === 'outlook') {
+      const outUrl = `https://outlook.live.com/mail/0/deeplink/compose?to=${encodeURIComponent(to)}&subject=${encodeURIComponent(subj)}&body=${encodeURIComponent(body)}`;
+      window.open(outUrl, '_blank');
+      toast('Redirecting to Outlook…', '📧');
+      return;
+    }
+    let safeBody = body;
+    if (safeBody.length > 1200) {
+      safeBody = safeBody.slice(0, 1200) + '\n\n[... Full specifications and PDF catalog attached ...]\n\nBest regards,\n' + (coName(me?.companyId) || 'ARGUS CNC');
+    }
+    const mailto = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subj)}&body=${encodeURIComponent(safeBody)}`;
+    const link = document.createElement('a');
+    link.href = mailto;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    setTimeout(() => { try { document.body.removeChild(link); } catch {} }, 400);
+    toast('Prompting your email app…', '✉️');
   },
   confirmDlg(o){
     window._cf = o.onOk;

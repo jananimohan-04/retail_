@@ -60,10 +60,41 @@ export default function ProductShareModal({
     window.open(url, '_blank');
   };
 
-  const handleLaunchEmail = () => {
+  const handleLaunchEmail = (provider = 'gmail') => {
     const to = (email || '').trim();
-    const mailto = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailBody)}`;
-    window.location.href = mailto;
+    if (provider === 'gmail') {
+      const gUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(to)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailBody)}`;
+      window.open(gUrl, '_blank');
+      toast('Redirecting to Gmail webmail…', '📧');
+      return;
+    }
+    if (provider === 'outlook') {
+      const outUrl = `https://outlook.live.com/mail/0/deeplink/compose?to=${encodeURIComponent(to)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailBody)}`;
+      window.open(outUrl, '_blank');
+      toast('Redirecting to Outlook…', '📧');
+      return;
+    }
+
+    // Default mailto: keep body under 1200 characters so Windows OS ShellExecute never drops it
+    let safeBody = emailBody;
+    const maxLen = 1200;
+    if (safeBody.length > maxLen) {
+      safeBody = safeBody.slice(0, maxLen) + '\n\n[... Full technical specifications & PDF catalog attached ...]\n\nBest regards,\n' + companyName;
+    }
+    const mailto = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(safeBody)}`;
+
+    // Anchor click reliably prompts the OS app chooser (Mail / Outlook / Chrome)
+    const link = document.createElement('a');
+    link.href = mailto;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    setTimeout(() => {
+      try { document.body.removeChild(link); } catch {}
+    }, 400);
+    toast('Prompting your email client…', '✉️');
   };
 
   const handleExportPdfNow = () => {
@@ -357,7 +388,7 @@ export default function ProductShareModal({
                 Download PDF to Attach
               </button>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <button
                   type="button"
                   onClick={() => handleCopyText(`Subject: ${subject}\n\n${emailBody}`, 'Email text')}
@@ -368,11 +399,21 @@ export default function ProductShareModal({
                 </button>
                 <button
                   type="button"
-                  onClick={handleLaunchEmail}
-                  className="btn btn-primary btn-sm bg-sky-800 hover:bg-sky-900 text-white border-none shadow-sm flex items-center gap-2 cursor-pointer font-bold px-4 py-2"
+                  onClick={() => handleLaunchEmail('gmail')}
+                  className="btn btn-sm bg-rose-700 hover:bg-rose-800 text-white border-none shadow-xs flex items-center gap-1.5 cursor-pointer font-bold px-3 py-2"
+                  title="Directly redirect into Gmail webmail"
                 >
                   <Mail className="w-4 h-4" />
-                  Open Email Client (mailto:)
+                  Open in Gmail
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleLaunchEmail('default')}
+                  className="btn btn-sm bg-sky-800 hover:bg-sky-900 text-white border-none shadow-xs flex items-center gap-1.5 cursor-pointer font-bold px-3 py-2"
+                  title="Open Default Desktop Mail App (Outlook, Windows Mail, or app picker)"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  Default Mail App
                 </button>
               </div>
             </div>
