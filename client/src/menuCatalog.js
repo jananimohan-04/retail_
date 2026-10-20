@@ -30,9 +30,9 @@ export const MENU_CATALOG = [
     id: 'overview',
     label: 'Overview',
     description: 'Executive dashboard and high-level KPIs',
-    color: 'indigo',
-    dotClass: 'bg-indigo-500 shadow-indigo-500/50',
-    badgeClass: 'bg-indigo-50 text-indigo-700 border-indigo-200',
+    color: 'amber',
+    dotClass: 'bg-[#8B5A2B] shadow-[#8B5A2B]/50',
+    badgeClass: 'bg-amber-50 text-amber-900 border-amber-300',
     items: [
       {
         id: 'super_dashboard',
@@ -57,13 +57,13 @@ export const MENU_CATALOG = [
         icon: 'LayoutDashboard',
         defaultRoles: ['company_admin'],
         theme: {
-          name: 'blue',
-          gradient: 'from-blue-600 via-indigo-600 to-sky-500',
-          activeLink: 'bg-blue-50/90 text-blue-700 font-bold border-blue-200/80 shadow-xs shadow-blue-100',
-          activeIcon: 'text-blue-600',
-          indicator: 'bg-blue-600',
-          badge: 'bg-blue-600 text-white',
-          glow: 'shadow-blue-500/20'
+          name: 'coffee',
+          gradient: 'from-[#331C0E] via-[#4D2D1B] to-[#75472E]',
+          activeLink: 'bg-gradient-to-r from-[#331C0E] to-[#4D2D1B] text-amber-100 font-bold border-[#75472E]/50 shadow-xs shadow-[#331C0E]/40',
+          activeIcon: 'text-amber-300',
+          indicator: 'bg-[#75472E]',
+          badge: 'bg-[#4D2D1B] text-white',
+          glow: 'shadow-[#331C0E]/40'
         }
       }
     ]
@@ -72,9 +72,9 @@ export const MENU_CATALOG = [
     id: 'organizations',
     label: 'Organizations',
     description: 'Companies, multi-tenant workspaces, and admins',
-    color: 'sky',
-    dotClass: 'bg-sky-500 shadow-sky-500/50',
-    badgeClass: 'bg-sky-50 text-sky-700 border-sky-200',
+    color: 'amber',
+    dotClass: 'bg-[#A0522D] shadow-[#A0522D]/50',
+    badgeClass: 'bg-amber-50 text-amber-900 border-amber-300',
     items: [
       {
         id: 'super_companies',
@@ -83,13 +83,13 @@ export const MENU_CATALOG = [
         icon: 'Building2',
         defaultRoles: ['super_admin'],
         theme: {
-          name: 'sky',
-          gradient: 'from-sky-500 via-cyan-500 to-blue-600',
-          activeLink: 'bg-sky-50/90 text-sky-800 font-bold border-sky-200/80 shadow-xs shadow-sky-100',
-          activeIcon: 'text-sky-600',
-          indicator: 'bg-sky-500',
-          badge: 'bg-sky-600 text-white',
-          glow: 'shadow-sky-500/20'
+          name: 'coffee',
+          gradient: 'from-[#361F14] via-[#52301C] to-[#7F4B2E]',
+          activeLink: 'bg-gradient-to-r from-[#361F14] to-[#52301C] text-amber-100 font-bold border-[#7F4B2E]/50 shadow-xs shadow-[#361F14]/40',
+          activeIcon: 'text-amber-300',
+          indicator: 'bg-[#7F4B2E]',
+          badge: 'bg-[#52301C] text-white',
+          glow: 'shadow-[#361F14]/40'
         }
       }
     ]
@@ -215,13 +215,13 @@ export const MENU_CATALOG = [
         icon: 'User',
         defaultRoles: ['company_admin'],
         theme: {
-          name: 'cyan',
-          gradient: 'from-cyan-600 via-teal-600 to-blue-600',
-          activeLink: 'bg-cyan-50/90 text-cyan-800 font-bold border-cyan-200/80 shadow-xs shadow-cyan-100',
-          activeIcon: 'text-cyan-600',
-          indicator: 'bg-cyan-600',
-          badge: 'bg-cyan-600 text-white',
-          glow: 'shadow-cyan-500/20'
+          name: 'coffee',
+          gradient: 'from-[#3E2415] via-[#5D3720] to-[#8A5232]',
+          activeLink: 'bg-gradient-to-r from-[#3E2415] to-[#5D3720] text-amber-100 font-bold border-[#8A5232]/50 shadow-xs shadow-[#3E2415]/40',
+          activeIcon: 'text-amber-300',
+          indicator: 'bg-[#8A5232]',
+          badge: 'bg-[#5D3720] text-white',
+          glow: 'shadow-[#3E2415]/40'
         }
       },
       {
@@ -307,13 +307,13 @@ export const MENU_CATALOG = [
         badgeKey: 'openQuotes',
         defaultRoles: ['company_admin'],
         theme: {
-          name: 'indigo',
-          gradient: 'from-indigo-500 via-blue-600 to-purple-600',
-          activeLink: 'bg-indigo-50/90 text-indigo-800 font-bold border-indigo-200/80 shadow-xs shadow-indigo-100',
-          activeIcon: 'text-indigo-600',
-          indicator: 'bg-indigo-500',
-          badge: 'bg-indigo-600 text-white',
-          glow: 'shadow-indigo-500/20'
+          name: 'coffee',
+          gradient: 'from-[#331C0E] via-[#4D2D1B] to-[#75472E]',
+          activeLink: 'bg-gradient-to-r from-[#331C0E] to-[#4D2D1B] text-amber-100 font-bold border-[#75472E]/50 shadow-xs shadow-[#331C0E]/40',
+          activeIcon: 'text-amber-300',
+          indicator: 'bg-[#75472E]',
+          badge: 'bg-[#4D2D1B] text-white',
+          glow: 'shadow-[#331C0E]/40'
         }
       }
     ]
@@ -563,13 +563,13 @@ export const MENU_CATALOG = [
         emoji: '🔩',
         defaultRoles: ['super_admin', 'company_admin', 'sales_user', 'sales_regional_partner', 'sales_channel_partner', 'sales_referral_partner'],
         theme: {
-          name: 'blue',
-          gradient: 'from-blue-600 via-indigo-600 to-sky-600',
-          activeLink: 'bg-blue-50/90 text-blue-800 font-bold border-blue-200/80 shadow-xs shadow-blue-100',
-          activeIcon: 'text-blue-600',
-          indicator: 'bg-blue-600',
-          badge: 'bg-blue-600 text-white',
-          glow: 'shadow-blue-500/20'
+          name: 'coffee',
+          gradient: 'from-[#3A2216] via-[#5A3523] to-[#875034]',
+          activeLink: 'bg-gradient-to-r from-[#3A2216] to-[#5A3523] text-amber-100 font-bold border-[#875034]/50 shadow-xs shadow-[#3A2216]/40',
+          activeIcon: 'text-amber-300',
+          indicator: 'bg-[#875034]',
+          badge: 'bg-[#5A3523] text-white',
+          glow: 'shadow-[#3A2216]/40'
         }
       },
       {
@@ -653,13 +653,13 @@ export const MENU_CATALOG = [
         emoji: '🛢️',
         defaultRoles: ['super_admin', 'company_admin', 'sales_user', 'sales_regional_partner', 'sales_channel_partner', 'sales_referral_partner'],
         theme: {
-          name: 'cyan',
-          gradient: 'from-cyan-600 via-sky-600 to-blue-600',
-          activeLink: 'bg-cyan-50/90 text-cyan-900 font-bold border-cyan-200/80 shadow-xs shadow-cyan-100',
-          activeIcon: 'text-cyan-600',
-          indicator: 'bg-cyan-600',
-          badge: 'bg-cyan-600 text-white',
-          glow: 'shadow-cyan-500/20'
+          name: 'coffee',
+          gradient: 'from-[#321C11] via-[#4F2C1B] to-[#784429]',
+          activeLink: 'bg-gradient-to-r from-[#321C11] to-[#4F2C1B] text-amber-100 font-bold border-[#784429]/50 shadow-xs shadow-[#321C11]/40',
+          activeIcon: 'text-amber-300',
+          indicator: 'bg-[#784429]',
+          badge: 'bg-[#4F2C1B] text-white',
+          glow: 'shadow-[#321C11]/40'
         }
       },
       {

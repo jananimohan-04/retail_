@@ -25,13 +25,15 @@
 
 /* Dark navigation sidebar rules to guarantee high-contrast text and sleek scrollbars */
 aside, .sidebar-dark {
-  color: #E2E8F0;
+  color: #E8DDD5;
+  background-color: #1C1008;
 }
 aside a, .sidebar-dark a {
-  color: #CBD5E1;
+  color: #D7C4B7;
 }
 aside a:hover, .sidebar-dark a:hover {
   color: #FFFFFF;
+  background-color: rgba(52, 31, 22, 0.85);
 }
 aside a.active, .sidebar-dark a.active {
   color: #FFFFFF !important;
@@ -42,7 +44,7 @@ aside a.active span, .sidebar-dark a.active span {
 
 .sidebar-scroll {
   scrollbar-width: thin;
-  scrollbar-color: #334155 transparent;
+  scrollbar-color: #4A2818 transparent;
 }
 .sidebar-scroll::-webkit-scrollbar {
   width: 5px;
@@ -51,37 +53,37 @@ aside a.active span, .sidebar-dark a.active span {
   background: transparent;
 }
 .sidebar-scroll::-webkit-scrollbar-thumb {
-  background: #334155;
+  background: #4A2818;
   border-radius: 999px;
   border: none;
 }
 .sidebar-scroll::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+  background: #6B3B24;
 }
 
 /* Header specific input & select overrides for dark topbar */
 header input#headerSearchInput {
-  background-color: #1E293B !important;
-  color: #F8FAFC !important;
-  border: 1px solid #334155 !important;
+  background-color: #24140B !important;
+  color: #FDFBF7 !important;
+  border: 1px solid #3E2316 !important;
   padding: 7px 36px 7px 36px !important;
   font-size: 12px !important;
   border-radius: 12px !important;
   height: 36px !important;
 }
 header input#headerSearchInput:focus {
-  border-color: #FF6500 !important;
-  box-shadow: 0 0 0 2px rgba(255, 101, 0, 0.25) !important;
-  background-color: #0F172A !important;
+  border-color: #8C4E2E !important;
+  box-shadow: 0 0 0 2px rgba(140, 78, 46, 0.35) !important;
+  background-color: #1C1008 !important;
 }
 header input#headerSearchInput::placeholder {
-  color: #94A3B8 !important;
+  color: #A89080 !important;
 }
 
 header select.company-select {
-  background-color: #1E293B !important;
-  color: #F8FAFC !important;
-  border: 1px solid #334155 !important;
+  background-color: #24140B !important;
+  color: #FDFBF7 !important;
+  border: 1px solid #3E2316 !important;
   padding: 6px 10px 6px 10px !important;
   font-size: 12px !important;
   font-weight: 700 !important;
@@ -90,12 +92,12 @@ header select.company-select {
   width: auto !important;
 }
 header select.company-select:focus {
-  border-color: #FF6500 !important;
-  box-shadow: 0 0 0 2px rgba(255, 101, 0, 0.25) !important;
+  border-color: #8C4E2E !important;
+  box-shadow: 0 0 0 2px rgba(140, 78, 46, 0.35) !important;
 }
 header select.company-select option {
-  background-color: #0F172A !important;
-  color: #F8FAFC !important;
+  background-color: #1C1008 !important;
+  color: #FDFBF7 !important;
 }
 
 /* ---------- buttons ---------- */

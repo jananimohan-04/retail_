@@ -33,7 +33,7 @@ function sideLink(to, label, IconComponent, badge = null, onClick = null, mini =
         group relative flex items-center ${mini ? 'justify-center p-2 w-9 h-9 mx-auto' : 'gap-2.5 px-2.5 py-1.5'} rounded-lg text-xs font-semibold transition-all duration-150
         ${isActive 
           ? `${activeClass} font-bold border` 
-          : 'text-slate-300 hover:text-white hover:bg-slate-800/80'}
+          : 'text-[#D7C4B7] hover:text-white hover:bg-[#341F16]/80'}
       `}
     >
       {({ isActive }) => (
@@ -48,23 +48,23 @@ function sideLink(to, label, IconComponent, badge = null, onClick = null, mini =
           <span className={`p-0.5 rounded-md transition-colors ${
             isActive 
               ? `${activeIconColor} bg-white/20 shadow-2xs` 
-              : 'text-slate-400 group-hover:text-orange-400 group-hover:bg-slate-750'
+              : 'text-[#B89F8F] group-hover:text-amber-300 group-hover:bg-[#43281C]'
           }`}>
             {IconComponent && <IconComponent className="w-4 h-4 flex-shrink-0" />}
           </span>
           {!mini && (
             <span className={`truncate flex-1 tracking-tight font-semibold ${
-              isActive ? '!text-white' : 'text-slate-200 group-hover:!text-white'
+              isActive ? '!text-white' : 'text-[#E8DDD5] group-hover:!text-white'
             }`}>
               {label}
             </span>
           )}
           {!mini && badge ? (
-            <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold tracking-wide ${isActive ? badgeClass : 'bg-slate-800 text-slate-300 border border-slate-700'}`}>
+            <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold tracking-wide ${isActive ? badgeClass : 'bg-[#2E180E] text-[#D7C4B7] border border-[#482819]'}`}>
               {badge}
             </span>
           ) : mini && badge ? (
-            <span className={`absolute top-1 right-1 w-2.5 h-2.5 rounded-full ${indicatorColor} ring-2 ring-slate-900`} />
+            <span className={`absolute top-1 right-1 w-2.5 h-2.5 rounded-full ${indicatorColor} ring-2 ring-[#1C1008]`} />
           ) : null}
         </>
       )}
@@ -115,12 +115,12 @@ export function Sidebar({ counts, onItemClick, mini = false }) {
     <div className={`w-full flex flex-col ${mini ? 'gap-1 py-0.5 items-center' : 'gap-2 py-0.5'}`}>
       {activeCategories.map((cat, idx) => (
         <div key={cat.id} className="w-full">
-          {idx > 0 && mini && <div className="w-8 border-t border-slate-800 my-1 mx-auto" />}
+          {idx > 0 && mini && <div className="w-8 border-t border-[#3A2217] my-1 mx-auto" />}
           <div>
             {!mini && (
               <div className="flex items-center gap-1.5 px-3 mb-1 mt-1.5 first:mt-0">
-                <span className={`w-1.5 h-1.5 rounded-full ${cat.dotClass || 'bg-slate-400'}`} />
-                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 truncate">
+                <span className={`w-1.5 h-1.5 rounded-full ${cat.dotClass || 'bg-amber-600'}`} />
+                <span className="text-[10px] font-black uppercase tracking-wider text-[#A88E7D] truncate">
                   {role === 'company_admin' && cat.id === 'operations' ? `${companyTitle} • ${cat.label}` : cat.label}
                 </span>
               </div>
@@ -138,9 +138,9 @@ export function Sidebar({ counts, onItemClick, mini = false }) {
 
       {/* Guidance boxes for content writer / finance if active and only workflow */}
       {!mini && role === 'content_writer' && hasPermission('content_writer') && !hasPermission('admin_products') && (
-        <div className="mt-2 p-2.5 rounded-xl bg-slate-800/80 border border-slate-700/80">
-          <div className="text-[10px] font-extrabold uppercase tracking-widest text-orange-400 mb-1">GUIDANCE</div>
-          <p className="text-[11px] leading-relaxed text-slate-300">
+        <div className="mt-2 p-2.5 rounded-xl bg-[#28150D]/90 border border-[#482819]/90">
+          <div className="text-[10px] font-extrabold uppercase tracking-widest text-amber-400 mb-1">GUIDANCE</div>
+          <p className="text-[11px] leading-relaxed text-[#D7C4B7]">
             Products arrive here automatically from ERP Inventory. Write sales copy, attach media, then
             <span className="font-bold text-white"> Submit to Finance</span> for pricing.
           </p>
@@ -148,9 +148,9 @@ export function Sidebar({ counts, onItemClick, mini = false }) {
       )}
 
       {!mini && role === 'finance' && hasPermission('finance_review') && !hasPermission('admin_products') && (
-        <div className="mt-2 p-2.5 rounded-xl bg-slate-800/80 border border-slate-700/80">
+        <div className="mt-2 p-2.5 rounded-xl bg-[#28150D]/90 border border-[#482819]/90">
           <div className="text-[10px] font-extrabold uppercase tracking-widest text-teal-400 mb-1">GUIDANCE</div>
-          <p className="text-[11px] leading-relaxed text-slate-300">
+          <p className="text-[11px] leading-relaxed text-[#D7C4B7]">
             Review submitted content, set the selling price, then
             <span className="font-bold text-white"> Approve &amp; Publish</span> to make the listing visible.
           </p>
@@ -160,9 +160,9 @@ export function Sidebar({ counts, onItemClick, mini = false }) {
       {/* Dynamic Browse Categories governed by dynamic permissions */}
       {showCategories && (
         <div className="w-full">
-          {mini && <div className="w-8 border-t border-slate-800 my-1 mx-auto" />}
+          {mini && <div className="w-8 border-t border-[#3A2217] my-1 mx-auto" />}
           <div>
-            {!mini && <div className="text-[10px] font-black uppercase tracking-wider text-slate-400 px-3 mb-1 mt-1.5">BROWSE CATEGORIES</div>}
+            {!mini && <div className="text-[10px] font-black uppercase tracking-wider text-[#A88E7D] px-3 mb-1 mt-1.5">BROWSE CATEGORIES</div>}
             <div className={mini ? 'flex flex-col gap-0.5 items-center' : 'space-y-0.5'}>
               {permittedCats.map((c) => (
                 <NavLink
@@ -172,7 +172,7 @@ export function Sidebar({ counts, onItemClick, mini = false }) {
                   title={c.name}
                   className={({ isActive }) => `
                     flex items-center ${mini ? 'justify-center w-9 h-9 p-1.5' : 'gap-2.5 px-2.5 py-1.5'} rounded-lg text-xs font-semibold transition-all
-                    ${isActive ? 'bg-gradient-to-r from-orange-600 to-amber-600 text-white font-bold shadow-xs' : 'text-slate-300 hover:text-white hover:bg-slate-800/80'}
+                    ${isActive ? 'bg-gradient-to-r from-[#4A2818] to-[#6E3C24] text-white font-bold shadow-xs border border-[#8C4E2E]/40' : 'text-[#D7C4B7] hover:text-white hover:bg-[#341F16]/80'}
                   `}
                 >
                   {({ isActive }) => (
@@ -180,7 +180,7 @@ export function Sidebar({ counts, onItemClick, mini = false }) {
                       <span className="text-sm flex-shrink-0">{c.icon || '📦'}</span>
                       {!mini && (
                         <span className={`truncate flex-1 tracking-tight font-semibold ${
-                          isActive ? '!text-white' : 'text-slate-200 group-hover:!text-white'
+                          isActive ? '!text-white' : 'text-[#E8DDD5] group-hover:!text-white'
                         }`}>
                           {c.name}
                         </span>
@@ -233,13 +233,13 @@ export const Topbar = forwardRef(function Topbar({ onMobileToggle, sidebarOpen, 
   const roleLabel = me?.salesTier ? `${me.salesTier} (+${me.markupPct || 0}%)` : (ROLE_LABELS[me?.role] || 'Sales');
 
   return (
-    <header ref={ref} className="sticky top-0 z-50 bg-[#0B1329] backdrop-blur-md border-b border-slate-800 shadow-md shadow-slate-950/20 w-full text-slate-100">
+    <header ref={ref} className="sticky top-0 z-50 bg-[#1C1008] backdrop-blur-md border-b border-[#3A2217] shadow-md shadow-black/30 w-full text-stone-100">
       <div className="w-full px-3 sm:px-5 h-15 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2.5 flex-shrink-0">
           <button
             type="button"
             onClick={onMobileToggle}
-            className="lg:hidden p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+            className="lg:hidden p-2 rounded-xl text-[#A89080] hover:text-white hover:bg-[#341F16] transition-colors cursor-pointer"
             aria-label="Toggle menu"
           >
             <Menu className="w-5 h-5" />
@@ -257,7 +257,7 @@ export const Topbar = forwardRef(function Topbar({ onMobileToggle, sidebarOpen, 
               className={`hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-all text-xs font-bold cursor-pointer shadow-xs ml-3 sm:ml-4 ${
                 !sidebarOpen
                   ? 'bg-gradient-to-r from-orange-500 to-amber-600 text-white border-orange-500 hover:from-orange-600 hover:to-amber-700 shadow-sm shadow-orange-500/30'
-                  : 'bg-slate-800/90 border-slate-700/80 text-slate-300 hover:bg-slate-700 hover:text-white'
+                  : 'bg-[#28150D]/90 border-[#482819]/80 text-[#D7C4B7] hover:bg-[#341F16] hover:text-white'
               }`}
             >
               {!sidebarOpen ? (
@@ -267,7 +267,7 @@ export const Topbar = forwardRef(function Topbar({ onMobileToggle, sidebarOpen, 
                 </>
               ) : (
                 <>
-                  <PanelLeftClose className="w-3.5 h-3.5 text-slate-400" />
+                  <PanelLeftClose className="w-3.5 h-3.5 text-[#A89080]" />
                   <span className="hidden xl:inline">Full Page</span>
                 </>
               )}
@@ -276,31 +276,31 @@ export const Topbar = forwardRef(function Topbar({ onMobileToggle, sidebarOpen, 
         </div>
 
         <form onSubmit={submit} className="flex-1 max-w-xl hidden md:flex items-center relative">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 pointer-events-none" />
+          <Search className="w-4 h-4 text-[#A89080] absolute left-3.5 pointer-events-none" />
           <input
             id="headerSearchInput"
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Search SKU, part number, brand, industrial tooling..."
-            className="w-full pl-9 pr-10 py-1.5 text-xs bg-slate-800/90 border border-slate-700/90 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all text-slate-100 placeholder-slate-400"
+            className="w-full pl-9 pr-10 py-1.5 text-xs bg-[#24140B] border border-[#3E2316] rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 transition-all text-stone-100 placeholder-[#9E8676]"
           />
-          <kbd className="absolute right-3 px-1.5 py-0.5 text-[10px] font-mono font-semibold text-slate-400 bg-slate-700/80 border border-slate-600 rounded-md pointer-events-none shadow-xs">/</kbd>
+          <kbd className="absolute right-3 px-1.5 py-0.5 text-[10px] font-mono font-semibold text-[#A89080] bg-[#341E12] border border-[#4A2D1F] rounded-md pointer-events-none shadow-xs">/</kbd>
         </form>
 
         <div className="flex items-center gap-2 sm:gap-2.5 flex-shrink-0">
           {/* Global Company Selector for Super Admin */}
           {me?.role === 'super_admin' && (
-            <div className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-800 border border-slate-700 hover:border-orange-500/50 rounded-xl shadow-xs transition-colors">
-              <Building2 className="w-3.5 h-3.5 text-orange-400 flex-shrink-0" />
+            <div className="flex items-center gap-1.5 px-2.5 py-1 bg-[#24140B] border border-[#3E2316] hover:border-amber-600/50 rounded-xl shadow-xs transition-colors">
+              <Building2 className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
               <select
                 value={activeCompany}
                 onChange={(e) => setActiveCompany(e.target.value)}
-                className="company-select bg-slate-800 text-xs font-bold text-slate-100 outline-none cursor-pointer border-none py-0.5 pr-1 max-w-[150px] sm:max-w-[185px] truncate"
+                className="company-select bg-[#24140B] text-xs font-bold text-stone-100 outline-none cursor-pointer border-none py-0.5 pr-1 max-w-[150px] sm:max-w-[185px] truncate"
                 title="Filter active company scope across Super Admin pages"
               >
-                <option value="all" className="bg-slate-900 text-slate-100">🏢 All Companies (Platform)</option>
+                <option value="all" className="bg-[#1C1008] text-stone-100">🏢 All Companies (Platform)</option>
                 {companies.map((c) => (
-                  <option key={c.id} value={c.id} className="bg-slate-900 text-slate-100">
+                  <option key={c.id} value={c.id} className="bg-[#1C1008] text-stone-100">
                     {c.logo || '🏭'} {c.name} ({c.code || c.id})
                   </option>
                 ))}
@@ -311,51 +311,51 @@ export const Topbar = forwardRef(function Topbar({ onMobileToggle, sidebarOpen, 
           {me && (
             <Link
               to="/store/profile"
-              className="hidden sm:flex items-center gap-2 bg-slate-800/90 hover:bg-slate-750 px-2.5 py-1 rounded-xl border border-slate-700 transition-colors cursor-pointer"
+              className="hidden sm:flex items-center gap-2 bg-[#24140B] hover:bg-[#341F16] px-2.5 py-1 rounded-xl border border-[#3E2316] transition-colors cursor-pointer"
               title="View Profile"
             >
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-xs font-bold text-slate-200 truncate max-w-[130px]">{me.name}</span>
-              <span className="text-[10px] uppercase font-extrabold text-orange-400 bg-orange-950/60 border border-orange-800/60 px-1.5 py-0.5 rounded-md tracking-wider">
+              <span className="text-xs font-bold text-[#E8DDD5] truncate max-w-[130px]">{me.name}</span>
+              <span className="text-[10px] uppercase font-extrabold text-amber-400 bg-amber-950/60 border border-amber-800/60 px-1.5 py-0.5 rounded-md tracking-wider">
                 {roleLabel}
               </span>
             </Link>
           )}
 
           {(!me || !me.google) && (
-            <div className="hidden 2xl:flex items-center gap-1 p-0.5 bg-slate-800/90 rounded-xl border border-slate-700 text-[11px] font-bold">
+            <div className="hidden 2xl:flex items-center gap-1 p-0.5 bg-[#24140B] rounded-xl border border-[#3E2316] text-[11px] font-bold">
               <button
                 type="button"
                 onClick={() => loginAs('super_admin')}
-                className={`px-2 py-0.5 rounded-lg transition-all cursor-pointer ${me?.role === 'super_admin' ? 'bg-orange-600 text-white shadow-xs' : 'text-slate-400 hover:text-white'}`}
+                className={`px-2 py-0.5 rounded-lg transition-all cursor-pointer ${me?.role === 'super_admin' ? 'bg-[#824E30] text-white shadow-xs font-black' : 'text-[#A89080] hover:text-white'}`}
               >
                 Super
               </button>
               <button
                 type="button"
                 onClick={() => loginAs('company_admin')}
-                className={`px-2 py-0.5 rounded-lg transition-all cursor-pointer ${me?.role === 'company_admin' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-400 hover:text-white'}`}
+                className={`px-2 py-0.5 rounded-lg transition-all cursor-pointer ${me?.role === 'company_admin' ? 'bg-[#6B3A1E] text-white shadow-xs font-black' : 'text-[#A89080] hover:text-white'}`}
               >
                 Admin
               </button>
               <button
                 type="button"
                 onClick={() => loginAs('content_writer')}
-                className={`px-2 py-0.5 rounded-lg transition-all cursor-pointer ${me?.role === 'content_writer' ? 'bg-fuchsia-600 text-white shadow-xs' : 'text-slate-400 hover:text-white'}`}
+                className={`px-2 py-0.5 rounded-lg transition-all cursor-pointer ${me?.role === 'content_writer' ? 'bg-fuchsia-600 text-white shadow-xs' : 'text-[#A89080] hover:text-white'}`}
               >
                 Content
               </button>
               <button
                 type="button"
                 onClick={() => loginAs('finance')}
-                className={`px-2 py-0.5 rounded-lg transition-all cursor-pointer ${me?.role === 'finance' ? 'bg-teal-600 text-white shadow-xs' : 'text-slate-400 hover:text-white'}`}
+                className={`px-2 py-0.5 rounded-lg transition-all cursor-pointer ${me?.role === 'finance' ? 'bg-teal-600 text-white shadow-xs' : 'text-[#A89080] hover:text-white'}`}
               >
                 Finance
               </button>
               <button
                 type="button"
                 onClick={() => loginAs('sales_user')}
-                className={`px-2 py-0.5 rounded-lg transition-all cursor-pointer ${me?.role === 'sales_user' ? 'bg-amber-600 text-white shadow-xs' : 'text-slate-400 hover:text-white'}`}
+                className={`px-2 py-0.5 rounded-lg transition-all cursor-pointer ${me?.role === 'sales_user' ? 'bg-amber-600 text-white shadow-xs' : 'text-[#A89080] hover:text-white'}`}
               >
                 Sales
               </button>
@@ -364,7 +364,7 @@ export const Topbar = forwardRef(function Topbar({ onMobileToggle, sidebarOpen, 
 
           <Link
             to="/store/cart"
-            className="relative p-2 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-750 text-slate-300 hover:text-orange-400 transition-all duration-200 shadow-xs group cursor-pointer"
+            className="relative p-2 rounded-xl border border-[#3E2316] bg-[#24140B] hover:bg-[#341F16] text-[#D7C4B7] hover:text-amber-400 transition-all duration-200 shadow-xs group cursor-pointer"
             aria-label="Shopping Cart"
           >
             <ShoppingCart className="w-4 h-4 transition-transform group-hover:scale-110" />
@@ -372,7 +372,7 @@ export const Topbar = forwardRef(function Topbar({ onMobileToggle, sidebarOpen, 
               <motion.span
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
-                className="absolute -top-1.5 -right-1.5 bg-orange-600 text-white font-extrabold text-[10px] min-w-4 h-4 rounded-full flex items-center justify-center px-1 shadow-sm border border-slate-900"
+                className="absolute -top-1.5 -right-1.5 bg-orange-600 text-white font-extrabold text-[10px] min-w-4 h-4 rounded-full flex items-center justify-center px-1 shadow-sm border border-[#1C1008]"
               >
                 {cartN}
               </motion.span>
@@ -381,7 +381,7 @@ export const Topbar = forwardRef(function Topbar({ onMobileToggle, sidebarOpen, 
 
           <Link
             to="/store/profile"
-            className="p-2 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-750 text-slate-300 hover:text-orange-400 transition-all duration-200 shadow-xs cursor-pointer group"
+            className="p-2 rounded-xl border border-[#3E2316] bg-[#24140B] hover:bg-[#341F16] text-[#D7C4B7] hover:text-amber-400 transition-all duration-200 shadow-xs cursor-pointer group"
             title={me?.name ? `${me.name} (${roleLabel}) — User Profile` : 'User Profile'}
             aria-label="User Profile"
           >
@@ -391,7 +391,7 @@ export const Topbar = forwardRef(function Topbar({ onMobileToggle, sidebarOpen, 
           <button
             type="button"
             onClick={() => { logout(); nav('/login'); }}
-            className="p-2 rounded-xl text-slate-400 hover:text-rose-400 hover:bg-rose-950/40 border border-slate-700 transition-colors cursor-pointer"
+            className="p-2 rounded-xl text-[#B89F8F] hover:text-rose-400 hover:bg-rose-950/40 border border-[#3E2316] transition-colors cursor-pointer"
             title="Sign Out"
           >
             <LogOut className="w-4 h-4" />
@@ -451,7 +451,7 @@ export function Shell({ counts, noSide, children }) {
         {!noSide && (
           <aside 
             style={{ top: `${headerH}px`, height: `calc(100vh - ${headerH}px)` }}
-            className={`hidden lg:flex flex-col flex-shrink-0 bg-[#0B1329] border-r border-slate-800 sticky self-start overflow-y-auto sidebar-scroll sidebar-dark text-slate-200 transition-all duration-200 z-30 shadow-md ${
+            className={`hidden lg:flex flex-col flex-shrink-0 bg-[#1C1008] border-r border-[#3A2217] sticky self-start overflow-y-auto sidebar-scroll sidebar-dark text-[#E8DDD5] transition-all duration-200 z-30 shadow-md ${
               sidebarOpen ? 'w-64 px-2 py-2.5' : 'w-14 p-1.5 items-center'
             }`}
           >
@@ -472,12 +472,12 @@ export function Shell({ counts, noSide, children }) {
             </motion.div>
           </main>
 
-          <footer className="border-t border-slate-800 bg-[#0B1329] py-4 text-xs text-slate-400 w-full mt-auto">
+          <footer className="border-t border-[#3A2217] bg-[#1C1008] py-4 text-xs text-[#A89080] w-full mt-auto">
             <div className="w-full px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
               <div>
                 <span className="font-bold text-white">ARGUSCNC ERP Industrial Procurement</span> • Connected B2B Factory Platform
               </div>
-              <div className="flex items-center gap-4 text-slate-400 font-medium">
+              <div className="flex items-center gap-4 text-[#A89080] font-medium">
                 <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse"></span>Multi-Tenant Architecture</span>
                 <span>•</span>
                 <span>Encrypted Cloud Storage</span>
@@ -495,23 +495,23 @@ export function Shell({ counts, noSide, children }) {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setMobileOpen(false)}
-              className="fixed inset-0 bg-slate-950/70"
+              className="fixed inset-0 bg-black/75"
             />
             <motion.div
               initial={{ x: '-100%' }}
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 250 }}
-              className="fixed inset-y-0 left-0 w-72 bg-[#0B1329] border-r border-slate-800 shadow-2xl p-4 flex flex-col z-10 overflow-y-auto sidebar-scroll sidebar-dark text-slate-200"
+              className="fixed inset-y-0 left-0 w-72 bg-[#1C1008] border-r border-[#3A2217] shadow-2xl p-4 flex flex-col z-10 overflow-y-auto sidebar-scroll sidebar-dark text-[#E8DDD5]"
             >
-              <div className="flex items-center justify-between pb-4 border-b border-slate-800 mb-2">
+              <div className="flex items-center justify-between pb-4 border-b border-[#3A2217] mb-2">
                 <div className="bg-white px-2 py-1 rounded-lg">
                   <img src="assets/argus-logo.png" alt="ARGUSCNC" className="h-6 w-auto" />
                 </div>
                 <button
                   type="button"
                   onClick={() => setMobileOpen(false)}
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
+                  className="p-1.5 rounded-lg text-[#A89080] hover:text-white hover:bg-[#341F16]"
                 >
                   <X className="w-5 h-5" />
                 </button>

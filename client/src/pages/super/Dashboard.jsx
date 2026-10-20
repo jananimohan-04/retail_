@@ -55,12 +55,12 @@ export default function Dashboard() {
         }
       />
       {co && (
-        <div className="flex items-center justify-between gap-3 p-3.5 mb-4 bg-sky-50/90 border border-sky-200/90 rounded-2xl shadow-2xs">
+        <div className="flex items-center justify-between gap-3 p-3.5 mb-4 bg-[#FAF6F0] border border-[#E3D5C8] rounded-2xl shadow-2xs">
           <div className="flex items-center gap-3">
             <span className="text-2xl">{co.logo || '🏭'}</span>
             <div>
               <div className="text-xs font-bold text-slate-900">
-                Active Tenant Scope: <span className="text-sky-600 font-extrabold">{co.name}</span> <span className="font-mono text-slate-500">({co.code || co.id})</span>
+                Active Tenant Scope: <span className="text-[#824E30] font-extrabold">{co.name}</span> <span className="font-mono text-slate-500">({co.code || co.id})</span>
               </div>
               <div className="text-[11px] text-slate-500">
                 Dashboard metrics, catalog inventory, and orders are scoped to this company
@@ -70,7 +70,7 @@ export default function Dashboard() {
           <button
             type="button"
             onClick={() => setActiveCompany('all')}
-            className="px-3 py-1.5 rounded-xl text-xs font-bold text-sky-700 hover:text-sky-900 bg-white hover:bg-sky-100/60 border border-sky-200 transition-colors cursor-pointer shadow-2xs"
+            className="px-3 py-1.5 rounded-xl text-xs font-bold text-[#824E30] hover:text-[#5C331E] bg-white hover:bg-[#F3EBE3] border border-[#D5C2B1] transition-colors cursor-pointer shadow-2xs"
           >
             Reset to All Companies
           </button>
@@ -83,8 +83,8 @@ export default function Dashboard() {
         <Kpi to="#/super/categories" value={s.categories} label="Global categories" sub="CNC catalog taxonomy" grad="linear-gradient(135deg,#92400E,#D97706)" />
         <Kpi to="#/super/orders" value={ordersCount} label="Total orders" sub={`${pendingCount} pending action`} grad="linear-gradient(135deg,#14532D,#16A34A)" />
         <Kpi to="#/super/orders?status=Pending" value={pendingCount} label="Pending orders" sub="needs processing" grad="linear-gradient(135deg,#065F46,#10B981)" />
-        <Kpi to="#/super/quotes" value={s.quotes} label="Quotation requests" sub={`${s.openQuotes} open RFQs`} grad="linear-gradient(135deg,#1E3A8A,#38BDF8)" />
-        <Kpi to="#/super/orders" value={fmt(gmvValue)} label="Order value" sub={co ? `${co.name} gross value` : "all companies, live rows"} grad="linear-gradient(135deg,#0B1533,#334155)" />
+        <Kpi to="#/super/quotes" value={s.quotes} label="Quotation requests" sub={`${s.openQuotes} open RFQs`} grad="linear-gradient(135deg,#3A2216,#6E3C24)" />
+        <Kpi to="#/super/orders" value={fmt(gmvValue)} label="Order value" sub={co ? `${co.name} gross value` : "all companies, live rows"} grad="linear-gradient(135deg,#1C1008,#3E2316)" />
       </div>
       <div className="grid2" style={{ marginTop: 14 }}>
         <div className="card"><div className="card-pad">
