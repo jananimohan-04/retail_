@@ -4,8 +4,8 @@
 :root{
   --navy:#0E0704; --blue:#FF6500; --brand-dark:#EA580C; --orange:#FF6500; --orange-dark:#EA580C;
   --violet:#7C3AED; --emerald:#10B981; --emerald-dark:#065F46; --amber:#F59E0B; --red:#DC2626;
-  --bg:#F1F5F9; --surface:#FFFFFF; --text:#0F172A; --text-2:#1E293B; --muted:#64748B;
-  --border:#E2E8F0; --line:#CBD5E1;
+  --bg:#DAC8B8; --surface:#EDE1D3; --text:#1A0A03; --text-2:#2E1508; --muted:#6B503E;
+  --border:#BAA794; --line:#D8C6B5;
   --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:20px; --s6:24px; --s8:32px;
   --r-sm:8px; --r:12px; --r-lg:14px;
   --shadow:0 1px 3px rgba(15,23,42,.08),0 4px 14px rgba(15,23,42,.06);
@@ -37,7 +37,7 @@
 
 /* scrollbars */
 ::-webkit-scrollbar{width:10px;height:10px}
-::-webkit-scrollbar-thumb{background:#CBD5E1;border-radius:8px;border:2px solid var(--bg)}
+::-webkit-scrollbar-thumb{background:#BAA794;border-radius:8px;border:2px solid var(--bg)}
 ::-webkit-scrollbar-track{background:transparent}
 
 /* numeric alignment for ERP figures */

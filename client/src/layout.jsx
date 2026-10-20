@@ -245,7 +245,7 @@ export const Topbar = forwardRef(function Topbar({ onMobileToggle, sidebarOpen, 
             <Menu className="w-5 h-5" />
           </button>
 
-          <Link to="/store/home" className="flex items-center gap-2 group flex-shrink-0 bg-white px-3 py-1.5 rounded-xl shadow-xs border border-white/20 transition-transform hover:scale-105 duration-200">
+          <Link to="/store/home" className="flex items-center gap-2 group flex-shrink-0 bg-white keep-white px-3 py-1.5 rounded-xl shadow-xs border border-white/20 transition-transform hover:scale-105 duration-200">
             <img src="assets/argus-logo.png" alt="ARGUSCNC" className="h-7 sm:h-8 w-auto object-contain" />
           </Link>
 
@@ -438,7 +438,7 @@ export function Shell({ counts, noSide, children }) {
   }, []);
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50/60 text-slate-900 font-sans w-full">
+    <div className="min-h-screen flex flex-col bg-[#DAC8B8] text-[#1A0A03] font-sans w-full">
       <Topbar 
         ref={headerRef}
         onMobileToggle={() => setMobileOpen(true)} 
@@ -459,11 +459,7 @@ export function Shell({ counts, noSide, children }) {
           </aside>
         )}
 
-        <div className={`flex-1 min-w-0 flex flex-col justify-between w-full transition-colors duration-200 ${
-          location.pathname === '/super/dashboard' 
-            ? 'bg-[#DAC8B8]' 
-            : 'bg-gradient-to-br from-slate-100 via-slate-50 to-orange-50/15'
-        }`}>
+        <div className="flex-1 min-w-0 flex flex-col justify-between w-full transition-colors duration-200 bg-[#DAC8B8]">
           <main className="w-full flex-1 px-3 py-2 sm:px-4 sm:py-2.5 lg:px-4 lg:py-2.5">
             <motion.div
               key={location.pathname}
@@ -509,7 +505,7 @@ export function Shell({ counts, noSide, children }) {
               className="fixed inset-y-0 left-0 w-72 bg-[#0E0704] border-r border-[#26140B] shadow-2xl p-4 flex flex-col z-10 overflow-y-auto sidebar-scroll sidebar-dark text-[#E8DDD5]"
             >
               <div className="flex items-center justify-between pb-4 border-b border-[#26140B] mb-2">
-                <div className="bg-white px-2 py-1 rounded-lg">
+                <div className="bg-white keep-white px-2 py-1 rounded-lg">
                   <img src="assets/argus-logo.png" alt="ARGUSCNC" className="h-6 w-auto" />
                 </div>
                 <button

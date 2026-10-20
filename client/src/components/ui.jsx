@@ -121,7 +121,7 @@ export function PageHero({
       initial={{ opacity: 0, y: -4 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2, ease: 'easeOut' }}
-      className={`relative overflow-hidden ${className ? className : 'bg-gradient-to-r from-white via-slate-50/90 to-orange-50/20 border-slate-200/90'} rounded-xl border px-4 py-2.5 sm:px-5 sm:py-3 shadow-xs mb-3.5`}
+      className={`relative overflow-hidden ${className ? className : 'bg-gradient-to-r from-[#EFE4D6] via-[#E8DCCF] to-[#DECDBE] border-[#BAA794]'} rounded-xl border px-4 py-2.5 sm:px-5 sm:py-3 shadow-xs mb-3.5`}
     >
       <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-orange-500 via-amber-500 to-transparent" />
       <div className="relative flex items-center justify-between gap-3">
@@ -132,7 +132,7 @@ export function PageHero({
             </div>
           )}
           <div className="flex items-center gap-2.5 min-w-0 flex-wrap">
-            <h1 className="text-base sm:text-lg font-black text-slate-900 tracking-tight truncate">{title}</h1>
+            <h1 className="text-base sm:text-lg font-black text-[#1A0A03] tracking-tight truncate">{title}</h1>
             {badgeText && (
               <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide border flex-shrink-0 ${BADGE_COLORS[badgeColor] || BADGE_COLORS.blue}`}>
                 {badgeText}
@@ -326,7 +326,7 @@ export function Modal({ title, onClose, wide, children }) {
           maxHeight: '100vh'
         }}
         onClick={(e) => e.stopPropagation()}
-        className="modal bg-white rounded-2xl shadow-2xl border border-slate-300/80 overflow-hidden flex flex-col relative select-text"
+        className="modal bg-[#EDE1D3] rounded-2xl shadow-2xl border border-[#BAA794] overflow-hidden flex flex-col relative select-text"
       >
         {/* Resize Handles (4 Sides + 4 Corners) */}
         {!isMaximized && (
@@ -377,7 +377,7 @@ export function Modal({ title, onClose, wide, children }) {
               className="absolute -bottom-1.5 -right-1.5 w-5 h-5 cursor-nwse-resize z-40 flex items-end justify-end p-0.5"
               title="Resize corner"
             >
-              <div className="w-2.5 h-2.5 border-r-2 border-b-2 border-slate-400 rounded-br-xs pointer-events-none mb-0.5 mr-0.5" />
+              <div className="w-2.5 h-2.5 border-r-2 border-b-2 border-[#BAA794] rounded-br-xs pointer-events-none mb-0.5 mr-0.5" />
             </div>
           </>
         )}
@@ -385,23 +385,23 @@ export function Modal({ title, onClose, wide, children }) {
         {/* Draggable Header */}
         <div
           onMouseDown={handleHeaderMouseDown}
-          className="flex items-center justify-between px-5 py-3.5 border-b border-slate-200 bg-slate-50/90 select-none cursor-move flex-shrink-0"
+          className="flex items-center justify-between px-5 py-3.5 border-b border-[#BAA794] bg-[#DECDBE] select-none cursor-move flex-shrink-0"
         >
           <div className="flex items-center gap-2 min-w-0">
-            <GripHorizontal className="w-4 h-4 text-slate-400 flex-shrink-0 cursor-move" title="Drag to move popup" />
-            <h3 className="font-extrabold text-slate-900 text-sm tracking-tight truncate">{title}</h3>
+            <GripHorizontal className="w-4 h-4 text-[#6B503E] flex-shrink-0 cursor-move" title="Drag to move popup" />
+            <h3 className="font-extrabold text-[#1A0A03] text-sm tracking-tight truncate">{title}</h3>
           </div>
           <div className="flex items-center gap-1.5 flex-shrink-0" onMouseDown={(e) => e.stopPropagation()}>
             <button
               onClick={toggleMaximize}
-              className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition-colors cursor-pointer"
+              className="w-7 h-7 rounded-lg flex items-center justify-center text-[#6B503E] hover:text-[#1A0A03] hover:bg-[#D4C2B0]/60 transition-colors cursor-pointer"
               title={isMaximized ? "Restore size" : "Maximize popup"}
             >
               {isMaximized ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
             </button>
             <button
               onClick={onClose}
-              className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition-colors cursor-pointer"
+              className="w-7 h-7 rounded-lg flex items-center justify-center text-[#6B503E] hover:text-[#1A0A03] hover:bg-[#D4C2B0]/60 transition-colors cursor-pointer"
               title="Close (Esc)"
             >
               <X className="w-4 h-4" />
@@ -420,7 +420,7 @@ export function Modal({ title, onClose, wide, children }) {
 export function Tabs({ tabs = [], active, onTab, onChange, className = '', compact = false }) {
   const handler = onTab || onChange || (() => {});
   return (
-    <div className={`flex items-center gap-1.5 p-1 bg-slate-100/90 rounded-2xl w-fit border border-slate-200/80 overflow-x-auto max-w-full ${className !== undefined && className !== '' ? className : 'mb-5'}`}>
+    <div className={`flex items-center gap-1.5 p-1 bg-[#DECDBE] rounded-2xl w-fit border border-[#BAA794] overflow-x-auto max-w-full ${className !== undefined && className !== '' ? className : 'mb-5'}`}>
       {tabs.map((t) => {
         const id = Array.isArray(t) ? t[0] : (typeof t === 'string' ? t : t.id);
         const label = Array.isArray(t) ? t[1] : (typeof t === 'string' ? t : (t.label || t.name));
@@ -432,8 +432,8 @@ export function Tabs({ tabs = [], active, onTab, onChange, className = '', compa
             onClick={() => handler(id)}
             className={`flex items-center gap-2 ${compact ? 'px-3 py-1.5 rounded-xl' : 'px-4 py-2 rounded-xl'} text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
               isActive
-                ? 'bg-white text-slate-900 shadow-xs border border-slate-200/60'
-                : 'text-slate-500 hover:text-slate-900 hover:bg-slate-200/60'
+                ? 'bg-[#EDE1D3] text-[#1A0A03] shadow-xs border border-[#BAA794]'
+                : 'text-[#6B503E] hover:text-[#1A0A03] hover:bg-[#D4C2B0]/60'
             }`}
           >
             <span>{label}</span>
@@ -453,14 +453,14 @@ export function Confirm({ title, body, okLabel = 'Confirm', danger = false, busy
           <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${danger ? 'bg-red-50 text-red-600' : 'bg-blue-50 text-blue-600'}`}>
             <AlertTriangle className="w-5 h-5" />
           </div>
-          <div className="text-xs text-slate-600 leading-relaxed pt-1" dangerouslySetInnerHTML={{ __html: body }} />
+          <div className="text-xs text-[#2E1508] leading-relaxed pt-1" dangerouslySetInnerHTML={{ __html: body }} />
         </div>
-        <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-slate-100">
+        <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-[#BAA794]">
           <button
             type="button"
             onClick={onCancel}
             disabled={busy}
-            className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+            className="px-4 py-2 rounded-xl text-xs font-bold text-[#2E1508] hover:bg-[#DECDBE] transition-colors cursor-pointer"
           >
             Cancel
           </button>
@@ -483,10 +483,10 @@ export function Confirm({ title, body, okLabel = 'Confirm', danger = false, busy
 /* ---------- Page Header (Compact Single-Line) ---------- */
 export function PageHead({ title, eyebrow, desc, actions }) {
   return (
-    <div className="flex items-center justify-between gap-3 flex-wrap pb-2 border-b border-slate-200/80 mb-3">
+    <div className="flex items-center justify-between gap-3 flex-wrap pb-2 border-b border-[#BAA794] mb-3">
       <div className="flex items-center gap-2 flex-wrap">
-        {eyebrow && <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">{eyebrow}</span>}
-        <h1 className="text-lg font-black text-slate-900 tracking-tight">{title}</h1>
+        {eyebrow && <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#6B503E]">{eyebrow}</span>}
+        <h1 className="text-lg font-black text-[#1A0A03] tracking-tight">{title}</h1>
       </div>
       {actions && <div className="flex items-center gap-2 flex-wrap">{actions}</div>}
     </div>
@@ -498,8 +498,8 @@ export function Empty({ icon = '📭', title = 'No records found', sub, action }
   return (
     <div className="py-16 px-4 text-center max-w-md mx-auto">
       <div className="text-4xl mb-3">{icon}</div>
-      <h3 className="font-bold text-slate-900 text-sm mb-1">{title}</h3>
-      {sub && <p className="text-xs text-slate-500 mb-4">{sub}</p>}
+      <h3 className="font-bold text-[#1A0A03] text-sm mb-1">{title}</h3>
+      {sub && <p className="text-xs text-[#6B503E] mb-4">{sub}</p>}
       {action}
     </div>
   );
@@ -526,27 +526,27 @@ export function Pager({ total, page = 1, limit = 8, onPage }) {
   if (pages <= 1) return null;
 
   return (
-    <div className="flex items-center justify-between gap-4 pt-4 border-t border-slate-100 text-xs">
-      <div className="text-slate-500">
-        Showing <span className="font-bold text-slate-800 font-mono">{(page - 1) * limit + 1}</span>–
-        <span className="font-bold text-slate-800 font-mono">{Math.min(page * limit, total)}</span> of{' '}
-        <span className="font-bold text-slate-800 font-mono">{total}</span>
+    <div className="flex items-center justify-between gap-4 pt-4 border-t border-[#BAA794] text-xs">
+      <div className="text-[#6B503E]">
+        Showing <span className="font-bold text-[#1A0A03] font-mono">{(page - 1) * limit + 1}</span>–
+        <span className="font-bold text-[#1A0A03] font-mono">{Math.min(page * limit, total)}</span> of{' '}
+        <span className="font-bold text-[#1A0A03] font-mono">{total}</span>
       </div>
       <div className="flex items-center gap-1.5">
         <button
           onClick={() => onPage(page - 1)}
           disabled={page <= 1}
-          className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+          className="p-1.5 rounded-lg border border-[#BAA794] text-[#2E1508] hover:bg-[#DECDBE] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
         >
           <ChevronLeft className="w-4 h-4" />
         </button>
-        <span className="px-3 font-semibold text-slate-700">
+        <span className="px-3 font-semibold text-[#2E1508]">
           Page {page} of {pages}
         </span>
         <button
           onClick={() => onPage(page + 1)}
           disabled={page >= pages}
-          className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+          className="p-1.5 rounded-lg border border-[#BAA794] text-[#2E1508] hover:bg-[#DECDBE] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
         >
           <ChevronRight className="w-4 h-4" />
         </button>
@@ -558,13 +558,13 @@ export function Pager({ total, page = 1, limit = 8, onPage }) {
 /* ---------- Data Table ---------- */
 export function DataTable({ cols, rows = [], rowKey = (r, i) => r.id || i, empty = 'No items found.' }) {
   if (!rows || !rows.length) {
-    return <div className="text-center py-12 text-xs text-slate-400">{empty}</div>;
+    return <div className="text-center py-12 text-xs text-[#6B503E]">{empty}</div>;
   }
 
   return (
-    <div className="overflow-x-auto rounded-2xl border border-slate-200/80 bg-white shadow-2xs">
+    <div className="overflow-x-auto rounded-2xl border border-[#BAA794] bg-[#EDE1D3] shadow-2xs">
       <table className="w-full text-left text-xs">
-        <thead className="bg-slate-50/80 border-b border-slate-200/80 text-[10px] uppercase font-bold text-slate-500 tracking-wider">
+        <thead className="bg-[#DECDBE] border-b border-[#BAA794] text-[10px] uppercase font-bold text-[#2E1508] tracking-wider">
           <tr>
             {cols.map((c) => (
               <th key={c.key} className="px-4 py-3 font-bold">
@@ -573,11 +573,11 @@ export function DataTable({ cols, rows = [], rowKey = (r, i) => r.id || i, empty
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-100">
+        <tbody className="divide-y divide-[#D8C6B5]">
           {rows.map((r, i) => (
-            <tr key={rowKey(r, i)} className="hover:bg-slate-50/80 transition-colors">
+            <tr key={rowKey(r, i)} className="hover:bg-[#E5D7C9] transition-colors">
               {cols.map((c) => (
-                <td key={c.key} className="px-4 py-3 text-slate-700 align-middle">
+                <td key={c.key} className="px-4 py-3 text-[#1A0A03] align-middle">
                   {c.render ? c.render(r) : r[c.key]}
                 </td>
               ))}
@@ -592,17 +592,17 @@ export function DataTable({ cols, rows = [], rowKey = (r, i) => r.id || i, empty
 /* ---------- Distribution Bars ---------- */
 export function Bars({ items, color = '#2563EB' }) {
   if (!items || !items.length) {
-    return <div className="text-center py-6 text-xs text-slate-400">Not enough data yet.</div>;
+    return <div className="text-center py-6 text-xs text-[#6B503E]">Not enough data yet.</div>;
   }
   const mx = Math.max(...items.map((r) => r.value), 1);
   return (
     <div className="space-y-2">
       {items.map((r, i) => (
         <div key={i} className="grid grid-cols-[140px_1fr_48px] gap-3 items-center text-xs">
-          <span className="truncate text-slate-600 font-medium" title={r.label}>
+          <span className="truncate text-[#2E1508] font-medium" title={r.label}>
             {r.label}
           </span>
-          <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+          <div className="w-full bg-[#D4C2B0] h-2.5 rounded-full overflow-hidden">
             <div
               className="h-full rounded-full transition-all duration-500"
               style={{
@@ -611,7 +611,7 @@ export function Bars({ items, color = '#2563EB' }) {
               }}
             />
           </div>
-          <span className="text-right font-bold font-mono text-slate-800">{r.value}</span>
+          <span className="text-right font-bold font-mono text-[#1A0A03]">{r.value}</span>
         </div>
       ))}
     </div>
@@ -623,13 +623,13 @@ export function Field({ label, req, hint, full, children }) {
   return (
     <div className={`space-y-1.5 ${full ? 'sm:col-span-2' : ''}`}>
       {label && (
-        <label className="text-xs font-bold text-slate-700 flex items-center gap-1">
+        <label className="text-xs font-bold text-[#2E1508] flex items-center gap-1">
           <span>{label}</span>
           {req && <span className="text-red-500">*</span>}
         </label>
       )}
       {children}
-      {hint && <span className="text-[11px] text-slate-400 block">{hint}</span>}
+      {hint && <span className="text-[11px] text-[#6B503E] block">{hint}</span>}
     </div>
   );
 }
