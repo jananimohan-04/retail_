@@ -80,7 +80,6 @@ export default function Dashboard() {
         <Kpi to="#/super/companies?tab=companies" value={companiesCount} label={co ? "Company" : "Total companies"} sub={companiesSub} grad="linear-gradient(135deg,#172554,#2563EB)" />
         <Kpi to="#/super/companies?tab=admins" value={co ? (co.admin || '1') : s.admins} label="Company admins" sub={co ? "Lead administrator" : "across all companies"} grad="linear-gradient(135deg,#6D28D9,#7C3AED)" />
         <Kpi to="#/super/companies?tab=users" value={usersCount} label="Sales users" sub={co ? "Assigned team users" : "procurement teams"} grad="linear-gradient(135deg,#0E7490,#0EA5E9)" />
-        <Kpi to="#/super/catalog" value={productsCount} label="Industrial SKUs" sub={co ? `${co.name} inventory` : `${s.visibleProducts} visible in stores`} grad="linear-gradient(135deg,#9A3412,#F97316)" />
         <Kpi to="#/super/categories" value={s.categories} label="Global categories" sub="CNC catalog taxonomy" grad="linear-gradient(135deg,#92400E,#D97706)" />
         <Kpi to="#/super/orders" value={ordersCount} label="Total orders" sub={`${pendingCount} pending action`} grad="linear-gradient(135deg,#14532D,#16A34A)" />
         <Kpi to="#/super/orders?status=Pending" value={pendingCount} label="Pending orders" sub="needs processing" grad="linear-gradient(135deg,#065F46,#10B981)" />
