@@ -7,7 +7,7 @@ import {
   Receipt, FileText, Settings, ShieldCheck, Store, Home, ShoppingCart, 
   Package, User, Search, Menu, X, LogOut, ChevronRight,
   PanelLeftClose, PanelLeftOpen, Maximize2, Minimize2,
-  PenLine, IndianRupee, ClipboardCheck
+  PenLine, IndianRupee, ClipboardCheck, Pin
 } from 'lucide-react';
 import { useAuth } from './auth';
 import { useCompany } from './companyContext';
@@ -413,9 +413,11 @@ export function Shell({ counts, noSide, children }) {
   const [sidebarOpen, setSidebarOpen] = useState(() => {
     try {
       const saved = localStorage.getItem('cncforge_sidebar_open');
-      return saved !== null ? saved === 'true' : true;
-    } catch { return true; }
+      return saved === 'true'; // Default is false (Full Page mode)
+    } catch { return false; }
   });
+  const [isHovered, setIsHovered] = useState(false);
+  const hoverTimeoutRef = useRef(null);
   const location = useLocation();
   const headerRef = useRef(null);
   const [headerH, setHeaderH] = useState(56);
@@ -428,8 +430,32 @@ export function Shell({ counts, noSide, children }) {
     });
   };
 
+  const handleTriggerEnter = () => {
+    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+    setIsHovered(true);
+  };
+
+  const handleTriggerLeave = () => {
+    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+    hoverTimeoutRef.current = setTimeout(() => {
+      setIsHovered(false);
+    }, 280);
+  };
+
+  const handleSidebarEnter = () => {
+    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+  };
+
+  const handleSidebarLeave = () => {
+    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+    hoverTimeoutRef.current = setTimeout(() => {
+      setIsHovered(false);
+    }, 280);
+  };
+
   useEffect(() => {
     setMobileOpen(false);
+    setIsHovered(false);
   }, [location.pathname]);
 
   useEffect(() => {
@@ -453,15 +479,115 @@ export function Shell({ counts, noSide, children }) {
         noSide={noSide}
       />
 
-      <div className="flex-1 flex w-full min-h-0 items-stretch">
-        {!noSide && (
-          <aside 
+      {/* Floating left edge pull-tab arrow trigger (visible in Full Page mode) */}
+      {!noSide && !sidebarOpen && (
+        <>
+          {/* Left Edge Hover Detection Strip */}
+          <div
+            onMouseEnter={handleTriggerEnter}
+            onMouseOver={handleTriggerEnter}
+            onMouseLeave={handleTriggerLeave}
+            className="fixed left-0 top-15 bottom-0 w-3.5 z-40 hidden lg:block cursor-pointer pointer-events-auto"
+            title="Move cursor here to reveal menu"
+          />
+
+          {/* Left Edge Arrow Pull-Tab Button */}
+          <div
+            id="leftEdgeArrowBtn"
+            onMouseEnter={handleTriggerEnter}
+            onMouseOver={handleTriggerEnter}
+            onMouseLeave={handleTriggerLeave}
+            onClick={() => setIsHovered(prev => !prev)}
+            className="fixed left-0 top-32 z-40 hidden lg:flex items-center cursor-pointer group select-none transition-transform duration-150"
+            title="Hover or click to reveal navigation menu"
+          >
+            <div className="flex items-center gap-1.5 pl-1.5 pr-2.5 py-3 bg-[#0E0704]/95 hover:bg-[#1A0A04] text-amber-400 hover:text-white border-y border-r border-[#36180C] hover:border-amber-500/80 rounded-r-2xl shadow-xl shadow-black/60 backdrop-blur-md transition-all duration-200 group-hover:translate-x-1 group-hover:shadow-amber-500/25">
+              <div className="w-6 h-6 rounded-full bg-amber-500/15 flex items-center justify-center text-amber-400 group-hover:bg-amber-500 group-hover:text-black transition-colors shadow-2xs">
+                <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+              </div>
+              <span className="text-[10px] font-black uppercase tracking-wider text-[#D7C4B7] group-hover:text-white pr-0.5 transition-colors hidden xl:inline">
+                Menu
+              </span>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Auto-Revealed Flyout Drawer on Hover (visible in Full Page mode) */}
+      {!noSide && !sidebarOpen && (
+        <>
+          {/* Soft overlay backdrop to dismiss if clicked outside */}
+          <div
+            onClick={() => setIsHovered(false)}
+            className={`fixed inset-0 bg-black/35 backdrop-blur-[1px] z-40 hidden lg:block transition-opacity duration-200 ${
+              isHovered ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+            }`}
+          />
+
+          <aside
             style={{ top: `${headerH}px`, height: `calc(100vh - ${headerH}px)` }}
-            className={`hidden lg:flex flex-col flex-shrink-0 bg-[#0E0704] border-r border-[#26140B] sticky self-start overflow-y-auto sidebar-scroll sidebar-dark text-[#E8DDD5] transition-all duration-200 z-30 shadow-md ${
-              sidebarOpen ? 'w-64 px-2 py-2.5' : 'w-14 p-1.5 items-center'
+            onMouseEnter={handleSidebarEnter}
+            onMouseOver={handleSidebarEnter}
+            onMouseLeave={handleSidebarLeave}
+            className={`fixed left-0 z-50 w-72 bg-[#0E0704] border-r border-[#26140B] shadow-2xl p-2.5 hidden lg:flex flex-col overflow-y-auto sidebar-scroll sidebar-dark text-[#E8DDD5] transition-transform duration-200 ease-out ${
+              isHovered ? 'translate-x-0 shadow-2xl shadow-black/80' : '-translate-x-full pointer-events-none'
             }`}
           >
-            <Sidebar counts={counts} mini={!sidebarOpen} />
+            <div className="flex items-center justify-between pb-2 mb-1.5 px-2 border-b border-[#26140B] flex-shrink-0">
+              <div className="flex items-center gap-1.5 text-[11px] font-bold text-amber-400">
+                <PanelLeftOpen className="w-3.5 h-3.5" />
+                <span>Navigation Menu</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    toggleSidebar();
+                    setIsHovered(false);
+                  }}
+                  className="px-2 py-1 rounded-lg text-[#D7C4B7] hover:text-white hover:bg-[#22120A] text-[10px] font-bold flex items-center gap-1 border border-[#36180C] cursor-pointer"
+                  title="Keep sidebar pinned open permanently"
+                >
+                  <Pin className="w-3 h-3 text-amber-500" />
+                  <span>Pin Open</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsHovered(false)}
+                  className="p-1 rounded-lg text-[#A89080] hover:text-white hover:bg-[#22120A] cursor-pointer"
+                  title="Close"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto sidebar-scroll">
+              <Sidebar counts={counts} onItemClick={() => setIsHovered(false)} />
+            </div>
+          </aside>
+        </>
+      )}
+
+      <div className="flex-1 flex w-full min-h-0 items-stretch">
+        {!noSide && sidebarOpen && (
+          <aside 
+            style={{ top: `${headerH}px`, height: `calc(100vh - ${headerH}px)` }}
+            className="hidden lg:flex flex-col flex-shrink-0 bg-[#0E0704] border-r border-[#26140B] sticky self-start overflow-y-auto sidebar-scroll sidebar-dark text-[#E8DDD5] transition-all duration-200 z-30 shadow-md w-64 px-2 py-2.5"
+          >
+            <div className="flex items-center justify-between pb-2 mb-1 px-2 border-b border-[#26140B]">
+              <span className="text-[10px] uppercase font-bold tracking-wider text-[#A89080]">Navigation</span>
+              <button
+                type="button"
+                onClick={toggleSidebar}
+                className="px-2 py-0.5 rounded-lg text-[#A89080] hover:text-white hover:bg-[#22120A] text-[10px] font-semibold flex items-center gap-1 cursor-pointer"
+                title="Switch to Full Page view (hover arrow to reveal)"
+              >
+                <Maximize2 className="w-3 h-3" />
+                <span>Full Page</span>
+              </button>
+            </div>
+            <Sidebar counts={counts} />
           </aside>
         )}
 

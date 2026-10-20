@@ -893,10 +893,37 @@
     }
   },
   "_meta": {
-    "version": 11
+    "version": 12
   },
-  "globalDisabledMenus": [],
+  "globalDisabledMenus": [
+    "cat_safety",
+    "cat_measuring",
+    "cat_consumables",
+    "cat_raw_materials",
+    "cat_electrical",
+    "cat_workholding",
+    "cat_spares",
+    "cat_cutting_tools",
+    "cat_cnc_machines",
+    "super_settings",
+    "admin_quotes",
+    "admin_orders",
+    "super_quotes",
+    "super_orders",
+    "admin_settings"
+  ],
   "audit_logs": [
+    {
+      "id": "A-179252679111089",
+      "ts": "2026-10-20T20:06:31.111Z",
+      "actor": "Janani Mohan",
+      "role": "super_admin",
+      "action": "permissions.global_disabled_update",
+      "entity": "system",
+      "entityId": "global_menus",
+      "companyId": "",
+      "summary": "Updated globally disabled menus: 15 menus disabled globally (was 0)"
+    },
     {
       "id": "A-179252651130449",
       "ts": "2026-10-20T20:01:51.304Z",
