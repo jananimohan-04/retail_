@@ -39,14 +39,15 @@ const setCart = c => localStorage.setItem(CARTKEY, JSON.stringify(c));
 const session = () => { try{return JSON.parse(localStorage.getItem(SESKEY)||'null')}catch{return null} };
 const setSession = s => s?localStorage.setItem(SESKEY,JSON.stringify(s)):localStorage.removeItem(SESKEY);
 let me = session() || null;
-let ui = { q:'', cat:'all', brand:'all', sort:'new', avail:'all', minP:'', maxP:'', adminQ:'', orderQ:'', orderStatus:'all', quoteStatus:'all', admFQ:'', admFCo:'all', admFStatus:'all', usrFQ:'', usrFCo:'all', usrFRole:'all', usrFStatus:'all' };
+let ui = { q:'', cat:'all', brand:'all', sort:'new', avail:'all', minP:'', maxP:'', adminQ:'', orderQ:'', orderStatus:'all', quoteStatus:'all', admFQ:'', admFCo:'all', admFStatus:'all', usrFQ:'', usrFCo:'all', usrFRole:'all', usrFStatus:'all', selectedProds:{} };
 
 function toast(msg, icon='✅'){ const w=$('#toasts'); const t=document.createElement('div'); t.className='toast'; t.innerHTML=`<span>${icon}</span><span>${msg}</span>`; w.appendChild(t); setTimeout(()=>{t.style.opacity='0';t.style.transition='.3s';setTimeout(()=>t.remove(),300)},2600); }
-function availBadge(p){
-  if (p.price == null && p.stock <= 0) return `<span class="badge out">Check availability</span>`;
-  if (p.stock <= 0) return `<span class="badge out">Out of stock</span>`;
-  if (p.stock <= 10) return `<span class="badge low">Low stock • ${p.stock}</span>`;
-  return `<span class="badge in">In stock</span>`;
+function availBadge(p, left=44){
+  const st = left ? ` style="left:${left}px"` : '';
+  if (p.price == null && p.stock <= 0) return `<span class="badge out"${st}>Check availability</span>`;
+  if (p.stock <= 0) return `<span class="badge out"${st}>Out of stock</span>`;
+  if (p.stock <= 10) return `<span class="badge low"${st}>Low stock • ${p.stock}</span>`;
+  return `<span class="badge in"${st}>In stock</span>`;
 }
 function priceHtml(p, big){
   if (p.price == null) return `<span class="price rfq">Request Quotation</span>`;
@@ -172,19 +173,25 @@ function side(){
 
 /* ---------- industrial product card ---------- */
 function prodCard(p){
+  const isSel = !!(ui.selectedProds && ui.selectedProds[p.id]);
   const action = p.price == null
     ? `<button class="btn btn-dark btn-sm" onclick="App.rfq('${p.id}')">Request Quote</button>`
     : p.stock <= 0
     ? `<button class="btn btn-ghost btn-sm" onclick="App.rfq('${p.id}')">Check Availability</button>`
     : `<button class="btn btn-primary btn-sm" onclick="App.addCart('${p.id}')">Add to Cart</button>`;
-  return `<div class="prod">
+  return `<div class="prod" style="position:relative;${isSel?'outline:2px solid #2E1508;background:#FAF6F1;':''}">
+    <div style="position:absolute;top:8px;left:8px;z-index:10" onclick="event.stopPropagation()">
+      <label style="display:flex;align-items:center;justify-content:center;padding:4px;background:rgba(255,255,255,.95);border:1px solid #BAA794;border-radius:5px;cursor:pointer" title="Select product to share or export">
+        <input type="checkbox" style="width:16px;height:16px;cursor:pointer" ${isSel?'checked':''} onchange="App.toggleProdSelect('${p.id}')">
+      </label>
+    </div>
     <a class="prod-img" href="#/store/product/${p.id}">${!(p.images||[]).find(Boolean)&&p.video?`<video src="${p.video}" muted preload="metadata" style="width:100%;height:100%;object-fit:cover"></video>`:`<img loading="lazy" src="${img0(p)}" alt="${p.name}" onerror="${NOIMG_ERR}">`}
-    ${availBadge(p)}<span class="badge cat">${catName(p.category)}</span></a>
+    ${availBadge(p, 44)}<span class="badge cat">${catName(p.category)}</span></a>
     <div class="prod-body"><span class="sku">SKU: ${p.sku||p.id}</span>
     <div class="prod-name">${p.name}</div><div class="prod-desc">${p.short||''}</div>
     <div class="prod-meta">${p.brand||''}${p.mpn?' • MPN '+p.mpn:''}${p.uom?' • per '+p.uom:''}</div>
     <div class="prod-row">${priceHtml(p)}<span class="hint">${p.warehouse||''}</span></div>
-    <div class="prod-actions"><a class="btn btn-ghost btn-sm" href="#/store/product/${p.id}">Details</a>${action}</div></div></div>`;
+    <div class="prod-actions"><a class="btn btn-ghost btn-sm" href="#/store/product/${p.id}">Details</a><button class="btn btn-ghost btn-sm" style="color:#2E1508;border:1px solid rgba(186,167,148,.6);font-weight:600" onclick="App.openShareSingle('${p.id}')" title="Share SKU (PDF / WhatsApp / Email)">↗️ Share</button>${action}</div></div></div>`;
 }
 
 /* ---------- views ---------- */
@@ -948,14 +955,37 @@ function vListing(){
   else if(ui.sort==='name') ps.sort((a,b)=>a.name.localeCompare(b.name));
   else if(ui.sort==='avail') ps.sort((a,b)=>(b.stock>0)-(a.stock>0));
   else ps.sort((a,b)=>String(b.created).localeCompare(String(a.created)));
+  const selKeys = Object.keys(ui.selectedProds || {});
+  const selCount = selKeys.length;
+  const allVisSel = ps.length > 0 && ps.every(p => !!(ui.selectedProds && ui.selectedProds[p.id]));
+
+  const batchBar = selCount > 0 ? `
+  <div style="margin-bottom:14px;padding:12px;border-radius:10px;background:#DECDBE;border:1px solid #BAA794;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;position:sticky;top:10px;z-index:20;box-shadow:0 2px 6px rgba(0,0,0,.08)">
+    <div style="display:flex;align-items:center;gap:8px">
+      <span style="width:10px;height:10px;border-radius:50%;background:#16A34A;display:inline-block"></span>
+      <span style="font-size:12.5px;font-weight:700;color:#1A0A03"><b>${selCount}</b> ${selCount===1?'product':'products'} selected</span>
+      <button class="btn btn-ghost btn-sm" style="font-size:11.5px;padding:2px 8px;color:#78350F" onclick="App.clearProdSelect()">Clear</button>
+      <span style="color:#BAA794">|</span>
+      <button class="btn btn-ghost btn-sm" style="font-size:11.5px;padding:2px 8px;color:#2E1508" onclick="App.toggleSelectAllVisible()">${allVisSel?'Deselect All Visible':`Select All Visible (${ps.length})`}</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-sm" style="background:#2E1508;color:#fff;border:none;font-weight:700;padding:6px 12px;border-radius:6px;cursor:pointer" onclick="App.openShareBatch('pdf')">📄 Download PDF (${selCount})</button>
+      <button class="btn btn-sm" style="background:#047857;color:#fff;border:none;font-weight:700;padding:6px 12px;border-radius:6px;cursor:pointer" onclick="App.openShareBatch('whatsapp')">💬 Send WhatsApp (${selCount})</button>
+      <button class="btn btn-sm" style="background:#075985;color:#fff;border:none;font-weight:700;padding:6px 12px;border-radius:6px;cursor:pointer" onclick="App.openShareBatch('email')">✉️ Send Email (${selCount})</button>
+    </div>
+  </div>` : '';
+
   return `<div class="section-head"><h2>Industrial catalog (${ps.length} SKUs)</h2><span class="hint">Search SKU • MPN • brand • compatibility</span></div>
-  <div class="card"><div class="card-pad"><div class="toolbar">
+  <div class="card"><div class="card-pad"><div class="toolbar" style="flex-wrap:wrap">
   <select onchange="App.f(event,'cat')"><option value="all">All categories</option>${storeCats().map(c=>`<option value="${c.id}" ${ui.cat===c.id?'selected':''}>${c.name}</option>`).join('')}</select>
   <select onchange="App.f(event,'brand')"><option value="all">All brands</option>${brands().map(b=>`<option ${ui.brand===b?'selected':''}>${b}</option>`).join('')}</select>
   <select onchange="App.f(event,'sort')"><option value="new">Recently added</option><option value="name" ${ui.sort==='name'?'selected':''}>Name A–Z</option><option value="price-asc" ${ui.sort==='price-asc'?'selected':''}>Price: low → high</option><option value="price-desc" ${ui.sort==='price-desc'?'selected':''}>Price: high → low</option><option value="avail" ${ui.sort==='avail'?'selected':''}>Availability</option></select>
   <select onchange="App.f(event,'avail')"><option value="all">All availability</option><option value="in" ${ui.avail==='in'?'selected':''}>In stock (priced)</option><option value="rfq" ${ui.avail==='rfq'?'selected':''}>Quotation / indent</option></select>
   <input type="number" placeholder="Min ₹" style="max-width:110px" value="${ui.minP}" oninput="App.f(event,'minP')"><input type="number" placeholder="Max ₹" style="max-width:110px" value="${ui.maxP}" oninput="App.f(event,'maxP')">
-  ${ui.q?`<span class="hint">“${ui.q}” <button class="btn btn-ghost btn-sm" onclick="App.clearF()">Clear</button></span>`:''}</div>
+  ${ui.q?`<span class="hint">“${ui.q}” <button class="btn btn-ghost btn-sm" onclick="App.clearF()">Clear</button></span>`:''}
+  ${ps.length?`<label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:#2E1508;cursor:pointer;margin-left:auto;background:rgba(242,229,216,.6);padding:6px 10px;border-radius:6px;border:1px solid rgba(186,167,148,.6)"><input type="checkbox" ${allVisSel?'checked':''} onchange="App.toggleSelectAllVisible()"> Select all visible (${ps.length})</label>`:''}
+  </div>
+  ${batchBar}
   ${ps.length?`<div class="prod-grid">${ps.map(prodCard).join('')}</div>`:`<div class="empty"><div class="big">🔩</div><b>No matching SKUs</b><p>Try a different SKU, brand or category.</p><button class="btn btn-ghost btn-sm" onclick="App.clearF()">Clear filters</button></div>`}</div></div>`;
 }
 function vProduct(id){
@@ -1592,6 +1622,173 @@ window.App={
     document.body.style.overflow = 'hidden';
     document.body.insertAdjacentHTML('beforeend', `<div class="modal-bg" id="coModalBg" onclick="if(event.target===this)App.closeModal()"><div class="modal${wide?' wide':''}"><div class="modal-body" style="padding:0"><div id="coModal"></div></div></div></div>`);
     $('#coModal').innerHTML = html;
+  },
+  /* ----- product selection and sharing (PDF, WhatsApp, Email) ----- */
+  toggleProdSelect(id){
+    if (!ui.selectedProds) ui.selectedProds = {};
+    if (ui.selectedProds[id]) delete ui.selectedProds[id];
+    else ui.selectedProds[id] = true;
+    render();
+  },
+  clearProdSelect(){
+    ui.selectedProds = {};
+    render();
+  },
+  toggleSelectAllVisible(){
+    const myCoId = me?.companyId || 'C-ARGUS';
+    let ps = (me?.role === 'super_admin' && !me?.companyId)
+      ? getProducts().filter(p=>p.visible)
+      : getProducts().filter(p=>p.companyId===myCoId&&p.visible);
+    const q=(ui.q||'').toLowerCase();
+    if(ui.cat!=='all') ps=ps.filter(p=>p.category===ui.cat);
+    if(ui.brand!=='all') ps=ps.filter(p=>p.brand===ui.brand);
+    if(ui.avail==='in') ps=ps.filter(p=>p.stock>0&&p.price!=null);
+    if(ui.avail==='rfq') ps=ps.filter(p=>p.price==null||p.stock<=0);
+    if(q) ps=ps.filter(p=>[p.name,p.short,p.desc,p.sku,p.brand,p.mpn].filter(Boolean).join(' ').toLowerCase().includes(q));
+    if(ui.minP!=='') ps=ps.filter(p=>p.price!=null&&p.price>=Number(ui.minP));
+    if(ui.maxP!=='') ps=ps.filter(p=>p.price!=null&&p.price<=Number(ui.maxP));
+
+    if (!ui.selectedProds) ui.selectedProds = {};
+    const allVis = ps.length > 0 && ps.every(p => !!ui.selectedProds[p.id]);
+    if (allVis) {
+      ps.forEach(p => delete ui.selectedProds[p.id]);
+    } else {
+      ps.forEach(p => ui.selectedProds[p.id] = true);
+    }
+    render();
+  },
+  openShareSingle(id){
+    const p = prodById(id);
+    if (!p) { toast('Product not found', '⚠️'); return; }
+    App.openShareModal([p], 'pdf');
+  },
+  openShareBatch(tab = 'pdf'){
+    const list = Object.keys(ui.selectedProds || {}).map(prodById).filter(Boolean);
+    if (!list.length) { toast('Please select at least 1 product', '⚠️'); return; }
+    App.openShareModal(list, tab);
+  },
+  openShareModal(products, tab = 'pdf'){
+    if (!products || !products.length) return;
+    const co = coName(me?.companyId) || 'ARGUS CNC';
+    const emailData = window.ProductShare ? window.ProductShare.formatProductsEmail(products, co) : { subject: '', body: '' };
+    const whatsAppData = window.ProductShare ? window.ProductShare.formatProductsWhatsApp(products, co) : '';
+    window._curShareProducts = products;
+
+    const renderShareContent = (curTab) => {
+      return `
+      <div class="modal-head" style="border-bottom:1px solid #BAA794">
+        <span>📤 Share & Export Products (${products.length} SKU${products.length>1?'s':''})</span>
+        <button class="btn btn-ghost btn-sm" onclick="App.closeModal()">✕</button>
+      </div>
+      <div class="modal-body" style="padding:16px">
+        <div style="display:flex;gap:8px;border-bottom:1px solid #BAA794;padding-bottom:10px;margin-bottom:14px">
+          <button class="btn btn-sm" style="${curTab==='pdf'?'background:#2E1508;color:#fff;font-weight:700':'color:#2E1508;background:transparent'}" onclick="App.switchShareTab('pdf')">📄 PDF Catalog (${products.length})</button>
+          <button class="btn btn-sm" style="${curTab==='whatsapp'?'background:#047857;color:#fff;font-weight:700':'color:#2E1508;background:transparent'}" onclick="App.switchShareTab('whatsapp')">💬 Share WhatsApp</button>
+          <button class="btn btn-sm" style="${curTab==='email'?'background:#075985;color:#fff;font-weight:700':'color:#2E1508;background:transparent'}" onclick="App.switchShareTab('email')">✉️ Share Email</button>
+        </div>
+
+        ${curTab === 'pdf' ? `
+          <div style="background:#F2E5D8;border:1px solid #BAA794;padding:12px;border-radius:8px;font-size:12.5px;color:#2E1508;margin-bottom:12px">
+            <b>Ready to Generate High-Res Catalog PDF</b>
+            <p style="margin:4px 0 0">Generates a clean, professional print-ready A4 datasheet containing high-resolution product photos, pricing, MOQ, stock availability, full technical specifications, and download links for attached documents.</p>
+          </div>
+          <div style="max-height:180px;overflow-y:auto;border:1px solid #BAA794;border-radius:8px;padding:8px;background:#fff;margin-bottom:14px">
+            ${products.map(p => {
+              const media = window.ProductShare ? window.ProductShare.getProductMedia(p) : { images: [], docs: [] };
+              return `<div style="display:flex;align-items:center;justify-content:space-between;padding:6px;border-bottom:1px solid #FAF6F1;font-size:12px">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <img src="${img0(p)}" style="width:36px;height:36px;object-fit:cover;border-radius:5px" onerror="${NOIMG_ERR}">
+                  <div><b>${p.name}</b><div class="hint">SKU: ${p.sku||p.id} • ${p.brand||'Argus'} • ${p.price!=null?fmt(p.price):'RFQ'}</div></div>
+                </div>
+                ${media.docs.length ? `<span class="badge in" style="font-size:10px;background:#FFE4E6;color:#9F1239">📄 ${media.docs.length} PDF${media.docs.length>1?'s':''}</span>` : ''}
+              </div>`;
+            }).join('')}
+          </div>
+          <div style="display:flex;gap:8px;justify-content:flex-end">
+            <button class="btn btn-ghost btn-sm" onclick="App.closeModal()">Close</button>
+            <button class="btn btn-primary btn-sm" style="background:#2E1508;color:#fff;font-weight:700;padding:8px 16px" onclick="App.exportCatalogPdfNow()">📄 Open & Download Catalog PDF</button>
+          </div>
+        ` : ''}
+
+        ${curTab === 'whatsapp' ? `
+          <div style="display:grid;grid-template-columns:2fr 1fr;gap:10px;align-items:center;margin-bottom:10px">
+            <div>
+              <label style="font-size:12px;font-weight:700;color:#2E1508;display:block;margin-bottom:4px">Recipient Mobile / WhatsApp Number (optional)</label>
+              <input id="waPhone" placeholder="e.g. 919876543210 (with country code)" style="width:100%;font-size:12px;padding:8px;border:1px solid #BAA794;border-radius:6px">
+            </div>
+            <span class="hint" style="font-size:11px;padding-top:16px">If omitted, WhatsApp prompts you to select a chat.</span>
+          </div>
+          <div style="margin-bottom:12px">
+            <label style="font-size:12px;font-weight:700;color:#2E1508;display:block;margin-bottom:4px">Formatted Message Preview</label>
+            <textarea id="waText" rows="8" style="width:100%;font-family:monospace;font-size:12px;padding:8px;border:1px solid #BAA794;border-radius:6px;box-sizing:border-box">${whatsAppData}</textarea>
+          </div>
+          <div style="display:flex;gap:8px;justify-content:space-between;align-items:center">
+            <button class="btn btn-ghost btn-sm" style="border:1px solid #BAA794" onclick="App.exportCatalogPdfNow()">📄 Download PDF to Attach</button>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-ghost btn-sm" style="border:1px solid #BAA794" onclick="App.copyTextFromEl('waText','WhatsApp text')">📋 Copy Text</button>
+              <button class="btn btn-primary btn-sm" style="background:#047857;color:#fff;font-weight:700;padding:8px 16px" onclick="App.launchWhatsAppNow()">💬 Open WhatsApp</button>
+            </div>
+          </div>
+        ` : ''}
+
+        ${curTab === 'email' ? `
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+            <div>
+              <label style="font-size:12px;font-weight:700;color:#2E1508;display:block;margin-bottom:4px">Recipient Email (optional)</label>
+              <input id="emTo" placeholder="client@example.com" style="width:100%;font-size:12px;padding:8px;border:1px solid #BAA794;border-radius:6px">
+            </div>
+            <div>
+              <label style="font-size:12px;font-weight:700;color:#2E1508;display:block;margin-bottom:4px">Subject Line</label>
+              <input id="emSubj" value="${String(emailData.subject).replace(/"/g,'&quot;')}" style="width:100%;font-size:12px;padding:8px;border:1px solid #BAA794;border-radius:6px">
+            </div>
+          </div>
+          <div style="margin-bottom:12px">
+            <label style="font-size:12px;font-weight:700;color:#2E1508;display:block;margin-bottom:4px">Email Body</label>
+            <textarea id="emBody" rows="8" style="width:100%;font-family:monospace;font-size:12px;padding:8px;border:1px solid #BAA794;border-radius:6px;box-sizing:border-box">${emailData.body}</textarea>
+          </div>
+          <div style="display:flex;gap:8px;justify-content:space-between;align-items:center">
+            <button class="btn btn-ghost btn-sm" style="border:1px solid #BAA794" onclick="App.exportCatalogPdfNow()">📄 Download PDF to Attach</button>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-ghost btn-sm" style="border:1px solid #BAA794" onclick="App.copyTextFromEl('emBody','Email text')">📋 Copy Text</button>
+              <button class="btn btn-primary btn-sm" style="background:#075985;color:#fff;font-weight:700;padding:8px 16px" onclick="App.launchEmailNow()">✉️ Open Email Client (mailto:)</button>
+            </div>
+          </div>
+        ` : ''}
+      </div>`;
+    };
+
+    window._curShareTab = tab;
+    App.openModal(renderShareContent(tab), true);
+  },
+  switchShareTab(tab){
+    App.openShareModal(window._curShareProducts || [], tab);
+  },
+  exportCatalogPdfNow(){
+    const list = window._curShareProducts || [];
+    if (!list.length) return;
+    if (window.ProductShare) {
+      window.ProductShare.exportProductsPdf(list, { name: coName(me?.companyId), email: me?.email });
+      toast('Generating catalog PDF...', '📄');
+    }
+  },
+  copyTextFromEl(id, label){
+    const el = document.getElementById(id);
+    if (!el) return;
+    navigator.clipboard.writeText(el.value).then(() => {
+      toast(label + ' copied to clipboard!', '📋');
+    }).catch(() => toast('Failed to copy', '⚠️'));
+  },
+  launchWhatsAppNow(){
+    const phone = (document.getElementById('waPhone')?.value || '').replace(/[^0-9]/g, '');
+    const text = document.getElementById('waText')?.value || '';
+    const url = phone ? `https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(text)}` : `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+    window.open(url, '_blank');
+  },
+  launchEmailNow(){
+    const to = (document.getElementById('emTo')?.value || '').trim();
+    const subj = document.getElementById('emSubj')?.value || '';
+    const body = document.getElementById('emBody')?.value || '';
+    window.location.href = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subj)}&body=${encodeURIComponent(body)}`;
   },
   confirmDlg(o){
     window._cf = o.onOk;

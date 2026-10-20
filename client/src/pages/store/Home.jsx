@@ -1,15 +1,16 @@
 /* Store home — mirrors legacy vHome: hero, category cards, conditional sections. */
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Share2 } from 'lucide-react';
 import { api, fmt, getCart, setCart } from '../../api';
 import { useAuth } from '../../auth';
 import { Field, Modal, Skeleton, toast } from '../../components/ui';
 
-export const availBadge = (p) => {
-  if (p.price == null && p.stock <= 0) return <span className="badge out">Check availability</span>;
-  if (p.stock <= 0) return <span className="badge out">Out of stock</span>;
-  if (p.stock <= 10) return <span className="badge low">Low stock • {p.stock}</span>;
-  return <span className="badge in">In stock</span>;
+export const availBadge = (p, style) => {
+  if (p.price == null && p.stock <= 0) return <span className="badge out" style={style}>Check availability</span>;
+  if (p.stock <= 0) return <span className="badge out" style={style}>Out of stock</span>;
+  if (p.stock <= 10) return <span className="badge low" style={style}>Low stock • {p.stock}</span>;
+  return <span className="badge in" style={style}>In stock</span>;
 };
 
 export const priceHtml = (p, big) => {
@@ -74,17 +75,37 @@ export function RfqModal({ p, me, onClose, onDone }) {
   );
 }
 
-export function ProdCard({ p, catName, onAdd, onRfq }) {
+export function ProdCard({ p, catName, onAdd, onRfq, selected, onToggleSelect, onShare }) {
   const action = p.price == null
     ? <button className="btn btn-dark btn-sm" onClick={() => onRfq(p)}>Request Quote</button>
     : p.stock <= 0
       ? <button className="btn btn-ghost btn-sm" onClick={() => onRfq(p)}>Check Availability</button>
       : <button className="btn btn-primary btn-sm" onClick={() => onAdd(p)}>Add to Cart</button>;
   return (
-    <div className="prod">
+    <div className={`prod ${selected ? 'ring-2 ring-[#2E1508] bg-[#FAF6F1]' : ''}`}>
       <Link className="prod-img" to={`/store/product/${p.id}`}>
+        {onToggleSelect && (
+          <div
+            className="absolute top-2.5 left-2.5 z-20"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onToggleSelect(p);
+            }}
+          >
+            <label className="flex items-center justify-center p-1 bg-white/95 hover:bg-white rounded-md shadow-sm border border-[#BAA794] cursor-pointer">
+              <input
+                type="checkbox"
+                checked={!!selected}
+                onChange={() => onToggleSelect(p)}
+                className="w-4 h-4 rounded border-[#BAA794] text-[#2E1508] focus:ring-[#2E1508] cursor-pointer"
+                title="Select product to share or export"
+              />
+            </label>
+          </div>
+        )}
         <img loading="lazy" src={(p.images || [])[0] || ''} alt={p.name} onError={(e) => { e.currentTarget.src = `https://picsum.photos/seed/${p.sku || p.id}/700/525`; }} />
-        {availBadge(p)}<span className="badge cat">{catName(p.category)}</span>
+        {availBadge(p, onToggleSelect ? { left: 44 } : undefined)}<span className="badge cat">{catName(p.category)}</span>
       </Link>
       <div className="prod-body">
         <span className="sku">SKU: {p.sku || p.id}</span>
@@ -92,7 +113,25 @@ export function ProdCard({ p, catName, onAdd, onRfq }) {
         <div className="prod-desc">{p.short || ''}</div>
         <div className="prod-meta">{p.brand || ''}{p.mpn ? ' • MPN ' + p.mpn : ''}{p.uom ? ' • per ' + p.uom : ''}</div>
         <div className="prod-row">{priceHtml(p)}<span className="hint">{p.warehouse || ''}</span></div>
-        <div className="prod-actions"><Link className="btn btn-ghost btn-sm" to={`/store/product/${p.id}`}>Details</Link>{action}</div>
+        <div className="prod-actions">
+          <Link className="btn btn-ghost btn-sm" to={`/store/product/${p.id}`}>Details</Link>
+          {onShare && (
+            <button
+              type="button"
+              className="btn btn-ghost btn-sm text-[#2E1508] hover:bg-[#DECDBE] border border-[#BAA794]/60 font-semibold flex items-center justify-center gap-1 cursor-pointer"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onShare(p);
+              }}
+              title="Share or Export this SKU (PDF / WhatsApp / Email)"
+            >
+              <Share2 className="w-3.5 h-3.5" />
+              Share
+            </button>
+          )}
+          {action}
+        </div>
       </div>
     </div>
   );
