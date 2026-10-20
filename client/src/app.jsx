@@ -42,6 +42,7 @@ import StoreQuotes from './pages/store/Quotes';
 import StoreProfile from './pages/store/Profile';
 import ContentWriter from './pages/content/ContentWriter';
 import FinanceReview from './pages/finance/Finance';
+import { ARGUS_LOGO_BASE64 } from './utils/logoBase64';
 
 /* role-aware landing page — content/finance staff do not belong in the storefront */
 const homeFor = (role) => ({
@@ -153,9 +154,18 @@ function Gate({ children, noSide, roles, perm }) {
 
   if (!ready) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-[#DAC8B8] gap-3">
-        <div className="skel" style={{ width: 64, height: 64, borderRadius: 16 }} />
-        <span className="text-xs font-semibold text-[#664D3B]">Loading workspace…</span>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[#DAC8B8] gap-4">
+        <div className="bg-white/95 backdrop-blur-md px-8 py-5 rounded-2xl shadow-xl border border-white/60 flex items-center justify-center transition-all animate-pulse">
+          <img 
+            src={ARGUS_LOGO_BASE64 || "assets/argus-logo.png"} 
+            alt="ARGUS CNC" 
+            className="h-10 sm:h-12 w-auto object-contain"
+          />
+        </div>
+        <div className="flex items-center gap-2 text-xs font-bold text-[#664D3B]">
+          <span className="w-2 h-2 rounded-full bg-[#EA580C] animate-ping" />
+          <span>Loading workspace…</span>
+        </div>
       </div>
     );
   }

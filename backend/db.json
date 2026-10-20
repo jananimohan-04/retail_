@@ -207,7 +207,7 @@
       "desc": "test",
       "price": 10,
       "uom": "kg",
-      "stock": 50,
+      "stock": 48,
       "moq": 1,
       "leadTime": "Ex-stock",
       "warehouse": "Retail Store Warehouse",
@@ -229,7 +229,7 @@
       "erp_last_synced_at": "2026-10-18T17:15:47.667Z",
       "workflow_stage": "published",
       "created": "2026-10-18",
-      "sold": 0,
+      "sold": 2,
       "workflow_updated_at": "2026-10-18T19:00:53.145Z",
       "workflow_history": [
         {
@@ -523,6 +523,84 @@
   ],
   "orders": [
     {
+      "id": "ORD-MVH358VSC0",
+      "companyId": "C-ARGUS",
+      "date": "2026-10-20 19:37",
+      "salesUser": "Janani Mohan",
+      "partnerRole": "super_admin",
+      "customer": "Priya Sharma",
+      "contact": "Priya Sharma",
+      "companyName": "Sharma Auto Components Pvt Ltd",
+      "mobile": "98765 43210",
+      "city": "Pune",
+      "address": "Plot 44, MIDC Bhosari, Pune, Pune, Maharashtra - 411026",
+      "poRef": "",
+      "total": 12,
+      "status": "Confirmed",
+      "invoiceNo": "INV/2026-27/6335",
+      "items": [
+        {
+          "pid": "P-MVE36US3V8",
+          "qty": 1,
+          "price": 10,
+          "name": "test",
+          "sku": "test",
+          "uom": "kg"
+        }
+      ],
+      "history": [
+        [
+          "Pending",
+          "21/10/2026, 1:07:51 am"
+        ],
+        [
+          "Confirmed",
+          "21/10/2026, 1:07:51 am"
+        ]
+      ]
+    },
+    {
+      "id": "ORD-MVH34SNQOS",
+      "companyId": "C-ARGUS",
+      "date": "2026-10-20 19:37",
+      "salesUser": "Janani Mohan",
+      "partnerRole": "super_admin",
+      "customer": "Priya Sharma",
+      "contact": "Priya Sharma",
+      "companyName": "Sharma Auto Components Pvt Ltd",
+      "mobile": "98765 43210",
+      "city": "Pune",
+      "address": "Plot 44, MIDC Bhosari, Pune",
+      "poRef": "",
+      "total": 10,
+      "status": "Pending",
+      "items": [
+        {
+          "pid": "P-MVE36US3V8",
+          "qty": 1,
+          "price": 10
+        }
+      ],
+      "history": [
+        [
+          "Pending",
+          "21/10/2026, 1:07:30 am"
+        ]
+      ],
+      "erp_sync_status": "deduction_failed",
+      "erp_deducted": false,
+      "erp_items": [
+        {
+          "pid": "P-MVE36US3V8",
+          "erp_item_id": "b5f2cce1-4dc6-4815-b49b-961af6df4907",
+          "sku": "test",
+          "qty": 1,
+          "price": 10
+        }
+      ],
+      "erp_deduction_error": "{\"success\":false,\"error\":\"Order deduction is not configured: set SUPABASE_SERVICE_ROLE_KEY and ERP_COMPANY_ID on the server. No stock was changed.\"}"
+    },
+    {
       "id": "ORD-MVH2HS2076",
       "companyId": "C-ARGUS",
       "date": "2026-10-20 19:19",
@@ -614,6 +692,47 @@
     }
   ],
   "quotations": [
+    {
+      "id": "Q-MVH33GYCD0",
+      "companyId": "C-ARGUS",
+      "date": "2026-10-20 19:36",
+      "requestedBy": "Janani Mohan",
+      "pid": "P-MVE36US3V8",
+      "qty": 1,
+      "items": [
+        {
+          "pid": "P-MVE36US3V8",
+          "qty": 1,
+          "price": 10,
+          "name": "test",
+          "sku": "test",
+          "uom": "kg",
+          "brand": "ArgusCNC",
+          "desc": "test"
+        }
+      ],
+      "subtotal": 10,
+      "quotePrice": 10,
+      "total": 12,
+      "techReq": "",
+      "deliveryReq": "",
+      "companyName": "Sharma Auto Components Pvt Ltd",
+      "contact": "Priya Sharma",
+      "mobile": "98765 43210",
+      "email": "purchase@sharmaauto.in",
+      "address": "Plot 44, MIDC Bhosari, Pune, Pune, Maharashtra - 411026",
+      "city": "Pune",
+      "state": "Maharashtra",
+      "pin": "411026",
+      "poRef": "",
+      "status": "Accepted",
+      "adminNote": "Tax Invoice Raised: INV/2026-27/6335",
+      "invoiced": true,
+      "invoiceNo": "INV/2026-27/6335",
+      "invoiceDate": "2026-10-20",
+      "invoiceDueDate": "2026-11-19",
+      "orderId": "ORD-MVH358VSC0"
+    },
     {
       "id": "Q-MVH2HQ3K3A",
       "companyId": "C-ARGUS",
@@ -777,6 +896,39 @@
     "version": 11
   },
   "audit_logs": [
+    {
+      "id": "A-179252522221057",
+      "ts": "2026-10-20T19:40:22.211Z",
+      "actor": "Janani Mohan",
+      "role": "super_admin",
+      "action": "permissions.role_update",
+      "entity": "role",
+      "entityId": "super_admin",
+      "companyId": "",
+      "summary": "Updated role permissions for \"Super Admin\": 14 pages enabled (was 23)"
+    },
+    {
+      "id": "A-179252507116454",
+      "ts": "2026-10-20T19:37:51.164Z",
+      "actor": "Janani Mohan",
+      "role": "super_admin",
+      "action": "quote.raise_invoice",
+      "entity": "quotation",
+      "entityId": "Q-MVH33GYCD0",
+      "companyId": "C-ARGUS",
+      "summary": "Raised Tax Invoice INV/2026-27/6335 for Order ORD-MVH358VSC0"
+    },
+    {
+      "id": "A-179252498831857",
+      "ts": "2026-10-20T19:36:28.319Z",
+      "actor": "Janani Mohan",
+      "role": "super_admin",
+      "action": "quote.create",
+      "entity": "quotation",
+      "entityId": "Q-MVH33GYCD0",
+      "companyId": "C-ARGUS",
+      "summary": "Created cart quotation with 1 items"
+    },
     {
       "id": "A-179252397626782",
       "ts": "2026-10-20T19:19:36.267Z",
@@ -1690,18 +1842,9 @@
         "store_cart",
         "store_orders",
         "store_profile",
-        "store_quotes",
-        "cat_cnc_machines",
-        "cat_cutting_tools",
-        "cat_spares",
-        "cat_workholding",
-        "cat_electrical",
-        "cat_raw_materials",
-        "cat_consumables",
-        "cat_measuring",
-        "cat_safety"
+        "store_quotes"
       ],
-      "updatedAt": "2026-10-20T05:57:14.067Z"
+      "updatedAt": "2026-10-20T19:40:22.199Z"
     }
   ]
 }
