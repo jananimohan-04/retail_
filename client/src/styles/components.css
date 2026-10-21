@@ -334,16 +334,44 @@ input.err,select.err{border-color:var(--red)}
 }
 
 /* Global Cards, Panels, and White Containers */
-.card,
-.icon-btn,
-.ind-stat,
-.bg-white:not(.keep-white):not(header *):not(aside *),
-.bg-white\/95:not(.keep-white):not(header *):not(aside *),
-.bg-white\/90:not(.keep-white):not(header *):not(aside *),
-.bg-white\/80:not(.keep-white):not(header *):not(aside *) {
+.card:not(.hero *),
+.icon-btn:not(.hero *),
+.ind-stat:not(.hero *),
+.bg-white:not(.keep-white):not(header *):not(aside *):not(.hero *),
+.bg-white\/95:not(.keep-white):not(header *):not(aside *):not(.hero *),
+.bg-white\/90:not(.keep-white):not(header *):not(aside *):not(.hero *),
+.bg-white\/80:not(.keep-white):not(header *):not(aside *):not(.hero *) {
   background-color: #EDE1D3 !important;
   border-color: #BAA794 !important;
   color: #1A0A03;
+}
+
+/* Hero Stat Strip — High-contrast dark glass cards with crisp white text */
+.hero .ind-stat {
+  background: rgba(15, 23, 42, 0.75) !important;
+  background-color: rgba(15, 23, 42, 0.75) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  border-left: 3.5px solid #FF6500 !important;
+  border-radius: 12px !important;
+  padding: 12px 16px !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3) !important;
+  color: #FFFFFF !important;
+}
+.hero .ind-stat b {
+  display: block !important;
+  font-size: 24px !important;
+  font-weight: 800 !important;
+  color: #FFFFFF !important;
+  line-height: 1.2 !important;
+}
+.hero .ind-stat p {
+  margin: 4px 0 0 !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: #CBD5E1 !important;
+  letter-spacing: 0.01em !important;
 }
 
 .card h2, .card h3 {
@@ -355,17 +383,17 @@ input.err,select.err{border-color:var(--red)}
 }
 
 /* Light / Slate background surfaces converted to warm sandstone tint */
-.bg-slate-50:not(header *):not(aside *),
-.bg-slate-50\/50:not(header *):not(aside *),
-.bg-slate-50\/60:not(header *):not(aside *),
-.bg-slate-50\/70:not(header *):not(aside *),
-.bg-slate-50\/80:not(header *):not(aside *),
-.bg-slate-50\/90:not(header *):not(aside *),
-.bg-slate-100:not(header *):not(aside *),
-.bg-slate-100\/80:not(header *):not(aside *),
-.bg-slate-100\/90:not(header *):not(aside *),
-.bg-slate-200\/60:not(header *):not(aside *),
-.bg-slate-200\/70:not(header *):not(aside *) {
+.bg-slate-50:not(header *):not(aside *):not(.hero *),
+.bg-slate-50\/50:not(header *):not(aside *):not(.hero *),
+.bg-slate-50\/60:not(header *):not(aside *):not(.hero *),
+.bg-slate-50\/70:not(header *):not(aside *):not(.hero *),
+.bg-slate-50\/80:not(header *):not(aside *):not(.hero *),
+.bg-slate-50\/90:not(header *):not(aside *):not(.hero *),
+.bg-slate-100:not(header *):not(aside *):not(.hero *),
+.bg-slate-100\/80:not(header *):not(aside *):not(.hero *),
+.bg-slate-100\/90:not(header *):not(aside *):not(.hero *),
+.bg-slate-200\/60:not(header *):not(aside *):not(.hero *),
+.bg-slate-200\/70:not(header *):not(aside *):not(.hero *) {
   background-color: #E2D4C5 !important;
 }
 

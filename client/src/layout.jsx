@@ -1315,14 +1315,14 @@ export function Shell({ counts, noSide, children }) {
             onMouseOver={handleTriggerEnter}
             onMouseLeave={handleTriggerLeave}
             onClick={() => setIsHovered(prev => !prev)}
-            className="fixed left-0 top-32 z-40 hidden lg:flex items-center cursor-pointer group select-none transition-transform duration-150"
+            className="fixed left-0 top-1/2 -translate-y-1/2 z-40 hidden lg:flex items-center cursor-pointer group select-none transition-all duration-200 -translate-x-3 hover:translate-x-0 opacity-80 hover:opacity-100"
             title="Hover or click to reveal navigation menu"
           >
-            <div className="flex items-center gap-1.5 pl-1.5 pr-2.5 py-3 bg-[#0E0704]/95 hover:bg-[#1A0A04] text-amber-400 hover:text-white border-y border-r border-[#36180C] hover:border-amber-500/80 rounded-r-2xl shadow-xl shadow-black/60 backdrop-blur-md transition-all duration-200 group-hover:translate-x-1 group-hover:shadow-amber-500/25">
-              <div className="w-6 h-6 rounded-full bg-amber-500/15 flex items-center justify-center text-amber-400 group-hover:bg-amber-500 group-hover:text-black transition-colors shadow-2xs">
-                <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+            <div className="flex items-center gap-1.5 pl-1.5 pr-2 py-2.5 bg-[#0E0704]/95 hover:bg-[#1A0A04] text-amber-400 hover:text-white border-y border-r border-[#36180C] hover:border-amber-500/80 rounded-r-2xl shadow-xl shadow-black/60 backdrop-blur-md transition-all duration-200 group-hover:shadow-amber-500/25">
+              <div className="w-5 h-5 rounded-full bg-amber-500/15 flex items-center justify-center text-amber-400 group-hover:bg-amber-500 group-hover:text-black transition-colors shadow-2xs">
+                <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
               </div>
-              <span className="text-[10px] font-black uppercase tracking-wider text-[#D7C4B7] group-hover:text-white pr-0.5 transition-colors hidden xl:inline">
+              <span className="text-[10px] font-black uppercase tracking-wider text-[#D7C4B7] group-hover:text-white pr-0.5 transition-colors hidden group-hover:inline">
                 Menu
               </span>
             </div>
@@ -1400,15 +1400,15 @@ export function Shell({ counts, noSide, children }) {
             onMouseOver={handleTriggerEnter}
             onMouseLeave={handleTriggerLeave}
             onClick={() => setIsHovered(prev => !prev)}
-            className="fixed right-0 top-32 z-40 hidden lg:flex items-center cursor-pointer group select-none transition-transform duration-150"
+            className="fixed right-0 top-1/2 -translate-y-1/2 z-40 hidden lg:flex items-center cursor-pointer group select-none transition-all duration-200 translate-x-3 hover:translate-x-0 opacity-80 hover:opacity-100"
             title="Hover or click to reveal navigation menu"
           >
-            <div className="flex items-center gap-1.5 pr-1.5 pl-2.5 py-3 bg-[#0E0704]/95 hover:bg-[#1A0A04] text-amber-400 hover:text-white border-y border-l border-[#36180C] hover:border-amber-500/80 rounded-l-2xl shadow-xl shadow-black/60 backdrop-blur-md transition-all duration-200 group-hover:-translate-x-1 group-hover:shadow-amber-500/25">
-              <span className="text-[10px] font-black uppercase tracking-wider text-[#D7C4B7] group-hover:text-white pl-0.5 transition-colors hidden xl:inline">
+            <div className="flex items-center gap-1.5 pr-1.5 pl-2 py-2.5 bg-[#0E0704]/95 hover:bg-[#1A0A04] text-amber-400 hover:text-white border-y border-l border-[#36180C] hover:border-amber-500/80 rounded-l-2xl shadow-xl shadow-black/60 backdrop-blur-md transition-all duration-200 group-hover:shadow-amber-500/25">
+              <span className="text-[10px] font-black uppercase tracking-wider text-[#D7C4B7] group-hover:text-white pl-0.5 transition-colors hidden group-hover:inline">
                 Menu
               </span>
-              <div className="w-6 h-6 rounded-full bg-amber-500/15 flex items-center justify-center text-amber-400 group-hover:bg-amber-500 group-hover:text-black transition-colors shadow-2xs">
-                <ChevronLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
+              <div className="w-5 h-5 rounded-full bg-amber-500/15 flex items-center justify-center text-amber-400 group-hover:bg-amber-500 group-hover:text-black transition-colors shadow-2xs">
+                <ChevronLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform" />
               </div>
             </div>
           </div>

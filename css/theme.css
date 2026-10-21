@@ -329,6 +329,9 @@ body.auth-open .footer{
 .ind-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:16px 0}
 .ind-stat{background:#fff;border:1px solid var(--line);border-left:4px solid var(--brand);border-radius:10px;padding:14px 16px;box-shadow:var(--shadow)}
 .ind-stat b{font-size:20px} .ind-stat p{margin:2px 0 0;font-size:12px;color:var(--muted)}
+.hero .ind-stat{background:rgba(15,23,42,0.75)!important;border:1px solid rgba(255,255,255,0.16)!important;border-left:3.5px solid var(--brand,#FF6500)!important;box-shadow:0 4px 16px rgba(0,0,0,0.3)!important}
+.hero .ind-stat b{color:#FFFFFF!important;font-size:22px!important;display:block!important}
+.hero .ind-stat p{color:#CBD5E1!important;font-size:12px!important;font-weight:600!important;margin-top:3px!important}
 
 @media(max-width:1040px){
   .auth-layout{grid-template-columns:1fr 1fr}

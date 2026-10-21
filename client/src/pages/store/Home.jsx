@@ -178,10 +178,10 @@ export default function Home() {
             <Link className="btn btn-ghost" style={{ background: 'rgba(255,255,255,.1)', borderColor: 'rgba(255,255,255,.3)', color: '#fff' }} to="/store/listing?cat=cutting-tools">Browse Categories</Link>
           </div>
           <div className="ind-strip" style={{ margin: '20px 0 0' }}>
-            <div className="ind-stat" style={{ background: 'rgba(255,255,255,.08)', borderColor: 'rgba(255,255,255,.15)' }}><b style={{ color: '#fff' }}>{ps.length}</b><p style={{ color: '#CBD5E1' }}>Live SKUs</p></div>
-            <div className="ind-stat" style={{ background: 'rgba(255,255,255,.08)', borderColor: 'rgba(255,255,255,.15)' }}><b style={{ color: '#fff' }}>{cats.length}</b><p style={{ color: '#CBD5E1' }}>Categories</p></div>
-            <div className="ind-stat" style={{ background: 'rgba(255,255,255,.08)', borderColor: 'rgba(255,255,255,.15)' }}><b style={{ color: '#fff' }}>{ps.filter((p) => p.stock > 0).length}</b><p style={{ color: '#CBD5E1' }}>In stock</p></div>
-            <div className="ind-stat" style={{ background: 'rgba(255,255,255,.08)', borderColor: 'rgba(255,255,255,.15)' }}><b style={{ color: '#fff' }}>{ps.filter((p) => p.price == null).length}</b><p style={{ color: '#CBD5E1' }}>On quotation</p></div>
+            <div className="ind-stat"><b>{ps.length}</b><p>Live SKUs</p></div>
+            <div className="ind-stat"><b>{cats.length}</b><p>Categories</p></div>
+            <div className="ind-stat"><b>{ps.filter((p) => p.stock > 0).length}</b><p>In stock</p></div>
+            <div className="ind-stat"><b>{ps.filter((p) => p.price == null).length}</b><p>On quotation</p></div>
           </div>
         </div>
         <div><img src="https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?auto=format&fit=crop&w=800&q=80" onError={(e) => { e.currentTarget.src = 'https://picsum.photos/seed/cnc-hero/800/600'; }} style={{ borderRadius: 12, aspectRatio: '4/3', objectFit: 'cover', width: '100%' }} alt="CNC machining floor" /></div>
