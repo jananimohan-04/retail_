@@ -380,7 +380,8 @@ const ordersOf = cid => db.orders.filter(o => o.companyId === cid);
 
 const app = express();
 app.use(cors());
-app.use(express.json({ limit: '2mb' }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 // Middleware: keep db synchronized across Vercel serverless instances and ensure saves complete
 app.use(async (req, res, next) => {
@@ -2003,6 +2004,8 @@ function defaultInvoiceProfile(cid) {
     ifsc: 'HDFC0001234',
     branch: (co.city || 'Bhosari') + ' Industrial Branch',
     upiId: 'arguscnc@hdfcbank',
+    qrMode: 'dynamic',
+    customQrImage: '',
     signatureImage: '',
     signatoryName: 'Authorized Signatory',
     signatoryDesignation: 'Commercial & Accounts Department',

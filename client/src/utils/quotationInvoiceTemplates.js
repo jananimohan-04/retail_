@@ -121,6 +121,8 @@ const DEFAULT_COMPANY = {
   ifsc: 'HDFC0001234',
   branch: 'MIDC Bhosari Branch, Pune',
   upiId: 'arguscnc@hdfcbank',
+  qrMode: 'dynamic',
+  customQrImage: '',
   signatureImage: '',
   signatoryName: 'Sanjay Deshmukh',
   signatoryDesignation: 'Director of Industrial Operations',
@@ -191,7 +193,14 @@ export async function generateQuotationHtml({
   const total = subtotal + cgst + sgst;
   const words = numberToWordsIndian(total);
 
-  const qrDataUrl = await generateUpiQrCode(co.upiId, co.accName || co.name, total, qNumber);
+  let qrDataUrl = null;
+  let qrCaption = `Scan & Pay ₹${total.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  if (co.qrMode === 'custom' && co.customQrImage) {
+    qrDataUrl = co.customQrImage;
+    qrCaption = 'Scan to Pay (UPI Merchant)';
+  } else if (co.upiId) {
+    qrDataUrl = await generateUpiQrCode(co.upiId, co.accName || co.name, total, qNumber);
+  }
 
   const defaultQuotationTerms = [
     '<b>Validity:</b> Prices quoted are firm and valid for 30 calendar days from the quotation date.',
@@ -358,7 +367,7 @@ export async function generateQuotationHtml({
         <div style="text-align:center; flex-shrink:0; background:#FFFFFF; padding:6px 8px; border-radius:6px; border:1px solid #DECDBE; box-shadow:0 1px 3px rgba(0,0,0,0.05)">
           <img src="${qrDataUrl}" style="width:84px; height:84px; display:block;" alt="UPI Payment QR Code" />
           <div style="font-size:8px; font-weight:800; color:#8F2A0E; margin-top:2px; letter-spacing:0.3px; text-transform:uppercase">
-            Scan &amp; Pay ₹${total.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            ${escapeHtml(qrCaption)}
           </div>
         </div>` : ''}
       </div>
@@ -449,7 +458,14 @@ export async function generateTaxInvoiceHtml({
   const total = subtotal + cgst + sgst;
   const words = numberToWordsIndian(total);
 
-  const qrDataUrl = await generateUpiQrCode(co.upiId, co.accName || co.name, total, invNumber);
+  let qrDataUrl = null;
+  let qrCaption = `Scan & Pay ₹${total.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  if (co.qrMode === 'custom' && co.customQrImage) {
+    qrDataUrl = co.customQrImage;
+    qrCaption = 'Scan to Pay (UPI Merchant)';
+  } else if (co.upiId) {
+    qrDataUrl = await generateUpiQrCode(co.upiId, co.accName || co.name, total, invNumber);
+  }
 
   const defaultInvoiceTerms = [
     'We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct.',
@@ -631,7 +647,7 @@ export async function generateTaxInvoiceHtml({
         <div style="text-align:center; flex-shrink:0; background:#FFFFFF; padding:6px 8px; border-radius:6px; border:1px solid #BAE6FD; box-shadow:0 1px 3px rgba(0,0,0,0.05)">
           <img src="${qrDataUrl}" style="width:84px; height:84px; display:block;" alt="UPI Payment QR Code" />
           <div style="font-size:8px; font-weight:800; color:#0369A1; margin-top:2px; letter-spacing:0.3px; text-transform:uppercase">
-            Scan &amp; Pay ₹${total.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            ${escapeHtml(qrCaption)}
           </div>
         </div>` : ''}
       </div>

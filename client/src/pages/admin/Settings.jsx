@@ -43,6 +43,8 @@ const DEFAULT_INVOICE_PROFILE = {
   ifsc: 'HDFC0001234',
   branch: 'MIDC Bhosari Branch, Pune',
   upiId: 'arguscnc@hdfcbank',
+  qrMode: 'dynamic',
+  customQrImage: '',
   signatureImage: '',
   signatoryName: 'Sanjay Deshmukh',
   signatoryDesignation: 'Director of Industrial Operations',
@@ -189,10 +191,12 @@ export default function Settings({ defaultTab }) {
     return () => { on = false; };
   }, [selectedCompanyId, me?.companyId, isSuperAdmin]);
 
-  // 4. Update Live QR code preview whenever UPI ID, Payee, or Test Amount changes
+  // 4. Update Live QR code preview (supports Dynamic Auto-QR or Custom Uploaded QR)
   useEffect(() => {
     let active = true;
-    if (invProfile?.upiId) {
+    if (invProfile?.qrMode === 'custom') {
+      setQrPreviewUrl(invProfile.customQrImage || '');
+    } else if (invProfile?.upiId) {
       const amt = Number(testAmount) > 0 ? Number(testAmount) : 1000;
       generateUpiQrCode(
         invProfile.upiId, 
@@ -206,13 +210,13 @@ export default function Settings({ defaultTab }) {
       setQrPreviewUrl('');
     }
     return () => { active = false; };
-  }, [invProfile?.upiId, invProfile?.accName, invProfile?.companyName, testAmount]);
+  }, [invProfile?.qrMode, invProfile?.customQrImage, invProfile?.upiId, invProfile?.accName, invProfile?.companyName, testAmount]);
 
   // Helper handlers
   const S = (k) => (e) => setF((p) => ({ ...p, [k]: e.target.value }));
   const P = (k) => (e) => setInvProfile((p) => ({ ...p, [k]: e.target.value }));
 
-  // File upload to base64 DataURL
+  // File upload to base64 DataURL (for Logo, Signature, and Custom QR Image)
   const handleFileUpload = (field) => (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -223,7 +227,8 @@ export default function Settings({ defaultTab }) {
     const reader = new FileReader();
     reader.onload = (evt) => {
       setInvProfile((prev) => ({ ...prev, [field]: evt.target.result }));
-      toast(`${field === 'logo' ? 'Logo' : 'Digital Signature'} loaded`, '🖼️');
+      const label = field === 'logo' ? 'Logo' : (field === 'signatureImage' ? 'Digital Signature' : 'Custom QR Code');
+      toast(`${label} loaded successfully`, '🖼️');
     };
     reader.readAsDataURL(file);
   };
@@ -790,26 +795,29 @@ export default function Settings({ defaultTab }) {
                 </div>
               </div>
 
-              {/* SECTION C: BANK DETAILS & DYNAMIC UPI QR */}
-              <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-5">
+              {/* SECTION C: BANK DETAILS & PAYMENT QR CODE */}
+              <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-6">
                 <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                   <div className="flex items-center gap-2">
                     <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
                       <Landmark className="w-4 h-4" />
                     </div>
                     <div>
-                      <h4 className="text-sm font-bold text-slate-900">Bank Wire Details &amp; Dynamic UPI QR Code</h4>
-                      <p className="text-xs text-slate-500">Automated NPCI payment QR generated dynamically based on document total</p>
+                      <h4 className="text-sm font-bold text-slate-900">Bank Wire Details &amp; Payment QR Code</h4>
+                      <p className="text-xs text-slate-500">Bank accounts for NEFT/RTGS and QR code configuration for instant customer payments</p>
                     </div>
                   </div>
-                  <span className="text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
-                    Auto-QR Generation
+                  <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+                    {invProfile.qrMode === 'custom' ? '🖼️ Custom Uploaded QR' : '⚡ Dynamic Auto-Amount QR'}
                   </span>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  {/* Left 2 Cols: Form Fields */}
-                  <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Sub-section 1: Bank Wire Accounts */}
+                <div>
+                  <h5 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-3">
+                    Bank Account Details (Printed on Quotations &amp; Tax Invoices)
+                  </h5>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     <div className="space-y-1.5">
                       <label className="text-xs font-bold text-slate-700">Bank Name</label>
                       <input 
@@ -854,7 +862,7 @@ export default function Settings({ defaultTab }) {
                       />
                     </div>
 
-                    <div className="space-y-1.5">
+                    <div className="space-y-1.5 sm:col-span-2">
                       <label className="text-xs font-bold text-slate-700">Branch Name &amp; City</label>
                       <input 
                         type="text" 
@@ -864,64 +872,184 @@ export default function Settings({ defaultTab }) {
                         className="w-full px-3.5 py-2.5 text-sm bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 focus:border-emerald-500 rounded-xl outline-hidden transition-all"
                       />
                     </div>
+                  </div>
+                </div>
 
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-emerald-800 flex items-center gap-1">
-                        <QrCode className="w-3.5 h-3.5 text-emerald-600" /> UPI ID / VPA (Payee Handle)
-                      </label>
-                      <input 
-                        type="text" 
-                        value={invProfile.upiId} 
-                        onChange={P('upiId')} 
-                        placeholder="arguscnc@hdfcbank"
-                        className="w-full px-3.5 py-2.5 text-sm bg-emerald-50/50 hover:bg-white focus:bg-white border border-emerald-300 focus:border-emerald-500 rounded-xl outline-hidden transition-all font-mono font-bold text-emerald-900"
-                      />
+                {/* Sub-section 2: QR Code Selection & Setup */}
+                <div className="pt-4 border-t border-slate-100">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                    <div>
+                      <h5 className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                        <QrCode className="w-4 h-4 text-emerald-600" /> Payment QR Code Method
+                      </h5>
+                      <p className="text-[11px] text-slate-500">
+                        Choose whether the QR code auto-generates the exact bill amount, or prints your uploaded merchant QR standee image.
+                      </p>
+                    </div>
+
+                    {/* Mode Toggle Pills */}
+                    <div className="inline-flex p-1 bg-slate-100 rounded-xl border border-slate-200/80 self-start sm:self-auto">
+                      <button
+                        type="button"
+                        onClick={() => setInvProfile(p => ({ ...p, qrMode: 'dynamic' }))}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                          invProfile.qrMode !== 'custom' 
+                            ? 'bg-emerald-600 text-white shadow-xs' 
+                            : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                      >
+                        ⚡ Dynamic Auto-Amount QR
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setInvProfile(p => ({ ...p, qrMode: 'custom' }))}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                          invProfile.qrMode === 'custom' 
+                            ? 'bg-emerald-600 text-white shadow-xs' 
+                            : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                      >
+                        🖼️ Upload Custom QR Image
+                      </button>
                     </div>
                   </div>
 
-                  {/* Right Col: Live Dynamic QR Verification Card */}
-                  <div className="bg-slate-50 border border-slate-200/90 rounded-2xl p-5 flex flex-col items-center justify-center text-center space-y-3">
-                    <div className="flex items-center justify-between w-full">
-                      <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-600 flex items-center gap-1">
-                        <QrCode className="w-3.5 h-3.5 text-emerald-600" /> Live QR Preview
-                      </span>
-                      <span className="text-[10px] bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full font-mono font-bold">
-                        NPCI UPI
-                      </span>
-                    </div>
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    {/* Left 2 Cols: Form Content depending on QR Mode */}
+                    {invProfile.qrMode !== 'custom' ? (
+                      /* MODE A: DYNAMIC AUTO-AMOUNT QR */
+                      <div className="lg:col-span-2 space-y-4">
+                        <div className="p-4 bg-emerald-50/70 border border-emerald-200 rounded-xl space-y-2">
+                          <div className="flex items-center gap-2 text-xs font-bold text-emerald-900">
+                            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                            <span>How Dynamic Auto-Amount QR Works:</span>
+                          </div>
+                          <p className="text-xs text-emerald-800 leading-relaxed">
+                            By specifying your company's <b>UPI ID / VPA Handle</b>, the ERP automatically generates a real-time NPCI QR code on every quotation and tax invoice with the <b>exact payable amount pre-filled</b> (e.g. ₹1,25,000). When customers scan with Google Pay, PhonePe, or Paytm, the exact amount is entered automatically without typing mistakes!
+                          </p>
+                        </div>
 
-                    {qrPreviewUrl ? (
-                      <div className="p-3 bg-white rounded-xl border border-slate-200 shadow-xs flex flex-col items-center">
-                        <img src={qrPreviewUrl} alt="Dynamic QR Code" className="w-32 h-32 object-contain" />
-                        <div className="text-[10px] font-black text-slate-900 mt-1.5 font-mono">
-                          SCAN TO PAY ₹{Number(testAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-bold text-emerald-950 flex items-center gap-1">
+                            <QrCode className="w-3.5 h-3.5 text-emerald-600" /> Payee UPI ID / VPA Handle
+                          </label>
+                          <input 
+                            type="text" 
+                            value={invProfile.upiId} 
+                            onChange={P('upiId')} 
+                            placeholder="e.g. arguscnc@hdfcbank or company@okicici"
+                            className="w-full px-3.5 py-2.5 text-sm bg-emerald-50/30 hover:bg-white focus:bg-white border border-emerald-300 focus:border-emerald-500 rounded-xl outline-hidden transition-all font-mono font-bold text-emerald-950"
+                          />
+                          <p className="text-[11px] text-slate-500">
+                            Enter the official UPI VPA linked to your current bank account (e.g. <span className="font-mono">name@hdfcbank</span>, <span className="font-mono">company@icici</span>).
+                          </p>
                         </div>
                       </div>
                     ) : (
-                      <div className="w-32 h-32 bg-slate-200/50 rounded-xl border border-dashed border-slate-300 flex items-center justify-center text-slate-400 text-xs p-3 text-center">
-                        Enter valid UPI ID to generate live QR
+                      /* MODE B: CUSTOM QR IMAGE UPLOAD */
+                      <div className="lg:col-span-2 space-y-4">
+                        <div className="p-4 bg-amber-50/80 border border-amber-200 rounded-xl space-y-2">
+                          <div className="flex items-center gap-2 text-xs font-bold text-amber-900">
+                            <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+                            <span>About Uploading Static QR Code Images:</span>
+                          </div>
+                          <p className="text-xs text-amber-900 leading-relaxed">
+                            A static uploaded image file (PNG/JPG from your shop standee, Paytm soundbox, or GPay merchant sticker) has permanently fixed pixels. <b>It cannot alter its pixels dynamically to insert different bill amounts.</b> When customers scan it, their app will prompt them to type the payment amount manually.
+                            <br /><br />
+                            <span className="font-semibold">Want automatic amount generation?</span> Switch back to <b>⚡ Dynamic Auto-Amount QR</b> above!
+                          </p>
+                        </div>
+
+                        {/* File Upload Box */}
+                        <div className="border border-dashed border-slate-300 rounded-2xl p-4 bg-slate-50/80 flex flex-col sm:flex-row items-center gap-5">
+                          <div className="w-28 h-28 bg-white border border-slate-200 rounded-xl flex items-center justify-center p-2 shadow-2xs overflow-hidden shrink-0">
+                            {invProfile.customQrImage ? (
+                              <img src={invProfile.customQrImage} alt="Custom QR Preview" className="max-h-full max-w-full object-contain" />
+                            ) : (
+                              <div className="text-center text-[10px] text-slate-400 font-semibold p-2">
+                                <QrCode className="w-6 h-6 mx-auto mb-1 text-slate-300" />
+                                <span>No QR Uploaded</span>
+                              </div>
+                            )}
+                          </div>
+                          <div className="space-y-1.5 flex-1">
+                            <div className="text-xs font-bold text-slate-800">Merchant Standee QR Image File (PNG / JPG)</div>
+                            <p className="text-[11px] text-slate-500 leading-relaxed">
+                              Upload a crisp image of your pre-printed merchant QR code (e.g., from Google Pay Business, PhonePe, Paytm, or bank standee).
+                            </p>
+                            <div className="flex items-center gap-2 pt-1">
+                              <label className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-lg transition-all cursor-pointer shadow-xs">
+                                <Upload className="w-3.5 h-3.5" /> Upload QR Image
+                                <input type="file" accept="image/*" onChange={handleFileUpload('customQrImage')} className="hidden" />
+                              </label>
+                              {invProfile.customQrImage && (
+                                <button
+                                  type="button"
+                                  onClick={() => setInvProfile(p => ({ ...p, customQrImage: '' }))}
+                                  className="inline-flex items-center gap-1 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-lg transition-all cursor-pointer"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5 text-red-500" /> Remove Image
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     )}
 
-                    <div className="w-full space-y-1">
-                      <label className="text-[10px] font-bold text-slate-500 block text-left">
-                        Test Amount (Simulates quotation/invoice total):
-                      </label>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-slate-600">₹</span>
-                        <input
-                          type="number"
-                          value={testAmount}
-                          onChange={(e) => setTestAmount(e.target.value)}
-                          placeholder="25000"
-                          className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg outline-hidden font-mono font-bold"
-                        />
+                    {/* Right Col: Live QR Verification Card */}
+                    <div className="bg-slate-50 border border-slate-200/90 rounded-2xl p-5 flex flex-col items-center justify-center text-center space-y-3">
+                      <div className="flex items-center justify-between w-full">
+                        <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-600 flex items-center gap-1">
+                          <QrCode className="w-3.5 h-3.5 text-emerald-600" /> Live QR Preview
+                        </span>
+                        <span className="text-[10px] bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full font-mono font-bold">
+                          {invProfile.qrMode === 'custom' ? 'Custom Image' : 'NPCI UPI Auto'}
+                        </span>
                       </div>
-                    </div>
 
-                    <p className="text-[10px] text-slate-400 leading-tight">
-                      On live documents, the QR code automatically recalculates to the exact subtotal + GST amount of that order.
-                    </p>
+                      {qrPreviewUrl ? (
+                        <div className="p-3 bg-white rounded-xl border border-slate-200 shadow-xs flex flex-col items-center">
+                          <img src={qrPreviewUrl} alt="Live QR Preview" className="w-32 h-32 object-contain" />
+                          <div className="text-[10px] font-black text-slate-900 mt-1.5 font-mono">
+                            {invProfile.qrMode === 'custom' 
+                              ? 'CUSTOM MERCHANT QR' 
+                              : `SCAN TO PAY ₹${Number(testAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="w-32 h-32 bg-slate-200/50 rounded-xl border border-dashed border-slate-300 flex items-center justify-center text-slate-400 text-xs p-3 text-center">
+                          {invProfile.qrMode === 'custom' 
+                            ? 'Upload a QR image to see preview' 
+                            : 'Enter valid UPI ID to generate live QR'}
+                        </div>
+                      )}
+
+                      {invProfile.qrMode !== 'custom' ? (
+                        <div className="w-full space-y-1">
+                          <label className="text-[10px] font-bold text-slate-500 block text-left">
+                            Test Amount Simulator:
+                          </label>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold text-slate-600">₹</span>
+                            <input
+                              type="number"
+                              value={testAmount}
+                              onChange={(e) => setTestAmount(e.target.value)}
+                              placeholder="25000"
+                              className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg outline-hidden font-mono font-bold"
+                            />
+                          </div>
+                          <p className="text-[10px] text-slate-400 leading-tight pt-1">
+                            On generated quotations/invoices, this QR code automatically encodes the exact grand total of each order.
+                          </p>
+                        </div>
+                      ) : (
+                        <p className="text-[10px] text-slate-400 leading-tight">
+                          This uploaded merchant QR image will be printed directly in the payment section of your quotations and tax invoices.
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
