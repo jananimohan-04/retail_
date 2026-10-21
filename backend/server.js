@@ -92,8 +92,8 @@ const MENU_CATALOG = [
       { id: 'admin_media', label: 'Product Media', path: '/admin/media', icon: 'ImageIcon', defaultRoles: ['company_admin'] },
       { id: 'admin_categories', label: 'Custom Categories', path: '/admin/categories', icon: 'FolderTree', defaultRoles: ['company_admin'] },
       { id: 'admin_users', label: 'Business Development Executive', path: '/admin/users', icon: 'User', defaultRoles: ['company_admin'] },
-      { id: 'admin_invoice_profile', label: 'Invoice & QR Profile', path: '/admin/settings?tab=invoice', icon: 'Receipt', defaultRoles: ['company_admin', 'super_admin'] },
-      { id: 'admin_settings', label: 'Store & Invoice Settings', path: '/admin/settings', icon: 'Settings', defaultRoles: ['company_admin', 'super_admin'] }
+      { id: 'admin_invoice_profile', label: 'Invoice & QR Profile', path: '/admin/settings?tab=invoice', icon: 'Receipt', defaultRoles: ['company_admin'] },
+      { id: 'admin_settings', label: 'Store Settings', path: '/admin/settings', icon: 'Settings', defaultRoles: ['company_admin'] }
     ]
   },
   {
@@ -205,14 +205,14 @@ function ensureRolePermissions() {
     if (r.id === 'super_admin' && !r.menuPermissions.includes('super_access')) {
       r.menuPermissions.push('super_access');
     }
-    if ((r.id === 'company_admin' || r.id === 'super_admin') && !r.menuPermissions.includes('admin_invoice_profile')) {
-      r.menuPermissions.push('admin_invoice_profile');
+    if (r.id === 'company_admin') {
+      if (!r.menuPermissions.includes('admin_invoice_profile')) r.menuPermissions.push('admin_invoice_profile');
+      if (!r.menuPermissions.includes('admin_settings')) r.menuPermissions.push('admin_settings');
     }
-    if ((r.id === 'company_admin' || r.id === 'super_admin') && !r.menuPermissions.includes('admin_settings')) {
-      r.menuPermissions.push('admin_settings');
-    }
-    if (r.id === 'super_admin' && !r.menuPermissions.includes('super_invoice_profile')) {
-      r.menuPermissions.push('super_invoice_profile');
+    if (r.id === 'super_admin') {
+      r.menuPermissions = r.menuPermissions.filter(p => p !== 'admin_invoice_profile' && p !== 'admin_settings');
+      if (!r.menuPermissions.includes('super_invoice_profile')) r.menuPermissions.push('super_invoice_profile');
+      if (!r.menuPermissions.includes('super_settings')) r.menuPermissions.push('super_settings');
     }
   });
 
@@ -294,9 +294,9 @@ function getEffectivePermissionsForUser(uOrCtx) {
     effective.add('super_access');
     effective.add('super_dashboard');
     effective.add('super_settings');
-    effective.add('admin_settings');
-    effective.add('admin_invoice_profile');
     effective.add('super_invoice_profile');
+    effective.delete('admin_invoice_profile');
+    effective.delete('admin_settings');
   }
 
   return Array.from(effective);

@@ -230,7 +230,7 @@ export const MENU_CATALOG = [
         label: 'Invoice & QR Profile',
         path: '/admin/settings?tab=invoice',
         icon: 'Receipt',
-        defaultRoles: ['company_admin', 'super_admin'],
+        defaultRoles: ['company_admin'],
         theme: {
           name: 'amber',
           gradient: 'from-amber-600 via-orange-600 to-amber-700',
@@ -243,10 +243,10 @@ export const MENU_CATALOG = [
       },
       {
         id: 'admin_settings',
-        label: 'Store & Invoice Settings',
+        label: 'Store Settings',
         path: '/admin/settings',
         icon: 'Settings',
-        defaultRoles: ['company_admin', 'super_admin'],
+        defaultRoles: ['company_admin'],
         theme: {
           name: 'slate',
           gradient: 'from-slate-600 via-teal-700 to-emerald-700',
