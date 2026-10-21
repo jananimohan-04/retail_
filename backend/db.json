@@ -103,7 +103,7 @@
   "companies": [
     {
       "id": "C-ARGUS",
-      "name": "Argus",
+      "name": "ARGUS CNC TECHNOLOGIES PVT. LTD.",
       "logo": "🏭",
       "city": "Pune",
       "status": "active",
@@ -115,14 +115,17 @@
       "code": "C-ARGUS",
       "industry": "CNC Manufacturing",
       "email": "argushexadoc2021@gmail.com",
-      "phone": "",
-      "address": "",
-      "state": "",
-      "pin": "",
+      "phone": "+91 98765 43210",
+      "address": "Plot 18, Sector 10, MIDC Industrial Area, Bhosari",
+      "state": "Maharashtra",
+      "pin": "411026",
       "description": "ARGUSCNC Industrial Manufacturing",
       "storeStatus": "active",
       "createdAt": "2026-10-16",
-      "updatedAt": "2026-10-16"
+      "updatedAt": "2026-10-21T06:09:56.500Z",
+      "gstin": "27AAACA1234A1Z5",
+      "pan": "AAACA1234A",
+      "cin": "U29253PN2021PTC198765"
     }
   ],
   "users": [
@@ -971,7 +974,35 @@
       "deliveryFee": 0,
       "freeAbove": 0,
       "orderPrefix": "ORD-",
-      "announcement": "GST invoice on all orders • Precision tooling by Argus"
+      "announcement": "GST invoice on all orders • Precision tooling by Argus",
+      "invoiceProfile": {
+        "companyName": "ARGUS CNC TECHNOLOGIES PVT. LTD.",
+        "tagline": "High-Precision CNC Machine Tools & Connected Factory Automation",
+        "logo": "",
+        "regAddress": "Plot 18, Sector 10, MIDC Industrial Area, Bhosari",
+        "city": "Pune",
+        "state": "Maharashtra",
+        "stateCode": "27 (Maharashtra)",
+        "pin": "411026",
+        "country": "India",
+        "gstin": "27AAACA1234A1Z5",
+        "pan": "AAACA1234A",
+        "cin": "U29253PN2021PTC198765",
+        "email": "argushexadoc2021@gmail.com",
+        "phone": "+91 98765 43210",
+        "bankName": "HDFC Bank Ltd.",
+        "accName": "ARGUS CNC TECHNOLOGIES PVT LTD",
+        "accNo": "50200067891234",
+        "ifsc": "HDFC0001234",
+        "branch": "MIDC Bhosari Branch, Pune",
+        "upiId": "arguscnc@hdfcbank",
+        "signatureImage": "",
+        "signatoryName": "Sanjay Deshmukh",
+        "signatoryDesignation": "Director of Industrial Operations",
+        "quotationTerms": "1. Prices quoted are firm and valid for 30 days.\n2. Payment: 100% against proforma invoice or agreed credit terms.\n3. GST extra as applicable.\n4. Delivery: Ready stock within 48h; custom tooling 5-7 days.",
+        "invoiceTerms": "1. Declared that particulars are true and correct.\n2. Interest @ 18% p.a. on delayed payments beyond due date.\n3. Goods once sold cannot be returned without RMA.\n4. Disputes subject to Pune, Maharashtra jurisdiction.",
+        "companyId": "C-ARGUS"
+      }
     }
   },
   "_meta": {
@@ -995,6 +1026,17 @@
     "admin_settings"
   ],
   "audit_logs": [
+    {
+      "id": "A-179256299652981",
+      "ts": "2026-10-21T06:09:56.530Z",
+      "actor": "ARGUS TECHNOLOGIES",
+      "role": "super_admin",
+      "action": "settings.invoice_profile",
+      "entity": "invoiceProfile",
+      "entityId": "C-ARGUS",
+      "companyId": "C-ARGUS",
+      "summary": "Updated invoice & quotation profile for company C-ARGUS"
+    },
     {
       "id": "A-179252926872120",
       "ts": "2026-10-20T20:47:48.722Z",

@@ -75,6 +75,7 @@ export default function Quotes() {
 
     return {
       quoteNo: q.id,
+      companyId: q.companyId || undefined,
       date: q.date || new Date().toISOString().slice(0, 10),
       validUntil: q.validUntil,
       customer: q.requestedBy || q.customer || q.contact || 'Valued Client',

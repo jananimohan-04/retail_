@@ -83,6 +83,7 @@ export default function Invoices() {
       downloadTaxInvoicePdf({
         invoiceNo: inv.invoiceNo,
         orderId: inv.orderId,
+        companyId: inv.companyId || undefined,
         date: inv.date,
         dueDate: inv.dueDate,
         poRef: inv.poRef || '',

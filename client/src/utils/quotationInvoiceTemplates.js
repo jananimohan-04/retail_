@@ -2,7 +2,47 @@
    Produces print-ready, high-resolution A4 documents with embedded ARGUS CNC logo,
    legal GST compliance (CGST/SGST/IGST breakdown), HSN codes, and bank wire details. */
 
+import QRCode from 'qrcode';
 import { ARGUS_LOGO_BASE64 } from './logoBase64';
+
+export async function generateUpiQrCode(upiId, payeeName, amount, docNo) {
+  if (!upiId) return null;
+  const cleanUpi = String(upiId).trim();
+  if (!cleanUpi) return null;
+  const numAmount = Number(amount || 0).toFixed(2);
+  const upiUri = `upi://pay?pa=${encodeURIComponent(cleanUpi)}&pn=${encodeURIComponent((payeeName || 'ARGUS CNC').trim())}&am=${numAmount}&cu=INR&tn=${encodeURIComponent((docNo || 'Payment').trim())}`;
+  try {
+    return await QRCode.toDataURL(upiUri, {
+      width: 160,
+      margin: 1,
+      color: {
+        dark: '#0F172A',
+        light: '#FFFFFF'
+      },
+      errorCorrectionLevel: 'M'
+    });
+  } catch (err) {
+    console.warn('QR code generation failed:', err);
+    return null;
+  }
+}
+
+export async function fetchCompanyInvoiceProfile(companyId) {
+  try {
+    const url = companyId ? `/api/settings/invoice-profile?companyId=${encodeURIComponent(companyId)}` : '/api/settings/invoice-profile';
+    const res = await fetch(url, { credentials: 'include' });
+    if (res.ok) {
+      const json = await res.json();
+      const data = json?.data || json;
+      if (data && (data.companyName || data.name)) {
+        return data;
+      }
+    }
+  } catch (e) {
+    // network or auth error, fallback to default
+  }
+  return null;
+}
 
 export function numberToWordsIndian(num) {
   num = Math.round(Number(num) || 0);
@@ -46,13 +86,33 @@ function escapeHtml(str) {
     .replace(/'/g, '&#39;');
 }
 
+function renderTermsList(termsStr, defaultTerms) {
+  if (!termsStr || !String(termsStr).trim()) {
+    return defaultTerms.map(t => `<li>${t}</li>`).join('');
+  }
+  const items = String(termsStr)
+    .split('\n')
+    .map(l => l.trim())
+    .filter(Boolean)
+    .map(l => l.replace(/^[-*•\d.]+\s*/, ''));
+  if (items.length === 0) {
+    return defaultTerms.map(t => `<li>${t}</li>`).join('');
+  }
+  return items.map(t => `<li>${escapeHtml(t)}</li>`).join('');
+}
+
 const DEFAULT_COMPANY = {
   name: 'ARGUS CNC TECHNOLOGIES PVT. LTD.',
+  companyName: 'ARGUS CNC TECHNOLOGIES PVT. LTD.',
   tagline: 'High-Precision CNC Machine Tools & Connected Factory Automation',
   regAddress: 'Plot 18, Sector 10, MIDC Industrial Area, Bhosari, Pune, Maharashtra - 411026',
+  city: 'Pune',
+  state: 'Maharashtra',
+  stateCode: '27 (Maharashtra)',
+  pin: '411026',
   gstin: '27AAACA1234A1Z5',
   pan: 'AAACA1234A',
-  stateCode: '27 (Maharashtra)',
+  cin: 'U29253PN2021PTC198765',
   email: 'technologiesargus@gmail.com',
   phone: '+91 98765 43210',
   bankName: 'HDFC Bank Ltd.',
@@ -60,13 +120,18 @@ const DEFAULT_COMPANY = {
   accNo: '50200067891234',
   ifsc: 'HDFC0001234',
   branch: 'MIDC Bhosari Branch, Pune',
-  upiId: 'arguscnc@hdfcbank'
+  upiId: 'arguscnc@hdfcbank',
+  signatureImage: '',
+  signatoryName: 'Sanjay Deshmukh',
+  signatoryDesignation: 'Director of Industrial Operations',
+  quotationTerms: '',
+  invoiceTerms: ''
 };
 
 /* -------------------------------------------------------------
    1. COMMERCIAL PROFORMA QUOTATION TEMPLATE
    ------------------------------------------------------------- */
-export function generateQuotationHtml({
+export async function generateQuotationHtml({
   quoteNo,
   date,
   validUntil,
@@ -75,7 +140,23 @@ export function generateQuotationHtml({
   items = [],
   notes = ''
 }) {
-  const co = { ...DEFAULT_COMPANY, ...company };
+  let co = { ...DEFAULT_COMPANY, ...company };
+  if (!company || Object.keys(company).length === 0 || !company.gstin) {
+    const remote = await fetchCompanyInvoiceProfile(company?.companyId || company?.id);
+    if (remote) {
+      co = {
+        ...DEFAULT_COMPANY,
+        ...remote,
+        name: remote.companyName || remote.name || DEFAULT_COMPANY.name,
+        companyName: remote.companyName || remote.name || DEFAULT_COMPANY.companyName,
+        ...company
+      };
+    }
+  }
+  co.name = co.name || co.companyName || DEFAULT_COMPANY.name;
+  co.companyName = co.companyName || co.name || DEFAULT_COMPANY.companyName;
+  const logoSrc = co.logo || ARGUS_LOGO_BASE64;
+
   const qDate = date || new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
   const qExpiry = validUntil || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
   const qNumber = quoteNo || `QT-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${Math.floor(1000 + Math.random() * 9000)}`;
@@ -109,6 +190,17 @@ export function generateQuotationHtml({
   const sgst = subtotal * 0.09;
   const total = subtotal + cgst + sgst;
   const words = numberToWordsIndian(total);
+
+  const qrDataUrl = await generateUpiQrCode(co.upiId, co.accName || co.name, total, qNumber);
+
+  const defaultQuotationTerms = [
+    '<b>Validity:</b> Prices quoted are firm and valid for 30 calendar days from the quotation date.',
+    '<b>Payment Terms:</b> 100% against Proforma Invoice or as per mutually agreed B2B vendor credit terms.',
+    '<b>Taxes:</b> Goods & Services Tax (GST) is charged extra as specified above as per statutory government regulations.',
+    '<b>Delivery / Dispatch:</b> Ready stock items dispatched within 48 hours; custom items dispatched within 5-7 working days upon receipt of confirmed Purchase Order.',
+    '<b>Warranty:</b> Standard 12-month manufacturer warranty against manufacturing defects.'
+  ];
+  const termsHtml = renderTermsList(co.quotationTerms, defaultQuotationTerms);
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -172,11 +264,11 @@ export function generateQuotationHtml({
   <div class="sheet">
     <div class="header">
       <div class="brand-col">
-        <img src="${ARGUS_LOGO_BASE64}" class="logo-img" alt="ARGUS CNC Logo" />
+        <img src="${logoSrc}" class="logo-img" alt="${escapeHtml(co.name)} Logo" />
         <div class="co-name">${escapeHtml(co.name)}</div>
         <div class="co-tag">${escapeHtml(co.tagline)}</div>
         <div class="co-addr">
-          ${escapeHtml(co.regAddress)}<br />
+          ${escapeHtml(co.regAddress)}${co.city ? `, ${escapeHtml(co.city)}` : ''}${co.pin ? ` - ${escapeHtml(co.pin)}` : ''}<br />
           <b>GSTIN:</b> ${escapeHtml(co.gstin)} &bull; <b>PAN:</b> ${escapeHtml(co.pan)} &bull; <b>State:</b> ${escapeHtml(co.stateCode)}<br />
           <b>Email:</b> ${escapeHtml(co.email)} &bull; <b>Phone:</b> ${escapeHtml(co.phone)}
         </div>
@@ -248,27 +340,36 @@ export function generateQuotationHtml({
     <div class="terms-box">
       <div class="box-title">Commercial Terms & Conditions</div>
       <ol class="terms-list">
-        <li><b>Validity:</b> Prices quoted are firm and valid for 30 calendar days from the quotation date.</li>
-        <li><b>Payment Terms:</b> 100% against Proforma Invoice or as per mutually agreed B2B vendor credit terms.</li>
-        <li><b>Taxes:</b> Goods & Services Tax (GST) is charged extra as specified above as per statutory government regulations.</li>
-        <li><b>Delivery / Dispatch:</b> Ready stock items dispatched within 48 hours; custom items dispatched within 5-7 working days upon receipt of confirmed Purchase Order.</li>
-        <li><b>Warranty:</b> Standard 12-month manufacturer warranty against manufacturing defects.</li>
+        ${termsHtml}
       </ol>
     </div>
 
     <div class="footer-grid">
-      <div class="bank-box">
-        <div style="font-weight:800;color:#2E1508;margin-bottom:2px">Bank Account for Wire Transfer (NEFT / RTGS / IMPS)</div>
-        <b>Bank Name:</b> ${escapeHtml(co.bankName)}<br />
-        <b>Account Name:</b> ${escapeHtml(co.accName)}<br />
-        <b>A/C Number:</b> <span style="font-family:monospace;font-weight:700">${escapeHtml(co.accNo)}</span><br />
-        <b>IFSC Code:</b> <span style="font-family:monospace;font-weight:700">${escapeHtml(co.ifsc)}</span> &bull; <b>Branch:</b> ${escapeHtml(co.branch)}<br />
-        <b>UPI ID:</b> ${escapeHtml(co.upiId)}
+      <div class="bank-box" style="display:flex; justify-content:space-between; align-items:center; gap:14px;">
+        <div style="flex:1">
+          <div style="font-weight:800;color:#2E1508;margin-bottom:2px">Bank Account for Wire Transfer (NEFT / RTGS / IMPS)</div>
+          <b>Bank Name:</b> ${escapeHtml(co.bankName)}<br />
+          <b>Account Name:</b> ${escapeHtml(co.accName)}<br />
+          <b>A/C Number:</b> <span style="font-family:monospace;font-weight:700">${escapeHtml(co.accNo)}</span><br />
+          <b>IFSC Code:</b> <span style="font-family:monospace;font-weight:700">${escapeHtml(co.ifsc)}</span> &bull; <b>Branch:</b> ${escapeHtml(co.branch)}<br />
+          <b>UPI ID:</b> <span style="font-family:monospace;font-weight:700">${escapeHtml(co.upiId)}</span>
+        </div>
+        ${qrDataUrl ? `
+        <div style="text-align:center; flex-shrink:0; background:#FFFFFF; padding:6px 8px; border-radius:6px; border:1px solid #DECDBE; box-shadow:0 1px 3px rgba(0,0,0,0.05)">
+          <img src="${qrDataUrl}" style="width:84px; height:84px; display:block;" alt="UPI Payment QR Code" />
+          <div style="font-size:8px; font-weight:800; color:#8F2A0E; margin-top:2px; letter-spacing:0.3px; text-transform:uppercase">
+            Scan &amp; Pay ₹${total.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </div>
+        </div>` : ''}
       </div>
       <div class="sig-col">
-        <div class="sig-stamp">Digital Stamp Verified</div>
+        ${co.signatureImage ? `
+        <div style="min-height:50px; display:flex; align-items:flex-end; justify-content:flex-end; margin-bottom:4px;">
+          <img src="${co.signatureImage}" style="max-height:48px; max-width:140px; object-fit:contain; display:block;" alt="Authorized Digital Signature" />
+        </div>` : `
+        <div class="sig-stamp">Digital Stamp Verified</div>`}
         <div class="sig-label">For ${escapeHtml(co.name)}</div>
-        <div style="font-size:9px;color:#64748B">Authorized Signatory &bull; Sales Engineering</div>
+        <div style="font-size:9px;color:#64748B">${escapeHtml(co.signatoryName || 'Authorized Signatory')}${co.signatoryDesignation ? ` &bull; ${escapeHtml(co.signatoryDesignation)}` : ' &bull; Sales Engineering'}</div>
       </div>
     </div>
   </div>
@@ -279,7 +380,7 @@ export function generateQuotationHtml({
 /* -------------------------------------------------------------
    2. LEGAL GST TAX INVOICE TEMPLATE
    ------------------------------------------------------------- */
-export function generateTaxInvoiceHtml({
+export async function generateTaxInvoiceHtml({
   invoiceNo,
   quoteNo,
   orderId,
@@ -291,7 +392,23 @@ export function generateTaxInvoiceHtml({
   items = [],
   notes = ''
 }) {
-  const co = { ...DEFAULT_COMPANY, ...company };
+  let co = { ...DEFAULT_COMPANY, ...company };
+  if (!company || Object.keys(company).length === 0 || !company.gstin) {
+    const remote = await fetchCompanyInvoiceProfile(company?.companyId || company?.id);
+    if (remote) {
+      co = {
+        ...DEFAULT_COMPANY,
+        ...remote,
+        name: remote.companyName || remote.name || DEFAULT_COMPANY.name,
+        companyName: remote.companyName || remote.name || DEFAULT_COMPANY.companyName,
+        ...company
+      };
+    }
+  }
+  co.name = co.name || co.companyName || DEFAULT_COMPANY.name;
+  co.companyName = co.companyName || co.name || DEFAULT_COMPANY.companyName;
+  const logoSrc = co.logo || ARGUS_LOGO_BASE64;
+
   const invDate = date || new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
   const invDue = dueDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
   const invNumber = invoiceNo || `INV/${new Date().getFullYear()}-${String(new Date().getFullYear() + 1).slice(2)}/${Math.floor(1000 + Math.random() * 9000)}`;
@@ -331,6 +448,16 @@ export function generateTaxInvoiceHtml({
   const sgst = subtotal * 0.09;
   const total = subtotal + cgst + sgst;
   const words = numberToWordsIndian(total);
+
+  const qrDataUrl = await generateUpiQrCode(co.upiId, co.accName || co.name, total, invNumber);
+
+  const defaultInvoiceTerms = [
+    'We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct.',
+    'Interest @ 18% per annum will be charged on delayed payments beyond the due date.',
+    'Goods once sold will not be accepted back without prior written material return authorization (RMA).',
+    'All disputes are subject to exclusive jurisdiction of Pune, Maharashtra courts only.'
+  ];
+  const termsHtml = renderTermsList(co.invoiceTerms, defaultInvoiceTerms);
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -400,13 +527,13 @@ export function generateTaxInvoiceHtml({
 
     <div class="header">
       <div class="brand-col">
-        <img src="${ARGUS_LOGO_BASE64}" class="logo-img" alt="ARGUS CNC Logo" />
+        <img src="${logoSrc}" class="logo-img" alt="${escapeHtml(co.name)} Logo" />
         <div class="co-name">${escapeHtml(co.name)}</div>
         <div class="co-tag">${escapeHtml(co.tagline)}</div>
         <div class="co-addr">
-          ${escapeHtml(co.regAddress)}<br />
+          ${escapeHtml(co.regAddress)}${co.city ? `, ${escapeHtml(co.city)}` : ''}${co.pin ? ` - ${escapeHtml(co.pin)}` : ''}<br />
           <b>GSTIN:</b> ${escapeHtml(co.gstin)} &bull; <b>PAN:</b> ${escapeHtml(co.pan)} &bull; <b>State Code:</b> ${escapeHtml(co.stateCode)}<br />
-          <b>CIN:</b> U29253PN2021PTC198765 &bull; <b>Email:</b> ${escapeHtml(co.email)} &bull; <b>Phone:</b> ${escapeHtml(co.phone)}
+          <b>CIN:</b> ${escapeHtml(co.cin || 'U29253PN2021PTC198765')} &bull; <b>Email:</b> ${escapeHtml(co.email)} &bull; <b>Phone:</b> ${escapeHtml(co.phone)}
         </div>
       </div>
       <div class="doc-col">
@@ -486,26 +613,36 @@ export function generateTaxInvoiceHtml({
     <div class="terms-box">
       <div class="party-title">Terms of Sale & Legal Declaration</div>
       <ol class="terms-list">
-        <li>We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct.</li>
-        <li>Interest @ 18% per annum will be charged on delayed payments beyond the due date.</li>
-        <li>Goods once sold will not be accepted back without prior written material return authorization (RMA).</li>
-        <li>All disputes are subject to exclusive jurisdiction of Pune, Maharashtra courts only.</li>
+        ${termsHtml}
       </ol>
     </div>
 
     <div class="footer-grid">
-      <div class="bank-box">
-        <div style="font-weight:800;color:#0369A1;margin-bottom:2px">Electronic Remittance Details (RTGS / NEFT / IMPS)</div>
-        <b>Beneficiary Name:</b> ${escapeHtml(co.accName)}<br />
-        <b>Bank Name:</b> ${escapeHtml(co.bankName)}<br />
-        <b>A/C Number:</b> <span style="font-family:monospace;font-weight:700">${escapeHtml(co.accNo)}</span><br />
-        <b>IFSC Code:</b> <span style="font-family:monospace;font-weight:700">${escapeHtml(co.ifsc)}</span> &bull; <b>Branch:</b> ${escapeHtml(co.branch)}<br />
-        <b>UPI VPA:</b> ${escapeHtml(co.upiId)}
+      <div class="bank-box" style="display:flex; justify-content:space-between; align-items:center; gap:14px;">
+        <div style="flex:1">
+          <div style="font-weight:800;color:#0369A1;margin-bottom:2px">Electronic Remittance Details (RTGS / NEFT / IMPS)</div>
+          <b>Beneficiary Name:</b> ${escapeHtml(co.accName)}<br />
+          <b>Bank Name:</b> ${escapeHtml(co.bankName)}<br />
+          <b>A/C Number:</b> <span style="font-family:monospace;font-weight:700">${escapeHtml(co.accNo)}</span><br />
+          <b>IFSC Code:</b> <span style="font-family:monospace;font-weight:700">${escapeHtml(co.ifsc)}</span> &bull; <b>Branch:</b> ${escapeHtml(co.branch)}<br />
+          <b>UPI VPA:</b> <span style="font-family:monospace;font-weight:700">${escapeHtml(co.upiId)}</span>
+        </div>
+        ${qrDataUrl ? `
+        <div style="text-align:center; flex-shrink:0; background:#FFFFFF; padding:6px 8px; border-radius:6px; border:1px solid #BAE6FD; box-shadow:0 1px 3px rgba(0,0,0,0.05)">
+          <img src="${qrDataUrl}" style="width:84px; height:84px; display:block;" alt="UPI Payment QR Code" />
+          <div style="font-size:8px; font-weight:800; color:#0369A1; margin-top:2px; letter-spacing:0.3px; text-transform:uppercase">
+            Scan &amp; Pay ₹${total.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </div>
+        </div>` : ''}
       </div>
       <div class="sig-col">
-        <div class="sig-stamp">DIGITALLY SIGNED &amp; SEALED</div>
+        ${co.signatureImage ? `
+        <div style="min-height:50px; display:flex; align-items:flex-end; justify-content:flex-end; margin-bottom:4px;">
+          <img src="${co.signatureImage}" style="max-height:48px; max-width:140px; object-fit:contain; display:block;" alt="Authorized Digital Signature" />
+        </div>` : `
+        <div class="sig-stamp">DIGITALLY SIGNED &amp; SEALED</div>`}
         <div class="sig-label">For ${escapeHtml(co.name)}</div>
-        <div style="font-size:9px;color:#64748B">Authorized Signatory &bull; Accounts Department</div>
+        <div style="font-size:9px;color:#64748B">${escapeHtml(co.signatoryName || 'Authorized Signatory')}${co.signatoryDesignation ? ` &bull; ${escapeHtml(co.signatoryDesignation)}` : ' &bull; Accounts Department'}</div>
       </div>
     </div>
   </div>
@@ -513,8 +650,8 @@ export function generateTaxInvoiceHtml({
 </html>`;
 }
 
-export function downloadQuotationPdf(data) {
-  const html = generateQuotationHtml(data);
+export async function downloadQuotationPdf(data) {
+  const html = await generateQuotationHtml(data);
   const win = window.open('', '_blank');
   if (!win) {
     alert('Please allow popups to open and print the quotation PDF.');
@@ -533,8 +670,8 @@ export function downloadQuotationPdf(data) {
   }, 400);
 }
 
-export function downloadTaxInvoicePdf(data) {
-  const html = generateTaxInvoiceHtml(data);
+export async function downloadTaxInvoicePdf(data) {
+  const html = await generateTaxInvoiceHtml(data);
   const win = window.open('', '_blank');
   if (!win) {
     alert('Please allow popups to open and print the tax invoice PDF.');

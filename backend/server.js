@@ -1963,7 +1963,46 @@ app.get('/api/stats/company', scopeCompany, (req, res) => {
   const qs = db.quotations.filter(q => q.companyId === cid);
   ok(res, { products: ps.length, visible: ps.filter(p => p.visible).length, lowStock: ps.filter(p => p.stock <= 10).length, quotationOnly: ps.filter(p => p.price == null).length, orders: os.length, pending: os.filter(o => o.status === 'Pending').length, delivered: os.filter(o => o.status === 'Delivered').length, revenue: os.reduce((a, o) => a + o.total, 0), openQuotes: qs.filter(q => q.status === 'Pending').length });
 });
-app.get('/api/settings', scopeCompany, (req, res) => ok(res, db.settings[req.companyId] || {}));
+function defaultInvoiceProfile(cid) {
+  const co = (db.companies || []).find(c => c.id === cid) || {};
+  return {
+    companyName: co.name || 'ARGUS CNC TECHNOLOGIES PVT. LTD.',
+    tagline: co.description || 'High-Precision CNC Machine Tools & Connected Factory Automation',
+    logo: (co.logo && (co.logo.startsWith('data:') || co.logo.startsWith('http') || co.logo.startsWith('/'))) ? co.logo : '',
+    regAddress: co.address || 'Plot 18, Sector 10, MIDC Industrial Area, Bhosari',
+    city: co.city || 'Pune',
+    state: co.state || 'Maharashtra',
+    stateCode: '27 (Maharashtra)',
+    pin: co.pin || '411026',
+    country: 'India',
+    gstin: co.gstin || '27AAACA1234A1Z5',
+    pan: co.pan || 'AAACA1234A',
+    cin: co.cin || 'U29253PN2021PTC198765',
+    email: co.email || 'technologiesargus@gmail.com',
+    phone: co.phone || '+91 98765 43210',
+    bankName: 'HDFC Bank Ltd.',
+    accName: (co.name ? co.name.toUpperCase() : 'ARGUS CNC TECHNOLOGIES') + ' PVT LTD',
+    accNo: '50200067891234',
+    ifsc: 'HDFC0001234',
+    branch: (co.city || 'Bhosari') + ' Industrial Branch',
+    upiId: 'arguscnc@hdfcbank',
+    signatureImage: '',
+    signatoryName: 'Authorized Signatory',
+    signatoryDesignation: 'Commercial & Accounts Department',
+    quotationTerms: '1. Prices quoted are firm and valid for 30 days.\n2. Payment: 100% against proforma invoice or agreed credit terms.\n3. GST extra as applicable.\n4. Delivery: Ready stock within 48h; custom tooling 5-7 days.',
+    invoiceTerms: '1. Declared that particulars are true and correct.\n2. Interest @ 18% p.a. on delayed payments beyond due date.\n3. Goods once sold cannot be returned without RMA.\n4. Disputes subject to Pune, Maharashtra jurisdiction.'
+  };
+}
+
+app.get('/api/settings', scopeCompany, (req, res) => {
+  const cid = req.companyId;
+  const current = (db.settings && db.settings[cid]) || {};
+  if (!current.invoiceProfile) {
+    current.invoiceProfile = defaultInvoiceProfile(cid);
+  }
+  ok(res, current);
+});
+
 app.put('/api/settings', scopeCompany, (req, res) => {
   if (req.ctx.role === 'sales_user') return res.status(403).json({ error: 'admin only' });
   const { companyId: _c, ...vals } = req.body;
@@ -1971,6 +2010,45 @@ app.put('/api/settings', scopeCompany, (req, res) => {
   db.settings[req.companyId] = { ...(db.settings[req.companyId] || {}), ...vals }; save();
   audit(req, 'settings.company', 'settings', req.companyId, req.companyId, `Updated store settings: ${Object.keys(req.body).join(', ')}`);
   ok(res, db.settings[req.companyId]);
+});
+
+app.get('/api/settings/invoice-profile', scopeCompany, (req, res) => {
+  const cid = req.companyId || 'C-ARGUS';
+  db.settings = db.settings || {};
+  db.settings[cid] = db.settings[cid] || {};
+  const profile = db.settings[cid].invoiceProfile || defaultInvoiceProfile(cid);
+  ok(res, profile);
+});
+
+app.put('/api/settings/invoice-profile', scopeCompany, (req, res) => {
+  if (req.ctx.role === 'sales_user') return res.status(403).json({ error: 'admin only' });
+  const cid = req.companyId || req.body.companyId || 'C-ARGUS';
+  db.settings = db.settings || {};
+  db.settings[cid] = db.settings[cid] || {};
+  const current = db.settings[cid].invoiceProfile || defaultInvoiceProfile(cid);
+  const updated = { ...current, ...req.body };
+  db.settings[cid].invoiceProfile = updated;
+
+  // Also sync primary company attributes to db.companies
+  const co = (db.companies || []).find(c => c.id === cid);
+  if (co) {
+    if (updated.companyName) co.name = updated.companyName;
+    if (updated.logo && (updated.logo.startsWith('data:image') || updated.logo.startsWith('http') || updated.logo.startsWith('/'))) co.logo = updated.logo;
+    if (updated.city) co.city = updated.city;
+    if (updated.regAddress) co.address = updated.regAddress;
+    if (updated.phone) co.phone = updated.phone;
+    if (updated.email) co.email = updated.email;
+    if (updated.gstin) co.gstin = updated.gstin;
+    if (updated.pan) co.pan = updated.pan;
+    if (updated.cin) co.cin = updated.cin;
+    if (updated.state) co.state = updated.state;
+    if (updated.pin) co.pin = updated.pin;
+    co.updatedAt = new Date().toISOString();
+  }
+
+  save();
+  audit(req, 'settings.invoice_profile', 'invoiceProfile', cid, cid, `Updated invoice & quotation profile for company ${cid}`);
+  ok(res, updated);
 });
 
 /* product media metadata (binaries stay on disk/Storage; company-scoped) */
