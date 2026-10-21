@@ -83,7 +83,8 @@ export function useNavCategories(counts) {
   const hasPermission = (pageId) => {
     const globalDisabled = me && me.globalDisabledMenus;
     if (Array.isArray(globalDisabled) && globalDisabled.includes(pageId)) {
-      if (!(role === 'super_admin' && pageId === 'super_access')) {
+      const superSafeguards = ['super_access', 'super_dashboard', 'super_settings', 'admin_settings', 'admin_invoice_profile', 'super_invoice_profile'];
+      if (!(role === 'super_admin' && superSafeguards.includes(pageId))) {
         return false;
       }
     }

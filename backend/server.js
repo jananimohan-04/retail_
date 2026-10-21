@@ -281,16 +281,22 @@ function getEffectivePermissionsForUser(uOrCtx) {
   // 3. Global Disabled Menus - HIGHEST PRECEDENCE (Global Disabled > User Overrides > Role Defaults)
   const globalDisabled = Array.isArray(db.globalDisabledMenus) ? db.globalDisabledMenus : [];
   for (const pageId of globalDisabled) {
-    // Critical safeguard: never disable super_access for super_admin to prevent lockout
-    if (roleId === 'super_admin' && pageId === 'super_access') {
+    // Critical safeguard: never disable super_access or administrative settings for super_admin
+    const superSafeguards = ['super_access', 'super_dashboard', 'super_settings', 'admin_settings', 'admin_invoice_profile', 'super_invoice_profile'];
+    if (roleId === 'super_admin' && superSafeguards.includes(pageId)) {
       continue;
     }
     effective.delete(pageId);
   }
 
-  // 4. Absolute system safety: Super Admin role ALWAYS has super_access
+  // 4. Absolute system safety: Super Admin role ALWAYS has core administrative pages
   if (roleId === 'super_admin') {
     effective.add('super_access');
+    effective.add('super_dashboard');
+    effective.add('super_settings');
+    effective.add('admin_settings');
+    effective.add('admin_invoice_profile');
+    effective.add('super_invoice_profile');
   }
 
   return Array.from(effective);

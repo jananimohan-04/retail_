@@ -1017,13 +1017,7 @@
     "cat_workholding",
     "cat_spares",
     "cat_cutting_tools",
-    "cat_cnc_machines",
-    "super_settings",
-    "admin_quotes",
-    "admin_orders",
-    "super_quotes",
-    "super_orders",
-    "admin_settings"
+    "cat_cnc_machines"
   ],
   "audit_logs": [
     {

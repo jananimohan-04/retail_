@@ -177,7 +177,8 @@ function Gate({ children, noSide, roles, perm }) {
   /* global disabled killswitch check */
   const globalDisabled = me.globalDisabledMenus || [];
   if (perm && globalDisabled.includes(perm)) {
-    if (!(me.role === 'super_admin' && perm === 'super_access')) {
+    const superSafeguards = ['super_access', 'super_dashboard', 'super_settings', 'admin_settings', 'admin_invoice_profile', 'super_invoice_profile'];
+    if (!(me.role === 'super_admin' && superSafeguards.includes(perm))) {
       return <Navigate to={homeFor(me.role)} replace />;
     }
   }
