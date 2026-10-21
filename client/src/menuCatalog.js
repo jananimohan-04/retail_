@@ -2,7 +2,7 @@
 import {
   LayoutDashboard, Building2, Boxes, FolderTree, Image as ImageIcon,
   Receipt, FileText, Settings, ShieldCheck, Store, Home, ShoppingCart,
-  Package, User, PenLine, IndianRupee, KeyRound
+  Package, User, PenLine, IndianRupee, KeyRound, QrCode
 } from 'lucide-react';
 
 export const ICON_MAP = {
@@ -22,7 +22,8 @@ export const ICON_MAP = {
   User,
   PenLine,
   IndianRupee,
-  KeyRound
+  KeyRound,
+  QrCode
 };
 
 export const MENU_CATALOG = [
@@ -225,11 +226,27 @@ export const MENU_CATALOG = [
         }
       },
       {
+        id: 'admin_invoice_profile',
+        label: 'Invoice & QR Profile',
+        path: '/admin/settings?tab=invoice',
+        icon: 'Receipt',
+        defaultRoles: ['company_admin', 'super_admin'],
+        theme: {
+          name: 'amber',
+          gradient: 'from-amber-600 via-orange-600 to-amber-700',
+          activeLink: 'bg-amber-50/90 text-amber-800 font-bold border-amber-300/80 shadow-xs shadow-amber-100',
+          activeIcon: 'text-amber-600',
+          indicator: 'bg-amber-600',
+          badge: 'bg-amber-700 text-white',
+          glow: 'shadow-amber-500/20'
+        }
+      },
+      {
         id: 'admin_settings',
-        label: 'Store Settings',
+        label: 'Store & Invoice Settings',
         path: '/admin/settings',
         icon: 'Settings',
-        defaultRoles: ['company_admin'],
+        defaultRoles: ['company_admin', 'super_admin'],
         theme: {
           name: 'slate',
           gradient: 'from-slate-600 via-teal-700 to-emerald-700',
@@ -340,6 +357,22 @@ export const MENU_CATALOG = [
           indicator: 'bg-rose-500',
           badge: 'bg-rose-600 text-white',
           glow: 'shadow-rose-500/20'
+        }
+      },
+      {
+        id: 'super_invoice_profile',
+        label: 'Invoice & QR Profiles',
+        path: '/admin/settings?tab=invoice',
+        icon: 'Receipt',
+        defaultRoles: ['super_admin'],
+        theme: {
+          name: 'amber',
+          gradient: 'from-amber-600 via-orange-600 to-amber-700',
+          activeLink: 'bg-amber-50/90 text-amber-800 font-bold border-amber-300/80 shadow-xs shadow-amber-100',
+          activeIcon: 'text-amber-600',
+          indicator: 'bg-amber-600',
+          badge: 'bg-amber-700 text-white',
+          glow: 'shadow-amber-500/20'
         }
       },
       {

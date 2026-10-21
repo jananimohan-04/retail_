@@ -239,6 +239,8 @@ export default function App() {
           <Route path="/admin/orders/:id" element={<Gate perm="admin_orders" roles={R.admin}><AdminOrderDetail back="/admin/orders" /></Gate>} />
           <Route path="/admin/quotes" element={<Gate perm="admin_quotes" roles={R.admin}><AdminQuotes /></Gate>} />
           <Route path="/admin/settings" element={<Gate perm="admin_settings" roles={R.admin}><AdminSettings /></Gate>} />
+          <Route path="/admin/invoice-profile" element={<Gate perm="admin_settings" roles={R.admin}><AdminSettings defaultTab="invoice" /></Gate>} />
+          <Route path="/super/invoice-profile" element={<Gate perm="admin_settings" roles={R.super}><AdminSettings defaultTab="invoice" /></Gate>} />
           <Route path="/content" element={<Gate perm="content_writer" roles={R.content}><ContentWriter /></Gate>} />
           <Route path="/content/:id" element={<Gate perm="content_writer" roles={R.content}><ContentWriter /></Gate>} />
           <Route path="/finance" element={<Gate perm="finance_review" roles={R.finance}><FinanceReview /></Gate>} />

@@ -485,6 +485,22 @@ function SettingsTab({ id }) {
   const ph = (k, fb) => (defs && defs[k] != null && defs[k] !== '' ? 'Global default: ' + defs[k] : fb);
   return (
     <>
+      <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-50 border border-emerald-200 mb-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+        <div>
+          <h4 className="text-xs font-black text-emerald-950 flex items-center gap-1.5">
+            <span>Invoice &amp; Quotation Profile (Rule 46 GST)</span>
+          </h4>
+          <p className="text-[11px] text-emerald-800">
+            Configure Company Letterhead Logo, Registered Address, Bank RTGS, Dynamic NPCI UPI QR code, and Authorized Digital Signature for this enterprise.
+          </p>
+        </div>
+        <Link
+          to={`/admin/settings?tab=invoice&companyId=${id}`}
+          className="btn btn-primary btn-sm bg-emerald-600 hover:bg-emerald-700 text-white border-none flex-shrink-0 shadow-xs"
+        >
+          Configure Invoice Profile 🧾
+        </Link>
+      </div>
       <PageHead title="Store settings" desc="Company overrides — blank fields fall back to global defaults." />
       <div className="form-grid">
         <Field label="Store name"><input value={f.storeName} onChange={set('storeName')} placeholder={ph('storeName', 'e.g. Argus Industrial Store')} /></Field>

@@ -4,13 +4,14 @@
    Includes role-based access: Super Admin can configure any company; Company Admin configures their own. */
 
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Settings as SettingsIcon, Save, Building2, Percent, 
   Hash, AlertTriangle, Megaphone, Loader2, CheckCircle2,
   FileText, Receipt, QrCode, Upload, Trash2, RefreshCw, 
   Eye, Landmark, Stamp, ShieldCheck, Mail, Phone, MapPin, 
-  HelpCircle, ChevronDown, Check
+  HelpCircle, ChevronDown, Check, ArrowRight
 } from 'lucide-react';
 import { api } from '../../api';
 import { useAuth } from '../../auth';
@@ -49,17 +50,51 @@ const DEFAULT_INVOICE_PROFILE = {
   invoiceTerms: '1. Declared that particulars in invoice are true and correct.\n2. Interest @ 18% p.a. charged on delayed payments beyond due date.\n3. Goods once sold cannot be returned without prior RMA.\n4. Disputes subject to exclusive jurisdiction of Pune, Maharashtra courts.'
 };
 
-export default function Settings() {
+export default function Settings({ defaultTab }) {
   const { me } = useAuth();
   const isSuperAdmin = me?.role === 'super_admin';
 
+  const [searchParams, setSearchParams] = useSearchParams();
+  const queryTab = searchParams.get('tab') || defaultTab;
+  const queryCid = searchParams.get('companyId');
+
   // Navigation tab: 'store' | 'invoice'
-  const [activeTab, setActiveTab] = useState('store');
+  const [activeTab, setActiveTab] = useState(queryTab === 'invoice' ? 'invoice' : (defaultTab || 'store'));
 
   // Company selection (for super admin)
   const [companies, setCompanies] = useState([]);
-  const [selectedCompanyId, setSelectedCompanyId] = useState(me?.companyId || 'C-ARGUS');
+  const [selectedCompanyId, setSelectedCompanyId] = useState(queryCid || me?.companyId || 'C-ARGUS');
   const [coName, setCoName] = useState('');
+
+  useEffect(() => {
+    if (queryTab === 'invoice' || queryTab === 'store') {
+      setActiveTab(queryTab);
+    }
+  }, [queryTab]);
+
+  useEffect(() => {
+    if (queryCid && isSuperAdmin) {
+      setSelectedCompanyId(queryCid);
+    }
+  }, [queryCid, isSuperAdmin]);
+
+  const handleTabChange = (t) => {
+    setActiveTab(t);
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set('tab', t);
+      return next;
+    });
+  };
+
+  const handleCompanyChange = (cid) => {
+    setSelectedCompanyId(cid);
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set('companyId', cid);
+      return next;
+    });
+  };
 
   // Storefront settings state
   const [f, setF] = useState(null);
@@ -316,7 +351,7 @@ export default function Settings() {
       <div className="flex flex-wrap items-center gap-2 border-b border-slate-200/80 pb-3">
         <button
           type="button"
-          onClick={() => setActiveTab('store')}
+          onClick={() => handleTabChange('store')}
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
             activeTab === 'store'
               ? 'bg-rose-50 text-rose-700 border border-rose-200 shadow-xs'
@@ -328,7 +363,7 @@ export default function Settings() {
         </button>
         <button
           type="button"
-          onClick={() => setActiveTab('invoice')}
+          onClick={() => handleTabChange('invoice')}
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
             activeTab === 'invoice'
               ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-xs'
@@ -346,6 +381,32 @@ export default function Settings() {
       {/* TAB 1: STOREFRONT & OPERATIONS */}
       {activeTab === 'store' && (
         <>
+          {/* Quick Jump Banner to Invoice & Quotation Profile */}
+          <div className="bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-amber-500/10 border border-emerald-500/30 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold text-base shadow-sm flex-shrink-0">
+                🧾
+              </div>
+              <div>
+                <h4 className="text-sm font-black text-slate-800 flex items-center gap-2">
+                  <span>Looking for Invoice &amp; Quotation Profile?</span>
+                  <span className="px-1.5 py-0.5 text-[9px] bg-emerald-100 text-emerald-800 rounded font-mono font-bold">Rule 46 GST</span>
+                </h4>
+                <p className="text-xs text-slate-600">
+                  Configure Company Letterhead Logo, Registered Address, Bank RTGS Details, Dynamic NPCI UPI QR code, and Authorized Digital Signatures.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => handleTabChange('invoice')}
+              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-xs transition-colors flex items-center gap-1.5 flex-shrink-0 cursor-pointer"
+            >
+              <span>Open Invoice Profile</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
           {errStore && !f ? (
             <div className="bg-white rounded-2xl border border-red-200 p-8 text-center max-w-lg mx-auto">
               <p className="text-red-500 font-bold mb-1">Failed to load storefront settings</p>
@@ -501,7 +562,7 @@ export default function Settings() {
                 <span className="text-xs font-bold text-slate-300 whitespace-nowrap">Company:</span>
                 <select
                   value={selectedCompanyId}
-                  onChange={(e) => setSelectedCompanyId(e.target.value)}
+                  onChange={(e) => handleCompanyChange(e.target.value)}
                   className="bg-slate-800 text-white font-bold text-xs px-3.5 py-2.5 rounded-xl border border-slate-700 hover:border-slate-600 focus:border-emerald-500 outline-hidden transition-all cursor-pointer"
                 >
                   {companies.length > 0 ? (

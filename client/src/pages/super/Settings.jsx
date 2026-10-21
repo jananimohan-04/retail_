@@ -1,6 +1,7 @@
 /* /super/settings — global defaults form + per-company overrides (read-only). */
 import { useEffect, useState } from 'react';
-import { Sliders } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Sliders, Receipt, ArrowRight } from 'lucide-react';
 import { api } from '../../api';
 import { PageHero, Field, DataTable, Empty, Skeleton, toast } from '../../components/ui';
 
@@ -39,6 +40,33 @@ export default function Settings() {
         gradient="from-rose-500 via-pink-600 to-rose-700"
         actions={[<button key="s" className="btn btn-primary btn-sm bg-rose-600 hover:bg-rose-700 border-none shadow-sm shadow-rose-600/30 text-white" disabled={busy || !g} onClick={save}>Publish Settings</button>]}
       />
+
+      {/* Prominent Banner for Multi-Company Invoice & Quotation Profiles */}
+      <div className="mb-6 p-4 rounded-2xl bg-gradient-to-r from-emerald-500/15 via-teal-500/10 to-amber-500/10 border border-emerald-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
+        <div className="flex items-center gap-3.5">
+          <div className="w-11 h-11 rounded-2xl bg-emerald-600 text-white flex items-center justify-center font-bold text-lg shadow-sm flex-shrink-0">
+            🧾
+          </div>
+          <div>
+            <h4 className="text-sm font-black text-slate-800 dark:text-emerald-100 flex items-center gap-2">
+              <span>Company Invoice &amp; Quotation Profiles</span>
+              <span className="px-2 py-0.5 text-[9px] bg-emerald-100 text-emerald-800 rounded font-mono font-bold">Rule 46 GST</span>
+            </h4>
+            <p className="text-xs text-slate-600 dark:text-stone-300 mt-0.5">
+              Configure company letterhead logo, registered address, GSTIN/PAN/CIN, bank wire details, dynamic amount UPI payment QR codes, and digital signatures.
+            </p>
+          </div>
+        </div>
+        <Link 
+          to="/admin/settings?tab=invoice"
+          className="btn btn-primary btn-sm bg-emerald-600 hover:bg-emerald-700 text-white border-none flex-shrink-0 flex items-center gap-1.5 shadow-sm"
+        >
+          <Receipt className="w-4 h-4" />
+          <span>Configure Company Profiles</span>
+          <ArrowRight className="w-3.5 h-3.5" />
+        </Link>
+      </div>
+
       {err ? <Empty icon="⚠️" title="Could not load settings" sub={err} />
         : !g ? <Skeleton h={220} />
         : (
@@ -61,6 +89,7 @@ export default function Settings() {
               cols={[
                 { key: 'co', label: 'Company', render: (c) => (<><b>{c.logo} {c.name}</b><div className="hint">{c.code} • {c.city}</div></>) },
                 { key: 'st', label: 'Store', render: (c) => (c.storeStatus || c.status) },
+                { key: 'inv', label: 'Invoice Profile', render: (c) => <a className="btn btn-primary btn-xs bg-emerald-600 hover:bg-emerald-700 text-white border-none shadow-xs" href={'#/admin/settings?tab=invoice&companyId=' + c.id}>Invoice Profile 🧾</a> },
                 { key: 'act', label: '', render: (c) => <a className="btn btn-ghost btn-sm" href={'#/super/companies/' + c.id}>Open →</a> }
               ]}
               rows={cos} rowKey={(c) => c.id} empty="No companies."

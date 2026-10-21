@@ -1099,7 +1099,25 @@ export const Topbar = forwardRef(function Topbar(
                         <span>My Profile &amp; Account</span>
                       </Link>
 
-                      {/* 2. Menu Position — immediately before full page view */}
+                      {/* 2. Company Invoice & Quotation Profile (Super Admin & Company Admin) */}
+                      {(me?.role === 'super_admin' || me?.role === 'company_admin') && (
+                        <Link
+                          to="/admin/settings?tab=invoice"
+                          id="profileDropdownInvoiceProfileBtn"
+                          onClick={() => setProfileDropdownOpen(false)}
+                          className="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-[#D7C4B7] hover:text-white hover:bg-[#22120A] transition-colors cursor-pointer group"
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <Receipt className="w-4 h-4 text-emerald-400 group-hover:scale-110 transition-transform" />
+                            <span className="font-bold text-white">Invoice &amp; QR Profile</span>
+                          </div>
+                          <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                            Rule 46
+                          </span>
+                        </Link>
+                      )}
+
+                      {/* 3. Menu Position — immediately before full page view */}
                       <button
                         type="button"
                         id="profileDropdownMenuPositionBtn"

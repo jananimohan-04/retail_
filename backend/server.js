@@ -92,7 +92,8 @@ const MENU_CATALOG = [
       { id: 'admin_media', label: 'Product Media', path: '/admin/media', icon: 'ImageIcon', defaultRoles: ['company_admin'] },
       { id: 'admin_categories', label: 'Custom Categories', path: '/admin/categories', icon: 'FolderTree', defaultRoles: ['company_admin'] },
       { id: 'admin_users', label: 'Business Development Executive', path: '/admin/users', icon: 'User', defaultRoles: ['company_admin'] },
-      { id: 'admin_settings', label: 'Store Settings', path: '/admin/settings', icon: 'Settings', defaultRoles: ['company_admin'] }
+      { id: 'admin_invoice_profile', label: 'Invoice & QR Profile', path: '/admin/settings?tab=invoice', icon: 'Receipt', defaultRoles: ['company_admin', 'super_admin'] },
+      { id: 'admin_settings', label: 'Store & Invoice Settings', path: '/admin/settings', icon: 'Settings', defaultRoles: ['company_admin', 'super_admin'] }
     ]
   },
   {
@@ -112,6 +113,7 @@ const MENU_CATALOG = [
     description: 'Menu access permissions, global settings, and audit logs',
     items: [
       { id: 'super_access', label: 'Menu Access Management', path: '/super/access', icon: 'ShieldCheck', defaultRoles: ['super_admin'] },
+      { id: 'super_invoice_profile', label: 'Company Invoice & QR Profiles', path: '/admin/settings?tab=invoice', icon: 'Receipt', defaultRoles: ['super_admin'] },
       { id: 'super_settings', label: 'Global Settings', path: '/super/settings', icon: 'Settings', defaultRoles: ['super_admin'] },
       { id: 'super_audit', label: 'Audit Logs', path: '/super/audit', icon: 'ShieldCheck', defaultRoles: ['super_admin'] }
     ]
@@ -202,6 +204,15 @@ function ensureRolePermissions() {
     }
     if (r.id === 'super_admin' && !r.menuPermissions.includes('super_access')) {
       r.menuPermissions.push('super_access');
+    }
+    if ((r.id === 'company_admin' || r.id === 'super_admin') && !r.menuPermissions.includes('admin_invoice_profile')) {
+      r.menuPermissions.push('admin_invoice_profile');
+    }
+    if ((r.id === 'company_admin' || r.id === 'super_admin') && !r.menuPermissions.includes('admin_settings')) {
+      r.menuPermissions.push('admin_settings');
+    }
+    if (r.id === 'super_admin' && !r.menuPermissions.includes('super_invoice_profile')) {
+      r.menuPermissions.push('super_invoice_profile');
     }
   });
 
